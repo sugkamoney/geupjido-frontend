@@ -12,4 +12,5 @@
 - 테스트 전략
 - 빌드와 배포
 
-아직 등록된 아키텍처 문서가 없다.
+- [프론트엔드 기반 기술 구조](frontend-foundation.md)
+- [프론트엔드 기반 구축 현황과 다음 단계](frontend-implementation-status.md)
