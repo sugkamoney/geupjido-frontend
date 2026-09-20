@@ -6,3 +6,4 @@
 데스크톱 웹과 모바일 웹의 지원 범위를 함께 명시한다.
 
 - [플랫폼 지원 범위](platform-support.md)
+- [SDD 제품 문서 구조](sdd-document-structure.md)
