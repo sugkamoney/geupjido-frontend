@@ -21,6 +21,13 @@ or frontend-backend integration issues, consult the backend repository when
 access is available. Do not modify the backend repository unless the task
 explicitly includes backend changes.
 
+## Design workspace
+
+The project's source-of-truth Figma design workspace is
+[`급지도 디자인 작업공간`](https://www.figma.com/design/VB4hekcKLXEAyuFPu4zhVU/%EA%B8%89%EC%A7%80%EB%8F%84-%EB%94%94%EC%9E%90%EC%9D%B8-%EC%9E%91%EC%97%85%EA%B3%B5%EA%B0%84?node-id=82-5).
+
+Use this file when reviewing, implementing, or validating frontend designs.
+
 ## Documentation
 
 Keep project documentation current as part of the work.
@@ -61,6 +68,36 @@ or update an index when a folder gains multiple documents or subtopics.
 
 Do not place secrets, access tokens, private user data, or sensitive deployment
 information in project documentation.
+
+### Spec-driven development
+
+Manage product requirements for an SDD cycle under
+`docs/product/specs/<feature-slug>/`. Create a feature folder only when its
+SDD cycle starts; do not add empty future-feature folders.
+
+Every feature folder must contain these documents:
+
+- `README.md`: product goal, target users, scope, document status, and related
+  Notion and architecture documents
+- `requirements.md`: user flows, UI behavior, product rules, and desktop and
+  mobile web support scope
+- `acceptance-criteria.md`: testable user scenarios that determine completion
+- `decisions.md`: open and confirmed product decisions with their next review
+  point
+
+Each feature document must show its status, current version, and last-updated
+date at the top. Keep only the current valid policy in the body, and record
+versioned changes in a `## 변경 이력` table at the end. Add immutable
+`versions/vX.Y.md` snapshots only when a major policy transition or external
+review requires the full prior text. When a decision's rationale, alternatives,
+or trade-offs need long-term preservation, record an ADR under `docs/history/`
+and link it from the feature document.
+
+Product documents define what users experience. Keep API contracts, state and
+data flow, component boundaries, SDK choices, error handling, performance, and
+test implementation in `docs/architecture/`; product documents should link to
+those technical documents instead of duplicating them. Start this structure
+with `map-exploration/` when its first SDD cycle begins.
 
 ## Commit convention
 
