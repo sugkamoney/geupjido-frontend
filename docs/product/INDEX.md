@@ -7,3 +7,4 @@
 
 - [플랫폼 지원 범위](platform-support.md)
 - [SDD 제품 문서 구조](sdd-document-structure.md)
+- [SDD 기능 명세](specs/INDEX.md)
