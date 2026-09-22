@@ -21,7 +21,7 @@
 
 - 시군구와 생활권 권역 경계를 지도에서 탐색
 - 확대 수준에 따른 단지 군집과 개별 단지 탐색
-- cluster 선택 시 해당 위치를 중심으로 지도 이동·확대
+- cluster 선택 시 해당 위치를 중심으로 zoom을 2단계 높이는 지도 이동·확대
 - 단지 결과 없음, 결과 제한, 지도 로딩·조회 실패의 사용자 안내
 
 ### 제외
@@ -38,6 +38,7 @@
 - [지도 탐색 요구사항](requirements.md)
 - [지도 탐색 수용 기준](acceptance-criteria.md)
 - [지도 탐색 제품 결정](decisions.md)
+- [지도 탐색 표시 단계](../../map-exploration.md)
 - [플랫폼 지원 범위](../../platform-support.md)
 - [지도 API·운영 기준 설계](../../../superpowers/specs/2026-09-19-map-api-and-runtime-design.md)
 - [프론트엔드 기반 기술 구조](../../../architecture/frontend-foundation.md)
