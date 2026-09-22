@@ -13,8 +13,8 @@
   로컬 개발에서만 Vite `/api` 프록시를 사용한다.
 - 경계는 GeoJSON `FeatureCollection`, 단지는 bounds·zoom 기반의 경량 viewport
   응답으로 제공한다.
-- 단지 조회는 zoom 10~13에서 cluster, 14~21에서 개별 단지를 표시하며 zoom 0~9에서는
-  요청하지 않는다.
+- 단지 조회는 임시로 zoom 12~13에서 cluster, 14~21에서 개별 단지를 표시하며 zoom
+  0~11에서는 요청하지 않는다. 실제 디자인·기획과 성능 검증 뒤 이 기준을 조정할 수 있다.
 - 백엔드가 생성한 OpenAPI JSON이 계약의 단일 기준이다. 프론트는 검토된 버전의
   사본으로 TypeScript 타입을 생성한다.
 

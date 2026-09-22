@@ -93,14 +93,9 @@ parameter로 받는다. 선택 필터는 명시된 값만 추가한다.
 
 응답은 현재 화면에서 표시할 항목만 담으며, `items`는 최대 500개다. 결과가 이
 상한을 넘는 경우 서버는 항목을 임의로 잘라 반환하지 않는다. cluster 구간에서는
-  cluster를 더 큰 격자로 합쳐 500개 이하로 만들고, complex 구간에서는
-`MAP_RESULT_LIMIT` 오류를 반환한다.
-
-`MAP_RESULT_LIMIT` 이후의 사용자 경험은 아직 제품 결정이 필요하다. 확대 안내,
-cluster 재전환, 목록 제공 중 어떤 행동을 제공할지는
-[지도 탐색 제품 결정](../../product/specs/map-exploration/decisions.md)에서 확정한 뒤
-이 문서와 OpenAPI 계약을 함께 갱신한다. 결정 전에도 프론트는 현재 경계 탐색을
-유지한다.
+cluster를 더 큰 격자로 합쳐 500개 이하로 만든다. complex 구간에서 상한을 넘을 때
+확대 안내, cluster 재전환, 목록 제공 중 어떤 경험을 제공할지와 그에 따른 API 응답은
+실제 단지 분포와 확정 디자인 검증 후 결정한다.
 
 ```json
 {
@@ -124,7 +119,8 @@ cluster 재전환, 목록 제공 중 어떤 행동을 제공할지는
 ```
 
 - `kind=cluster`는 화면을 더 확대하도록 유도하는 집계 결과이며 상세 조회 대상이
-  아니다.
+  아니다. 사용자가 선택하면 프론트는 cluster 중심으로 지도 zoom을 2단계 높이며,
+  목록이나 상세 패널을 열지 않는다.
 - cluster ID는 `cluster:{zoom}:{gridVersion}:{cellX}:{cellY}` 형식의 임시 ID다.
   viewport, zoom, 집계 격자 revision 또는 필터가 바뀌면 같은 단지 집합도 다른
   cluster ID를 받을 수 있으므로 선택 상태나 URL에 저장하지 않는다.
@@ -144,10 +140,11 @@ cluster 재전환, 목록 제공 중 어떤 행동을 제공할지는
 
 - 시·권역 경계는 앱 진입 후 한 번 가져와 GeoJSON Data Layer에 표시한다.
   query cache는 경계 level별로 구분한다.
-- `zoom` 0~9에서는 단지 API를 호출하지 않는다. 10~13에서는 단지 API를 호출하고
+- `zoom` 0~11에서는 단지 API를 호출하지 않는다. 12~13에서는 단지 API를 호출하고
   cluster 항목만 표시한다. 14~21에서는 단지 API를 호출하고 complex 항목만 표시한다.
-- query key의 zoom bucket은 `10~13`에서는 `cluster:{zoom}`, `14~21`에서는
-  `complex`다. 0~9에는 단지 query key가 없다.
+- query key의 zoom bucket은 `12~13`에서는 `cluster:{zoom}`, `14~21`에서는
+  `complex`다. 0~11에는 단지 query key가 없다. 이 zoom 전환값은 임시 기준이며,
+  확정 디자인·기획과 실제 데이터 성능 검증 후 조정할 수 있다.
 - 정규화 bounds는 `west`·`south`를 소수점 넷째 자리에서 내림하고 `east`·`north`를
   소수점 넷째 자리에서 올림한 값이다. 프론트는 이 정규화한 bounds를 요청과 query
   key 모두에 사용한다.

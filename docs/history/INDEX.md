@@ -22,3 +22,4 @@
 
 - [ADR-001: 프로젝트 문서와 학습·결정 이력을 작업 중 함께 기록한다](ADR-001-documentation-recording.md)
 - [ADR-002: NAVER Maps 기반 Vite SPA로 데스크톱 웹을 먼저 개발한다](ADR-002-frontend-foundation.md)
+- [ADR-003: 지도 프론트엔드 상태와 API 계약을 URL·OpenAPI 중심으로 관리한다](ADR-003-map-frontend-state-and-contract.md)
