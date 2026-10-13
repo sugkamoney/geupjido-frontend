@@ -17,3 +17,4 @@
 - [2026-10-13 백엔드·디자인 구현 준비 점검](2026-10-13-implementation-readiness.md)
 
 - [프로젝트 초기화](project-initialization.md)
+- [PR 작성 규칙](pull-request-convention.md)

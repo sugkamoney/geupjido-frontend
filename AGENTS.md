@@ -99,6 +99,23 @@ test implementation in `docs/architecture/`; product documents should link to
 those technical documents instead of duplicating them. Start this structure
 with `map-exploration/` when its first SDD cycle begins.
 
+## Pull request convention
+
+Use `.github/pull_request_template.md` for every pull request.
+
+- Perform 100% of code writing and modification with AI. For documentation-only
+  changes, mark the AI code-work section as not applicable.
+- Write the PR title without emojis, using the issue reference (when one
+  exists), category, and a short Korean summary.
+  Example: `[#12] feature(web): 지도 검색 기능 추가`.
+- Use the same issue-reference and category rules as the commit convention.
+- Keep the body concise: explain what changed and why, record AI code work,
+  and include test cases with expected and actual results.
+- Report tests honestly: include the reason for unrun or inapplicable tests.
+  For UI changes, include desktop and mobile web results or support limitations.
+
+See [PR 작성 규칙](docs/architecture/pull-request-convention.md) for details.
+
 ## Commit convention
 
 Use the following commit message format:
@@ -116,6 +133,7 @@ Use the following commit message format:
   - `feature(web)` for frontend feature development
   - `bugfix` for bug fixes
 - Write the description in Korean.
+- Do not use emojis in commit messages.
 - Keep the first line to a short summary.
 - Add a blank line after the summary, followed by a concise description of the
   work. Do not make the body unnecessarily long.
