@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { MapControl, PanelHandle } from '../ui';
 import { ShellNavigation } from './shell-navigation';
 import { DetailPanel, TimelinePanel } from './shell-panels';
@@ -17,12 +17,21 @@ export function AppShell({
   onDetailClose,
   search,
   onLevelChange,
+  displayLevel,
+  sheetExpanded: controlledSheetExpanded,
+  onSheetExpandedChange,
   onMapCommand,
   review = false,
 }: AppShellProps) {
   const [panelOpen, setPanelOpen] = useState(false);
-  const [level, setLevel] = useState<DisplayLevel>('zone');
-  const [sheetExpanded, setSheetExpanded] = useState(false);
+  const [localLevel, setLevel] = useState<DisplayLevel>('zone');
+  const [localSheetExpanded, setLocalSheetExpanded] = useState(false);
+  const level = displayLevel ?? localLevel;
+  const sheetExpanded = controlledSheetExpanded ?? localSheetExpanded;
+  const setSheetExpanded = (expanded: boolean) => {
+    setLocalSheetExpanded(expanded);
+    onSheetExpandedChange?.(expanded);
+  };
   const [searchEditing, setSearchEditing] = useState(false);
   const [mobileNotice, setMobileNotice] = useState(false);
   const rootRef = useRef<HTMLElement | null>(null);
@@ -34,6 +43,7 @@ export function AppShell({
   const mapButtonRef = useRef<HTMLButtonElement | null>(null);
   const handleRef = useRef<HTMLButtonElement | null>(null);
   const detailOrigin = useRef<HTMLElement | null>(null);
+  const restoreDetailFocus = useRef(false);
   const previousDetail = useRef<string | undefined>(undefined);
   const interactionOrigin = useRef<HTMLElement | null>(null);
   const lastFocused = useRef<HTMLElement | null>(null);
@@ -79,18 +89,23 @@ export function AppShell({
     previousDetail.current = detail?.id;
   }, [detail]);
 
+  // Restore after selection overlays have been removed from the committed tree.
+  useLayoutEffect(() => {
+    if (detail || !restoreDetailFocus.current) return;
+    restoreDetailFocus.current = false;
+    const origin = detailOrigin.current;
+    if (
+      origin?.isConnected &&
+      !origin.closest('[inert], [hidden]') &&
+      !hasHiddenAncestor(origin)
+    )
+      origin.focus({ preventScroll: true });
+    else mapButtonRef.current?.focus({ preventScroll: true });
+  }, [detail]);
+
   const closeDetail = (restoreFocus = true) => {
     setSheetExpanded(false);
-    if (restoreFocus) {
-      const origin = detailOrigin.current;
-      if (
-        origin?.isConnected &&
-        !origin.closest('[inert], [hidden]') &&
-        !hasHiddenAncestor(origin)
-      )
-        origin.focus({ preventScroll: true });
-      else mapButtonRef.current?.focus({ preventScroll: true });
-    }
+    restoreDetailFocus.current = restoreFocus;
     onDetailClose?.();
   };
   const changeLevel = (next: DisplayLevel) => {

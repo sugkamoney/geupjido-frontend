@@ -17,3 +17,5 @@
 - [QA-FE-004: 문서 변경만 병합했는데 Frontend CI가 왜 실패했나?](QA-FE-004-ci-document-format-check.md)
 
 - [QA-FE-005: 로컬 터치 검사는 통과했는데 Linux CI는 왜 실패했나?](QA-FE-005-touch-release-ci.md)
+
+- [QA-FE-006: Vite preview와 병렬 빌드의 asset 경합](QA-FE-006-preview-build-race.md)

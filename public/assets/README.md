@@ -48,3 +48,17 @@ fonts/Pretendard-400/500/600/700.woff2는 [Pretendard v1.3.9](https://github.com
 SVG/PNG 원본 바이트를 보존한다. 지도·월드컵 nav의 SVG는 mask로 원본 path를
 유지하고 Rail/Item 설명(`460:905`)의 text/tertiary·선택 text/brand 상태 색을 적용한다.
 기존 공통 Icon 컴포넌트의 색상 API를 변경하지 않는다.
+
+## 지도 탐색 자산
+
+Figma `187:273` Map/Label, `490:2113` Map/Apartment Pin의 context에서 원본 SVG를 받았다. 지도 바탕 스크린샷·실제 경계는 자산으로 사용하지 않는다.
+
+| 파일                      | 원본 노드                        | 자연 크기 / 표시                                    |
+| ------------------------- | -------------------------------- | --------------------------------------------------- |
+| map/label-house.svg       | 244:665 vector fill              | 86×40.6943, 기본 집 배경                            |
+| map/label-selected.svg    | 272:1210 vector fill             | 88×42.6943, 흰 테두리 포함 선택 배경                |
+| map/dot-1.svg ~ dot-5.svg | 244:671, 272:1185/1193/1201/1209 | 8×8, 급지별 중심 점                                 |
+| map/apartment-white.svg   | 490:2102, Icon/16/Apartment      | 16×16, 28×28 몸통 안 원본 흰 아이콘                 |
+| map/pin-tail.svg          | 490:2104                         | 12.4142×6.20711, 원본 inset을 10×5 꼬리 slot에 적용 |
+
+root width/height와 path를 보존한다. `MapSurface`의 해당 slot에서 사용하며 temporary URL은 저장하지 않는다. hover 점은 원본을 담은 wrapper를 1.25배 확대한다. 공통 GradeChip/Card·지도 컨트롤·레일 자산은 기존 것을 재사용한다.

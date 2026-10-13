@@ -27,3 +27,5 @@
 - [ADR-005: Figma 토큰과 표시 컴포넌트를 제품 정책에서 분리한다](ADR-005-design-system-source-and-boundaries.md)
 
 - [ADR-006: 앱 화면 틀 슬롯과 검토용 반응형 배치](ADR-006-app-shell-slots-and-review-layout.md)
+
+- [ADR-005: 지도 탐색 검토 데이터와 운영 연동 경계](ADR-005-map-fixture-boundary.md)

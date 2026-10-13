@@ -1,11 +1,13 @@
 import { Link, Route, Routes } from 'react-router';
 import { DesignSystemPage } from './design-system-page';
+import { ExplorationPage } from '../features/map-exploration/exploration-page';
 import { ShellPage } from './shell-page';
 
 export function App() {
   return (
     <Routes>
-      <Route path="/" element={<ShellPage />} />
+      <Route path="/" element={<ExplorationPage />} />
+      <Route path="/map-exploration" element={<ExplorationPage />} />
       <Route path="/app-shell" element={<ShellPage review />} />
       <Route path="/design-system" element={<DesignSystemPage />} />
       <Route path="*" element={<NotFoundPage />} />
