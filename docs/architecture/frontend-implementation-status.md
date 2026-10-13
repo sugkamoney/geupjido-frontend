@@ -19,7 +19,9 @@ SearchField·닫기/패널/지도 조작 버튼, 로컬 자산과 검토 카탈�
 디자인 시스템 PR #2는 develop `2c3a1f4`에 병합됐다. 기존 디자인 시스템 workspace는
 사용자 요청으로 제거했다. 앱 화면 틀은 이 커밋에서 분기한 `feature/app-shell`에서
 SDD를 시작해 레일/하단 탭·패널·상세/시트·검색과 지도 슬롯을 구현했다.
-현재 feature 브랜치 로컬 검증은 RTL 13개와 브라우저 40개 통과(14개 플랫폼 적용 제외)다.
+현재 feature 브랜치 로컬 검증은 RTL 15개와 브라우저 40개 통과(14개 플랫폼 적용 제외)다.
+PR #3 최초 CI는 터치 드래그 후 탭의 합성 click 누락으로 실패했다. Linux 재현 후
+pointerup 처리와 회귀 검사를 보완했으며 원격 최신 상태는 PR checks에서 확인한다.
 화면 틀은 홈의 준비 상태와 별도 `/app-shell` 검토 fixture로 나뉘며 실제 집계 수치는 없다. [앱 화면 틀](app-shell.md)과 [제품 명세](../product/specs/app-shell/README.md)를 따른다.
 원본 대응·접근성·반응형 제한은 [디자인 시스템](design-system.md)에 기록한다.
 지도·검색 결과·월드컵의 제품 기능과 SDK/API 연동은 아직 구현하지 않았다.
@@ -96,7 +98,7 @@ SDD를 시작해 레일/하단 탭·패널·상세/시트·검색과 지도 슬�
 `codex --yolo` 터미널을 따로 준비했다. 구현 파일은 Orca worktree에 있다.
 
 디자인 시스템 PR #2는 develop 통합을 완료했다. 앱 화면 틀 작업은
-`feature/app-shell`과 전용 Orca workspace에서 진행하며 이번 요청은 구현·검증·커밋까지다.
-feature push·PR·merge는 요청하지 않았다. 후속 PR은 develop 대상이며 기본 템플릿과
+`feature/app-shell`과 전용 Orca workspace에서 구현·검증·커밋을 완료했다.
+후속 사용자 요청으로 feature를 push하고 develop 대상 PR #3을 생성했다. merge는 요청하지 않았다. 후속 PR은 develop 대상이며 기본 템플릿과
 한국어 작성 규칙을 적용한다. 실제 지도/API/검색 결과/월드컵 집계는 후속 SDD 범위다.
 모바일·좁은 데스크톱 배치는 검토용 임시 구현으로 다음 디자인 리뷰에서 확정한다.

@@ -1,6 +1,6 @@
 # 앱 화면 틀 구조와 구현 계획
 
-> 상태: 구현·검증 완료 · 버전: 0.2 · 갱신: 2026-10-13
+> 상태: 구현·검증 완료 · 버전: 0.3 · 갱신: 2026-10-13
 
 제품 기준은 [앱 화면 틀 SDD](../product/specs/app-shell/README.md)다.
 이번 작업은 기존 Orca linked worktree `feature/app-shell`에서 실행한다.
@@ -96,13 +96,14 @@ frozen 설치 통과. 기존 `pnpm check`(RTL 8개·토큰/타입/lint/format/bu
 ## 실행 결과와 시각 대조
 
 코드 작성·수정은 100% AI로 수행했다. `feature/app-shell`에 커밋하며
-통합 대상은 develop이다. 이번에는 feature push·PR·merge를 수행하지 않는다.
+통합 대상은 develop이다. 최초 구현 요청은 커밋까지였고, 이후 사용자 요청으로 feature push와 PR #3 생성을 진행했다.
+merge는 요청하지 않았다.
 후속 PR은 `.github/pull_request_template.md`와 [PR 규칙](pull-request-convention.md)을 적용한다.
 
 | 검사 | 기대 | 실제 결과 |
 |---|---|---|
 | `pnpm install --frozen-lockfile` | 잠금 파일 변경 없이 설치 | 통과, package/lockfile 변경 없음 |
-| `pnpm check` | 토큰 생성 일치·타입·lint·format·RTL·build 통과 | 통과, RTL 13개(기존 8 + 화면 틀 5), 운영 빌드 성공 |
+| `pnpm check` | 토큰 생성 일치·타입·lint·format·RTL·build 통과 | 통과, RTL 15개(기존 8 + 화면 틀/포인터 7), 운영 빌드 성공 |
 | `pnpm test:e2e --workers=3` | 기존 UI 회귀와 화면 틀 브라우저 시나리오 통과 | 40개 통과, 14개 플랫폼 적용 제외, 실패 0 |
 | 1920 패널 조합 | 64/390/360/340 폭·상세/검색 좌표 | 패널 접기·상세 닫기/구 전환 후 좌표까지 통과 |
 | 패널 scroll·focus | 헤더 고정·목록 독립·숨은 콘텐츠 탐색 제외 | 휠/End 키, 패널 복원, 상세 origin 복귀 통과 |
@@ -117,7 +118,7 @@ frozen 설치 통과. 기존 `pnpm check`(RTL 8개·토큰/타입/lint/format/bu
 모바일 Chromium에서 실행했다. WebKit은 tap·키보드·목록 End 검사를 실행했으며
 물리적 터치 swipe 검증을 대신하지 않는다. 브라우저 구성은 desktop Chromium,
 Pixel 7 Chromium, iPhone 13 WebKit이다. Chrome/Edge/Safari 실제 최신 안정 버전과
-물리 기기·VoiceOver·운영 배포·실제 NAVER/API·이번 세션의 GitHub CI는 미실행이다.
+물리 기기·VoiceOver·운영 배포·실제 NAVER/API·최초 구현 단계의 GitHub CI는 미실행이었다. 이후 PR #3에서 발생한 실패는 아래 보완 기록을 따른다.
 각각 실제 환경 또는 후속 기능/PR 범위가 필요하기 때문이다.
 
 Figma 메인 `594:21211`을 캡처하고 레일 `594:21246`, 시작 `594:21260`,
@@ -142,8 +143,8 @@ native focus를 보장하지 않으며, 과거 pointer origin만 쓰면 나중�
 기록하고 남아 있는 nav/상세 닫기/검색 input으로 복구한다.
 
 시트 손잡이의 touch-action:none이 공통 button 규칙에 밀려 pointercancel이 발생한 것을
-실제 이벤트 stream으로 확인하고 손잡이 선택자를 보완했다. 드래그 직후 발생할 click만
-억제하며 이후 탭/키보드를 막지 않는다. 검색 전체 화면의 inset 우선순위와 입력 줄 flex도
+실제 이벤트 stream으로 확인하고 손잡이 선택자를 보완했다. 터치·펜의 드래그/탭은 pointerup에서 한 번 처리하고 후속 호환 click은 무시한다.
+마우스·키보드 click은 유지한다. Linux CI에서 호환 click이 생략되는 경우까지 보완했다. 검색 전체 화면의 inset 우선순위와 입력 줄 flex도
 캡처에서 발견하고 실패 테스트 후 수정했다.
 
 `requesting-code-review` 스킬에 따른 독립 읽기 전용 리뷰를 수행했다.
@@ -161,9 +162,26 @@ SDK/API/검색 결과/월드컵/지표, 랭킹·리포트 운영 노출, 색상 
 검토 서버: `http://127.0.0.1:5174/app-shell` (시작 전 빈 포트 확인).
 테스트 preview는 4173을 사용하고 실행 후 종료한다. 서버 포트는 제품 정책이 아니다.
 
+## PR #3 CI 보완
+
+최초 CI [38356143404](https://github.com/sugkamoney/geupjido-frontend/actions/runs/38356143404)는
+품질 검사를 통과한 뒤 터치 드래그→탭 접기 시나리오 1개가 실패했다(39 통과/14 제외).
+macOS에서는 CI 옵션으로 5회 통과했지만 같은 Playwright 1.64.0의 Ubuntu arm64 컨테이너에서
+운영 빌드로 10회 모두 재현했다. 실제 입력 로그에서 다음 탭의 pointerdown/up은 발생하고
+click은 발생하지 않았다. 탭 처리를 합성 click에 맡긴 구현이 원인이다.
+
+터치/펜은 pointerup에서 이동량에 따라 드래그 또는 탭을 처리하고, 호환 click을 무시해
+중복 처리를 막는다. detail=0 활성화와 마우스 click은 유지한다. 클릭이 없는 탭/후속 클릭/
+키보드 활성화를 검증하는 회귀 2개를 먼저 실패시키고 수정 후 통과시켰다.
+수정 후 Linux 같은 재현은 10회 모두 통과했다. 테스트 제외·재시도·대기 시간은 늘리지 않았다.
+컨테이너는 GitHub amd64 runner의 대체가 아니며 원격 결과는
+[PR #3 checks](https://github.com/sugkamoney/geupjido-frontend/pull/3/checks)에서 별도로 확인한다.
+설명은 [QA-FE-005](../learning/frontend/q-and-a/QA-FE-005-touch-release-ci.md)에 보존한다.
+
 ## 변경 이력
 
 | 버전 | 날짜 | 변경 |
 |---|---|---|
 | 0.1 | 2026-10-13 | 상태/슬롯/반응형 기술 경계와 구현 계획, baseline 기록 |
 | 0.2 | 2026-10-13 | 화면 틀 구현·독립 리뷰 보완·브라우저/시각 검증 결과와 후속 제한 기록 |
+| 0.3 | 2026-10-13 | PR #3 Linux 터치 CI 실패를 재현하고 pointerup 처리·회귀 2개 추가 |

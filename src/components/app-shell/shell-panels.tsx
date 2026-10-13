@@ -57,7 +57,7 @@ export function DetailPanel({
   closeRef: RefObject<HTMLButtonElement | null>;
   panelRef: RefObject<HTMLElement | null>;
 }) {
-  const skipClick = useRef(false);
+  const pointerInput = useRef(false);
   const drag = useRef<{ id: number; y: number } | null>(null);
   return (
     <section
@@ -73,18 +73,23 @@ export function DetailPanel({
           aria-label={expanded ? '상세 접기' : '상세 펼치기'}
           aria-expanded={expanded}
           aria-controls="shell-detail-body"
-          onClick={() => {
-            if (skipClick.current) {
-              skipClick.current = false;
+          onClick={(event) => {
+            const native = event.nativeEvent;
+            const pointerType =
+              'pointerType' in native ? native.pointerType : undefined;
+            // Touch/pen activate on release; their compatibility click may be absent.
+            // detail=0 preserves keyboard and assistive-technology activation.
+            if (
+              event.detail !== 0 &&
+              (pointerType === 'touch' ||
+                pointerType === 'pen' ||
+                (pointerType === undefined && pointerInput.current))
+            )
               return;
-            }
             onExpandedChange(!expanded);
           }}
-          onKeyDown={() => {
-            skipClick.current = false;
-          }}
           onPointerDown={(event) => {
-            skipClick.current = false;
+            pointerInput.current = event.pointerType !== 'mouse';
             if (event.pointerType === 'mouse') return;
             drag.current = { id: event.pointerId, y: event.clientY };
             event.currentTarget.setPointerCapture(event.pointerId);
@@ -96,7 +101,8 @@ export function DetailPanel({
             const delta = event.clientY - start.y;
             if (Math.abs(delta) > 24) {
               onExpandedChange(delta < 0);
-              skipClick.current = true;
+            } else {
+              onExpandedChange(!expanded);
             }
           }}
           onPointerCancel={() => {
