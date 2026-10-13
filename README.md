@@ -29,6 +29,19 @@ pnpm preview
 브라우저 테스트는 데스크톱 Chromium, 모바일 Chromium·WebKit의 smoke 환경이며
 정식 모바일 지원 브라우저·최소 화면 확정을 대신하지 않습니다.
 
+## 디자인 시스템 검토
+
+`/design-system`에서 공통 UI의 variant·입력·조작을 API 키 없이 확인합니다.
+초기화 workspace가 5173을 사용한다면 아래 명령으로 실행합니다.
+
+```sh
+pnpm dev --host 127.0.0.1 --port 5174 --strictPort
+pnpm tokens:generate
+```
+
+원본 토큰 대응과 컴포넌트 사용법은
+[디자인 시스템 코드 기반](docs/architecture/design-system.md)을 따릅니다.
+
 ## 문서
 
 - [문서 안내](docs/INDEX.md)

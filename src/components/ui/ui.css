@@ -1,0 +1,416 @@
+.ui-button,
+.ui-control,
+.ui-search-clear {
+  appearance: none;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  flex-shrink: 0;
+}
+
+.ui-button:focus-visible,
+.ui-control:focus-visible,
+.ui-search-clear:focus-visible {
+  outline: var(--stroke-2) solid var(--control-focus);
+  outline-offset: var(--space-4);
+}
+
+.ui-button:disabled,
+.ui-control:disabled,
+.ui-search-clear:disabled {
+  cursor: not-allowed;
+}
+
+.ui-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-4);
+  min-height: var(--control-touch-target);
+  max-width: 100%;
+  width: 220px;
+  padding: 10px var(--space-16);
+  border: var(--stroke-1) solid transparent;
+  border-radius: var(--radius-8);
+  font: var(--type-body-15-semibold);
+  color: var(--text-on-action);
+  background: var(--action-primary);
+  overflow-wrap: anywhere;
+}
+
+.ui-button--gradient {
+  width: 349px;
+  gap: var(--space-8);
+  border-radius: var(--radius-6);
+  background: radial-gradient(
+    ellipse 58.3% 100% at 50% 100%,
+    var(--action-primary),
+    var(--action-primary-gradient-end)
+  );
+}
+
+.ui-button--outline {
+  width: 328px;
+  border-color: var(--border-brand);
+  border-radius: var(--radius-6);
+  background: var(--bg-surface);
+  color: var(--text-brand);
+}
+
+.ui-button--subtle {
+  background: var(--action-primary-subtle);
+  color: var(--text-brand);
+}
+
+@media (hover: hover) {
+  .ui-button--primary:enabled:hover {
+    background: var(--action-primary-hover);
+  }
+  .ui-button--gradient:enabled:hover {
+    background: radial-gradient(
+      ellipse 58.3% 100% at 50% 100%,
+      var(--action-primary-hover),
+      var(--action-gradient-hover-end)
+    );
+  }
+  .ui-button--outline:enabled:hover {
+    background: var(--bg-brand-subtle);
+    border-color: var(--border-selected-subtle);
+  }
+  .ui-button--subtle:enabled:hover {
+    background: var(--action-primary-subtle-hover);
+  }
+  .ui-control:enabled:hover {
+    background: var(--bg-hover);
+  }
+  .ui-close:enabled:hover .ui-close-default {
+    display: none;
+  }
+  .ui-close:enabled:hover .ui-close-active {
+    display: flex;
+  }
+}
+
+.ui-button--primary:enabled:active {
+  background: var(--action-primary-pressed);
+}
+/* Pressed variants absent from Figma use a state derived from existing semantics. */
+.ui-button--gradient:enabled:active {
+  background: radial-gradient(
+    ellipse 58.3% 100% at 50% 100%,
+    var(--action-primary-pressed),
+    var(--action-gradient-hover-end)
+  );
+}
+.ui-button--outline:enabled:active {
+  background: var(--action-primary-subtle);
+  border-color: var(--border-selected);
+}
+.ui-button--subtle:enabled:active {
+  background: var(--action-primary-subtle-hover);
+}
+.ui-button:disabled {
+  background: var(--action-disabled);
+  color: var(--control-disabled-text);
+  border-color: transparent;
+}
+.ui-crown {
+  width: 16px;
+  height: 16px;
+  object-fit: cover;
+}
+
+.ui-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--size-20);
+  height: var(--size-20);
+  flex: none;
+}
+.ui-icon-grid {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  flex: none;
+  transform: scale(calc(20 / 24));
+}
+.ui-icon--small {
+  width: 16px;
+  height: 16px;
+}
+.ui-icon--small .ui-icon-grid {
+  width: 16px;
+  height: 16px;
+  transform: none;
+}
+.ui-icon img {
+  max-width: none;
+  flex: none;
+}
+
+.ui-control {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-8);
+  background: transparent;
+}
+.ui-control:enabled:active {
+  background: var(--bg-pressed);
+}
+.ui-control:disabled {
+  background: var(--action-disabled);
+  opacity: 0.6;
+}
+.ui-close {
+  width: var(--size-32);
+  height: var(--size-32);
+}
+.ui-close-active {
+  display: none;
+}
+.ui-close:enabled:active .ui-close-default {
+  display: none;
+}
+.ui-close:enabled:active .ui-close-active {
+  display: flex;
+}
+.ui-map-control {
+  width: var(--size-40);
+  height: var(--size-40);
+  background: var(--bg-surface);
+  box-shadow: var(--shadow-float);
+}
+.ui-panel-handle {
+  width: var(--size-20);
+  height: var(--size-48);
+  border: var(--stroke-1) solid var(--border-default);
+  border-radius: var(--radius-12);
+  background: var(--bg-surface);
+  box-shadow: var(--shadow-float-2);
+}
+
+.ui-grade {
+  --grade-color: var(--map-grade-1);
+  --grade-text: var(--text-on-action);
+}
+.ui-grade[data-grade='2'] {
+  --grade-color: var(--map-grade-2);
+  --grade-text: var(--text-primary);
+}
+.ui-grade[data-grade='3'] {
+  --grade-color: var(--map-grade-3);
+  --grade-text: var(--text-primary);
+}
+.ui-grade[data-grade='4'] {
+  --grade-color: var(--map-grade-4);
+}
+.ui-grade[data-grade='5'] {
+  --grade-color: var(--map-grade-5);
+}
+.ui-grade-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 26px;
+  min-height: 16px;
+  padding-inline: 2px;
+  border-radius: var(--radius-4);
+  background: var(--grade-color);
+  color: var(--grade-text);
+  font: var(--type-caption-12-medium);
+}
+.ui-grade-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  width: 328px;
+  max-width: 100%;
+  min-height: 104px;
+  padding: 14px;
+  overflow: hidden;
+  border-radius: var(--radius-12);
+  color: var(--grade-text);
+  --grade-card-fill: linear-gradient(
+    to right,
+    var(--grade-color),
+    color-mix(in srgb, var(--grade-color) 50%, transparent)
+  );
+}
+.ui-grade-card[data-grade='3'] {
+  --grade-card-fill: linear-gradient(
+    to right,
+    var(--grade-color),
+    color-mix(in srgb, var(--grade-card-3-end) 50%, transparent)
+  );
+}
+.ui-grade-card[data-grade='5'] {
+  --grade-color: var(--grade-card-5);
+}
+.ui-grade-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: var(--grade-card-fill);
+}
+.ui-grade-house {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  mix-blend-mode: screen;
+  opacity: 0.88;
+}
+.ui-grade-card > span {
+  position: relative;
+  z-index: 2;
+}
+.ui-grade-title {
+  font: var(--type-body-15-semibold);
+}
+.ui-grade-value {
+  font: var(--type-title-24);
+}
+.ui-grade-rank {
+  font: var(--type-caption-12-regular);
+  overflow-wrap: anywhere;
+}
+.ui-grade-card[data-grade='2'] .ui-grade-rank,
+.ui-grade-card[data-grade='3'] .ui-grade-rank {
+  color: var(--text-secondary);
+}
+.ui-grade-stage {
+  width: 328px;
+  max-width: 100%;
+  padding: var(--space-12);
+  border: var(--stroke-1) solid var(--border-default);
+  border-radius: var(--radius-12);
+  background: var(--bg-surface);
+}
+.ui-grade-stage ol {
+  display: flex;
+  gap: var(--space-4);
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.ui-grade-stage li {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+  gap: 6px;
+  color: var(--text-tertiary);
+  font: var(--type-caption-12-regular);
+}
+.ui-stage-bar {
+  height: 3px;
+  border-radius: var(--radius-2);
+  background: var(--border-default);
+}
+.ui-grade-stage [data-state='past'] .ui-stage-bar {
+  background: var(--stage-past);
+}
+.ui-grade-stage [data-state='current'] .ui-stage-bar {
+  background: var(--action-primary);
+}
+.ui-grade-stage [aria-current] {
+  color: var(--text-primary);
+  font: var(--type-caption-12-semibold);
+}
+.ui-grade-stage p {
+  margin: var(--space-8) 0 0;
+  color: var(--text-secondary);
+  font: var(--type-caption-12-medium);
+  overflow-wrap: anywhere;
+}
+
+.ui-search-field {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  width: 340px;
+  max-width: 100%;
+  height: var(--control-touch-target);
+  padding-inline: var(--space-12);
+  border-radius: var(--radius-12);
+  background: var(--bg-surface);
+  box-shadow: var(--shadow-float-2);
+}
+.ui-search-field:has(input:focus) {
+  outline: 1.5px solid var(--border-selected);
+  outline-offset: -1.5px;
+  box-shadow: var(--focus-input);
+}
+.ui-search-field input {
+  width: 100%;
+  min-width: 0;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  outline: none;
+  border-radius: 0;
+  appearance: none;
+  color: var(--text-primary);
+  background: transparent;
+  font: var(--type-body-15-regular);
+}
+.ui-search-field input::placeholder {
+  color: var(--text-tertiary);
+  opacity: 1;
+}
+.ui-search-field input::-webkit-search-cancel-button {
+  appearance: none;
+}
+.ui-search-field > img {
+  flex: none;
+}
+.ui-search-clear {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-4);
+  background: transparent;
+}
+.ui-search-field[data-disabled] {
+  background: var(--bg-panel);
+}
+
+@media (pointer: coarse) {
+  .ui-control {
+    min-width: var(--control-touch-target);
+    min-height: var(--control-touch-target);
+  }
+  .ui-search-clear {
+    min-width: var(--control-touch-target);
+    min-height: var(--control-touch-target);
+  }
+  /* 16px avoids automatic input zoom on mobile Safari; desktop keeps Figma 15px. */
+  .ui-search-field input {
+    font-size: 16px;
+  }
+}
+
+@media (forced-colors: active) {
+  .ui-button,
+  .ui-control,
+  .ui-search-field {
+    border: 1px solid ButtonText;
+  }
+  .ui-grade-stage [aria-current] {
+    text-decoration: underline;
+  }
+}

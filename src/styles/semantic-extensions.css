@@ -1,0 +1,24 @@
+/* Values missing from variables, taken from MD or component fills. */
+:root {
+  --map-land: var(--bg-pressed);
+  --map-water: var(--sky-200);
+  --stage-past: #40454c;
+  --grade-card-5: #8aa8f5;
+  --grade-card-3-end: #ffeba4;
+  --action-gradient-hover-end: var(--blue-400);
+  --control-focus: var(--action-primary);
+  --control-touch-target: 44px;
+  --control-disabled-text: var(--text-secondary);
+}
+
+@theme inline {
+  --color-surface: var(--bg-surface);
+  --color-panel: var(--bg-panel);
+  --color-primary: var(--text-primary);
+  --color-secondary: var(--text-secondary);
+  --color-brand: var(--text-brand);
+  --color-action: var(--action-primary);
+  --color-divider: var(--border-default);
+  --radius-card: var(--radius-12);
+  --shadow-floating: var(--shadow-float);
+}

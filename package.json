@@ -19,7 +19,9 @@
     "test": "cross-env NODE_ENV=test vitest run",
     "test:watch": "cross-env NODE_ENV=test vitest",
     "test:e2e": "playwright test",
-    "check": "pnpm typecheck && pnpm lint && pnpm format:check && pnpm test && pnpm build"
+    "check": "pnpm tokens:check && pnpm typecheck && pnpm lint && pnpm format:check && pnpm test && pnpm build",
+    "tokens:generate": "node scripts/generate-design-tokens.mjs",
+    "tokens:check": "node scripts/generate-design-tokens.mjs --check"
   },
   "dependencies": {
     "react": "19.3.0",

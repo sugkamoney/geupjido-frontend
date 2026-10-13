@@ -24,3 +24,4 @@
 - [ADR-002: NAVER Maps 기반 Vite SPA로 데스크톱 웹을 먼저 개발한다](ADR-002-frontend-foundation.md)
 - [ADR-003: 지도 프론트엔드 상태와 API 계약을 URL·OpenAPI 중심으로 관리한다](ADR-003-map-frontend-state-and-contract.md)
 - [ADR-004: 데스크톱과 모바일 웹을 함께 지원한다](ADR-004-mobile-web-support.md)
+- [ADR-005: Figma 토큰과 표시 컴포넌트를 제품 정책에서 분리한다](ADR-005-design-system-source-and-boundaries.md)

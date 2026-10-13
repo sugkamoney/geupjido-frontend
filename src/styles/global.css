@@ -1,63 +1,98 @@
 @import 'tailwindcss';
+@import './tokens.css';
+@import './semantic-extensions.css';
+@import '../app/design-system-page.css' layer(components);
+@import '../components/ui/ui.css' layer(components);
 
-:root {
-  font-family:
-    Pretendard,
-    system-ui,
-    -apple-system,
-    BlinkMacSystemFont,
-    sans-serif;
-  color: #16181c;
-  background: #f8f9fa;
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
+@font-face {
+  font-family: 'Pretendard';
+  src: url('/assets/fonts/Pretendard-400.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Pretendard';
+  src: url('/assets/fonts/Pretendard-500.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Pretendard';
+  src: url('/assets/fonts/Pretendard-600.woff2') format('woff2');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Pretendard';
+  src: url('/assets/fonts/Pretendard-700.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
 }
 
-* {
-  box-sizing: border-box;
-}
+@layer base {
+  :root {
+    font-family:
+      Pretendard,
+      system-ui,
+      -apple-system,
+      BlinkMacSystemFont,
+      sans-serif;
+    color: var(--text-primary);
+    background: var(--bg-panel);
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+  }
 
-body {
-  margin: 0;
-  min-width: 0;
-}
+  * {
+    box-sizing: border-box;
+  }
 
-.page {
-  display: grid;
-  min-height: 100vh;
-  min-height: 100dvh;
-  place-items: center;
-  padding: 24px;
-}
+  body {
+    margin: 0;
+    min-width: 0;
+  }
 
-.message {
-  width: min(100%, 32rem);
-  padding: clamp(20px, 5vw, 40px);
-  border: 1px solid #e6e8ec;
-  border-radius: 16px;
-  background: #fff;
-  overflow-wrap: anywhere;
-}
+  .page {
+    display: grid;
+    min-height: 100vh;
+    min-height: 100dvh;
+    place-items: center;
+    padding: var(--space-24);
+  }
 
-h1 {
-  margin: 0 0 12px;
-  font-size: 24px;
-  line-height: 1.25;
-}
+  .message {
+    width: min(100%, 32rem);
+    padding: clamp(20px, 5vw, 40px);
+    border: var(--stroke-1) solid var(--border-default);
+    border-radius: var(--radius-16);
+    background: var(--bg-surface);
+    overflow-wrap: anywhere;
+  }
 
-p {
-  color: #5f6570;
-  line-height: 1.5;
-}
+  h1 {
+    margin: 0 0 12px;
+    font-size: 24px;
+    line-height: 1.25;
+  }
 
-a {
-  display: inline-block;
-  padding-block: 8px;
-  color: #1578fb;
-}
+  p {
+    color: var(--text-secondary);
+    line-height: 1.5;
+  }
 
-a:focus-visible {
-  outline: 3px solid #1578fb;
-  outline-offset: 4px;
+  a {
+    display: inline-block;
+    padding-block: 8px;
+    color: var(--text-brand);
+  }
+
+  a:focus-visible {
+    outline: 3px solid var(--control-focus);
+    outline-offset: 4px;
+  }
 }

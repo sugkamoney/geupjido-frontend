@@ -1,0 +1,224 @@
+/* Generated from figma-tokens.json. Run pnpm tokens:generate. */
+:root {
+  --gray-0: #ffffff;
+  --gray-50: #f4f5f7;
+  --gray-100: #e9ebee;
+  --gray-200: #e6e8ec;
+  --gray-400: #9aa0a8;
+  --gray-600: #5f6570;
+  --gray-800: #2b2f36;
+  --gray-900: #16181c;
+  --gray-1000: #000000;
+  --sky-200: #c6dcee;
+  --grade-1: #ff6363;
+  --grade-2: #ffa95e;
+  --grade-3: #ffdc5e;
+  --grade-4: #51cab1;
+  --grade-5: #94b2ff;
+  --text-primary: var(--gray-900);
+  --text-secondary: var(--gray-600);
+  --text-tertiary: var(--gray-400);
+  --text-on-action: var(--gray-0);
+  --text-on-inverse-muted: var(--gray-400);
+  --bg-surface: var(--gray-0);
+  --bg-panel: var(--gray-25);
+  --bg-hover: var(--gray-75);
+  --bg-pressed: var(--gray-100);
+  --bg-inverse: var(--gray-900);
+  --bg-inverse-hover: var(--gray-800);
+  --action-primary: var(--blue-500);
+  --action-primary-hover: var(--blue-600);
+  --action-primary-pressed: var(--blue-700);
+  --action-disabled: var(--gray-200);
+  --border-default: var(--gray-200);
+  --border-selected: var(--blue-500);
+  --map-grade-1: var(--grade-1);
+  --map-grade-2: var(--grade-2);
+  --map-grade-3: var(--grade-3);
+  --map-grade-4: var(--grade-4);
+  --map-grade-5: var(--grade-5);
+  --space-4: 4px;
+  --space-8: 8px;
+  --space-12: 12px;
+  --space-16: 16px;
+  --space-20: 20px;
+  --space-24: 24px;
+  --space-32: 32px;
+  --radius-0: 0px;
+  --radius-6: 6px;
+  --radius-8: 8px;
+  --radius-12: 12px;
+  --radius-full: 999px;
+  --size-20: 20px;
+  --size-32: 32px;
+  --size-40: 40px;
+  --size-48: 48px;
+  --stroke-1: 1px;
+  --stroke-2: 2px;
+  --font-family: 'Pretendard';
+  --font-regular: 'Regular';
+  --font-medium: 'Medium';
+  --font-semibold: 'SemiBold';
+  --font-bold: 'Bold';
+  --blue-50: #f3f7fe;
+  --blue-100: #e2efff;
+  --blue-200: #bbd5fd;
+  --blue-300: #8abbfe;
+  --blue-400: #559cfe;
+  --blue-500: #1578fb;
+  --blue-600: #0368d2;
+  --blue-700: #0355a4;
+  --blue-800: #02437c;
+  --blue-900: #012f56;
+  --action-primary-subtle: var(--blue-100);
+  --action-primary-subtle-hover: var(--blue-200);
+  --action-neutral: var(--gray-900);
+  --action-neutral-hover: var(--gray-800);
+  --action-neutral-pressed: var(--gray-1000);
+  --text-brand: var(--blue-500);
+  --bg-selected: var(--blue-500);
+  --bg-selected-subtle: var(--blue-100);
+  --bg-brand-subtle: var(--blue-50);
+  --border-selected-subtle: var(--blue-300);
+  --border-brand: var(--blue-200);
+  --border-subtle: var(--gray-100);
+  --action-primary-gradient-end: var(--blue-300);
+  --action-primary-faint: var(--blue-50);
+  --bg-neutral: var(--gray-100);
+  --gray-25: #f8f9fa;
+  --gray-75: #eff1f3;
+  --bg-dim: rgb(16 18 22 / 46%);
+  --radius-4: 4px;
+  --radius-16: 16px;
+  --radius-2: 2px;
+  --shadow-float:
+    0px 1px 2px 0px rgb(16 18 22 / 5%), 0px 8px 24px 0px rgb(16 18 22 / 8%);
+  --shadow-label: 0px 1px 3px 0px rgb(16 18 22 / 22%);
+  --shadow-float-2: 0px 2px 10px 0px rgb(16 18 22 / 14%);
+  --shadow-panel:
+    0px 4px 18px 0px rgb(16 18 22 / 12%), 0px 1px 3px 0px rgb(16 18 22 / 6%);
+  --shadow-selected-area: 0px 3px 8px 0px rgb(16 18 22 / 50%);
+  --focus-input:
+    0px 0px 0px 3px rgb(21 120 251 / 18%), 0px 2px 10px 0px rgb(16 18 22 / 14%);
+  --shadow-pin: 0px 2px 6px 0px rgb(16 18 22 / 20%);
+  --shadow-label-hover: 0px 2px 5px 0px rgb(16 18 22 / 32%);
+  --type-title-22: 600 22px/28px var(--font-family), system-ui, sans-serif;
+  --type-title-24: 600 24px/30px var(--font-family), system-ui, sans-serif;
+  --type-body-15-regular:
+    400 15px/22px var(--font-family), system-ui, sans-serif;
+  --type-body-15-semibold:
+    600 15px/22px var(--font-family), system-ui, sans-serif;
+  --type-body-14-semibold:
+    600 14px/20px var(--font-family), system-ui, sans-serif;
+  --type-caption-12-semibold:
+    600 12px/16px var(--font-family), system-ui, sans-serif;
+  --type-paragraph-12: 400 12px/18px var(--font-family), system-ui, sans-serif;
+  --type-caption-12-regular:
+    400 12px/16px var(--font-family), system-ui, sans-serif;
+  --type-caption-11-medium:
+    500 11px/16px var(--font-family), system-ui, sans-serif;
+  --type-body-15-medium:
+    500 15px/22px var(--font-family), system-ui, sans-serif;
+  --type-body-14-medium:
+    500 14px/20px var(--font-family), system-ui, sans-serif;
+  --type-body-14-regular:
+    400 14px/20px var(--font-family), system-ui, sans-serif;
+  --type-caption-12-medium:
+    500 12px/16px var(--font-family), system-ui, sans-serif;
+  --type-caption-11-bold:
+    700 11px/16px var(--font-family), system-ui, sans-serif;
+  --type-paragraph-14: 400 14px/22px var(--font-family), system-ui, sans-serif;
+  --type-title-20-bold: 700 20px/28px var(--font-family), system-ui, sans-serif;
+  --type-body-17-bold: 700 17px/24px var(--font-family), system-ui, sans-serif;
+  --type-body-17-semibold:
+    600 17px/24px var(--font-family), system-ui, sans-serif;
+  --type-body-13-medium:
+    500 13px/20px var(--font-family), system-ui, sans-serif;
+  --type-body-13-bold: 700 13px/20px var(--font-family), system-ui, sans-serif;
+  --type-caption-12-medium-18:
+    500 12px/18px var(--font-family), system-ui, sans-serif;
+}
+
+@utility type-title-22 {
+  font: var(--type-title-22);
+}
+
+@utility type-title-24 {
+  font: var(--type-title-24);
+}
+
+@utility type-body-15-regular {
+  font: var(--type-body-15-regular);
+}
+
+@utility type-body-15-semibold {
+  font: var(--type-body-15-semibold);
+}
+
+@utility type-body-14-semibold {
+  font: var(--type-body-14-semibold);
+}
+
+@utility type-caption-12-semibold {
+  font: var(--type-caption-12-semibold);
+}
+
+@utility type-paragraph-12 {
+  font: var(--type-paragraph-12);
+}
+
+@utility type-caption-12-regular {
+  font: var(--type-caption-12-regular);
+}
+
+@utility type-caption-11-medium {
+  font: var(--type-caption-11-medium);
+}
+
+@utility type-body-15-medium {
+  font: var(--type-body-15-medium);
+}
+
+@utility type-body-14-medium {
+  font: var(--type-body-14-medium);
+}
+
+@utility type-body-14-regular {
+  font: var(--type-body-14-regular);
+}
+
+@utility type-caption-12-medium {
+  font: var(--type-caption-12-medium);
+}
+
+@utility type-caption-11-bold {
+  font: var(--type-caption-11-bold);
+}
+
+@utility type-paragraph-14 {
+  font: var(--type-paragraph-14);
+}
+
+@utility type-title-20-bold {
+  font: var(--type-title-20-bold);
+}
+
+@utility type-body-17-bold {
+  font: var(--type-body-17-bold);
+}
+
+@utility type-body-17-semibold {
+  font: var(--type-body-17-semibold);
+}
+
+@utility type-body-13-medium {
+  font: var(--type-body-13-medium);
+}
+
+@utility type-body-13-bold {
+  font: var(--type-body-13-bold);
+}
+
+@utility type-caption-12-medium-18 {
+  font: var(--type-caption-12-medium-18);
+}
