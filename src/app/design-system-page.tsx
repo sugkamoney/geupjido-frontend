@@ -12,7 +12,6 @@ import {
   SearchField,
   type Grade,
 } from '../components/ui';
-import './design-system-page.css';
 
 const grades: Grade[] = [1, 2, 3, 4, 5];
 export function DesignSystemPage() {

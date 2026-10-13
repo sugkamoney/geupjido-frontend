@@ -1,6 +1,6 @@
 # 디자인 시스템 코드 기반
 
-> 상태: 구현·로컬 검증 완료 · 버전: 1.0 · 갱신: 2026-10-13
+> 상태: 구현·로컬 검증 완료 · 버전: 1.1 · 갱신: 2026-10-13
 
 ## 목적과 경계
 
@@ -97,6 +97,19 @@ Button의 `variant`는 Figma Type, native `type`은 HTML 폼 type이다.
 CloseButton의 label과 SearchField의 label은 필수다. 아이콘은 장식이며 동작 이름은
 버튼에서 제공한다. Icon은 현재 쓰는 24 세트 6개와 16 세트 3개를 제공한다.
 
+### 스타일 레이어와 className
+
+`global.css`에서 Tailwind의 레이어 순서를 선언한 뒤 카탈로그와 공통 UI CSS를
+`layer(components)`로 import한다. 기본 페이지·타이포 규칙은 `base`에 둔다.
+카탈로그 CSS도 global 진입점에서 가져와 먼저 레이어를 생성하는 별도 side-effect
+import가 없도록 한다. 기본 타이포 → 공통 UI → 사용처 유틸리티 순으로 적용한다.
+
+공통 UI의 root className에 `hidden`, `hidden md:block`, `w-full`을 넣으면
+utilities 레이어가 기본 display·폭을 덮어쓴다. SearchField의 className은 입력을
+감싸는 root에 적용된다. 컴포넌트 CSS를 레이어 없이 import하면 specificity와 무관하게
+layered utility보다 우선하므로 금지한다. 토큰 변수 정의와 폰트 선언은 이 규칙의
+대상인 컴포넌트 시각 스타일과 구분한다.
+
 SearchField는 controlled 입력만 담당한다. 조합 중 입력도 전달하고 지우기 후
 입력으로 focus를 돌린다. 화살표/Enter/Escape 결과 탐색, combobox 역할·listbox 연결,
 결과 데이터·선택 및 외부 focus 복귀는 검색 기능의 책임이다. role을 과장하지 않고
@@ -156,10 +169,13 @@ visible focus와 native 키보드 활성화를 제공하고 hover는 hover 가�
 - frozen 설치, 초기 pnpm check(2개 테스트)와 기존 브라우저 6개 통과.
 - pnpm check: 토큰 생성 일치·strict 타입·lint·format·RTL 8개·운영 빌드 통과.
 - 브라우저: desktop Chromium / Pixel 7 Chromium / iPhone 13 WebKit.
-  기존 6개와 공통 UI 9개를 포함한 15개 시나리오를 검증한다.
+  기존 6개와 공통 UI 12개를 포함한 18개 시나리오를 검증한다.
 - 검증 내용: 실제 Tab·Enter·터치, focus 복귀, disabled, ARIA 상태, 이미지 로딩,
   hover/pressed와 원본 치수, 320px 좁은 화면·긴 문구·200% 글자 크기 시뮬레이션.
   320px는 스트레스 테스트이며 지원 최소 폭을 확정한 값이 아니다.
+- 레이어 회귀 검사: 공통 UI 8종의 `hidden`, 640/1024px에서 `hidden md:block`,
+  200px block 부모에서 `w-full`을 운영 빌드로 검증한다. 원본 치수·focus·hover와
+  Stage 글자 크기도 기존 검사로 유지한다. 테스트 폭은 지원 정책이 아니다.
 - Figma Button/Chip/Stage/Search/Close/Handle/Map Control과 Grade Card export를
   운영 빌드·개발 브라우저 캡처에 대조했다. 숫자·순위는 카탈로그 예시다.
 - macOS WebKit의 버튼 Tab 탐색은 Option+Tab으로 검사한다. 자동화는 실제 iOS
@@ -176,3 +192,4 @@ visible focus와 native 키보드 활성화를 제공하고 hover는 hover 가�
 | 버전 | 날짜 | 변경 |
 |---|---|---|
 | 1.0 | 2026-10-13 | 공통 UI 구현·토큰·원본 대응·사용법·검증과 후속 범위 기록 |
+| 1.1 | 2026-10-13 | 공통 UI를 components 레이어로 import하고 기본 스타일을 base로 정리, 유틸리티·반응형 회귀 검사 추가 |

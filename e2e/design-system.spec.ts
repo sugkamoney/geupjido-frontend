@@ -1,5 +1,50 @@
 import { expect, test } from '@playwright/test';
 
+test('Tailwind utilities control common UI visibility and width', async ({
+  page,
+}) => {
+  await page.goto('/design-system');
+  const selectors = [
+    '.ui-button',
+    '.ui-close',
+    '.ui-panel-handle',
+    '.ui-map-control',
+    '.ui-grade-chip',
+    '.ui-grade-card',
+    '.ui-grade-stage',
+    '.ui-search-field',
+  ];
+  for (const selector of selectors) {
+    const component = page.locator(selector).first();
+    // Apply the same root classes accepted by each component's className prop.
+    await component.evaluate((element) => element.classList.add('hidden'));
+    await expect(component).toHaveCSS('display', 'none');
+  }
+  await page.setViewportSize({ width: 640, height: 800 });
+  for (const selector of selectors) {
+    const component = page.locator(selector).first();
+    await component.evaluate((element) =>
+      element.classList.add('md:block', 'w-full'),
+    );
+    await expect(component).toHaveCSS('display', 'none');
+  }
+  await page.setViewportSize({ width: 1024, height: 800 });
+  for (const selector of selectors) {
+    const component = page.locator(selector).first();
+    await expect(component).toHaveCSS('display', 'block');
+    // Use a fixed block containing area so Grid track sizes are not mistaken
+    // for the full parent width when checking percentage utilities.
+    await component.evaluate((element) => {
+      Object.assign(element.parentElement!.style, {
+        display: 'block',
+        width: '200px',
+        padding: '0',
+      });
+    });
+    await expect(component).toHaveCSS('width', '200px');
+  }
+});
+
 test('catalogue controls work with keyboard and touch without API keys', async ({
   page,
 }, testInfo) => {
