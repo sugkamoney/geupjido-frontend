@@ -1,24 +1,15 @@
 import { Link, Route, Routes } from 'react-router';
 import { DesignSystemPage } from './design-system-page';
+import { ShellPage } from './shell-page';
 
 export function App() {
   return (
     <Routes>
-      <Route path="/" element={<HomePage />} />
+      <Route path="/" element={<ShellPage />} />
+      <Route path="/app-shell" element={<ShellPage review />} />
       <Route path="/design-system" element={<DesignSystemPage />} />
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
-  );
-}
-
-function HomePage() {
-  return (
-    <main className="page">
-      <section className="message">
-        <h1>급지도</h1>
-        <p>지도를 준비하고 있어요.</p>
-      </section>
-    </main>
   );
 }
 

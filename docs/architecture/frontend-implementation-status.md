@@ -1,6 +1,6 @@
 # 프론트엔드 기반 구축 현황과 다음 단계
 
-> 상태: **프로젝트 초기화·디자인 시스템 기반 구현, 제품 화면 구현 대기** · 기준 날짜: 2026-10-13
+> 상태: **디자인 시스템 develop 통합 완료, 앱 화면 틀 구현·로컬 검증 완료** · 기준 날짜: 2026-10-13
 
 ## 최신 준비 점검
 
@@ -9,13 +9,18 @@
 아직 없다. Figma·동작 MD를 기준으로 UI/mock 개발은 착수할 수 있다.
 사용자는 모바일 웹도 지원하기로 확정했으며 모바일도 제품·QA 범위에 포함한다.
 React·TypeScript·Vite 앱과 pnpm lockfile, Router·Query provider, Tailwind, 품질 검사,
-단위·브라우저 테스트 및 GitHub CI 설정을 추가했다. 로컬 검사는 통과했고 실제
-GitHub CI 실행·운영 배포 설정과 제품 화면은 후속 작업이다.
+단위·브라우저 테스트 및 GitHub CI 설정을 추가했다. 초기화 당시 로컬 검사는 통과했다. 현재 GitHub CI 상태와 운영 배포 설정은
+별도 확인 범위다. 실제 지도/API와 제품 데이터 화면은 후속 작업이다.
 자세한 구성과 실행 방법은 [프로젝트 초기화](project-initialization.md)를 따른다.
 
 초기화 PR #1은 main에 병합됐고 develop을 통합 기준으로 생성했다.
 `feature/design-system`에서 Figma semantic tokens와 Button·GradeChip/Card/Stage·
 SearchField·닫기/패널/지도 조작 버튼, 로컬 자산과 검토 카탈로그를 구현했다.
+디자인 시스템 PR #2는 develop `2c3a1f4`에 병합됐다. 기존 디자인 시스템 workspace는
+사용자 요청으로 제거했다. 앱 화면 틀은 이 커밋에서 분기한 `feature/app-shell`에서
+SDD를 시작해 레일/하단 탭·패널·상세/시트·검색과 지도 슬롯을 구현했다.
+현재 feature 브랜치 로컬 검증은 RTL 13개와 브라우저 40개 통과(14개 플랫폼 적용 제외)다.
+화면 틀은 홈의 준비 상태와 별도 `/app-shell` 검토 fixture로 나뉘며 실제 집계 수치는 없다. [앱 화면 틀](app-shell.md)과 [제품 명세](../product/specs/app-shell/README.md)를 따른다.
 원본 대응·접근성·반응형 제한은 [디자인 시스템](design-system.md)에 기록한다.
 지도·검색 결과·월드컵의 제품 기능과 SDK/API 연동은 아직 구현하지 않았다.
 
@@ -90,7 +95,8 @@ SearchField·닫기/패널/지도 조작 버튼, 로컬 자산과 검토 카탈�
 현재 Orca CLI는 workspace 생성의 `--yolo`를 지원하지 않아 workspace 안에
 `codex --yolo` 터미널을 따로 준비했다. 구현 파일은 Orca worktree에 있다.
 
-다음에는 디자인 시스템 브랜치를 develop 기준으로 검토·통합하고, 기능 SDD에 따라
-지도·검색·패널의 공통 UI를 구성한다. 디자인 시스템 기반은 로컬 커밋 단계이며
-feature push·PR·merge는 별도 요청이 필요하다. 새 디자인의 모바일 세부 배치와
-지도 API 계약은 별도로 확인한다. 실제 BE OpenAPI 전까지 mock은 임시 계약임을 명시한다.
+디자인 시스템 PR #2는 develop 통합을 완료했다. 앱 화면 틀 작업은
+`feature/app-shell`과 전용 Orca workspace에서 진행하며 이번 요청은 구현·검증·커밋까지다.
+feature push·PR·merge는 요청하지 않았다. 후속 PR은 develop 대상이며 기본 템플릿과
+한국어 작성 규칙을 적용한다. 실제 지도/API/검색 결과/월드컵 집계는 후속 SDD 범위다.
+모바일·좁은 데스크톱 배치는 검토용 임시 구현으로 다음 디자인 리뷰에서 확정한다.

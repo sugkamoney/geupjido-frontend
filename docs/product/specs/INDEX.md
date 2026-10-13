@@ -13,6 +13,8 @@
 
 ## 활성 기능
 
+- [앱 화면 틀](app-shell/README.md) · 검토용 구현·검증 완료 · v0.2
+
 - [지도 탐색](map-exploration/README.md) · 제안 · v0.1
   - 시군구·권역·단지를 지도에서 탐색하는 첫 SDD 기능
 

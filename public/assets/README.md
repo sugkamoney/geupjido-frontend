@@ -33,3 +33,18 @@ Icon 원본 SVG는 도형의 경계로 crop되어 있다. 자연 치수를 유�
 fonts/Pretendard-400/500/600/700.woff2는 [Pretendard v1.3.9](https://github.com/orioncactus/pretendard/tree/v1.3.9)
 원본 전체 폰트이며, [OFL.txt](fonts/OFL.txt)에 라이선스·저작권을 포함한다.
 제공 HTML의 subset font나 운영 CDN에 의존하지 않는다.
+
+## 앱 화면 틀 자산
+
+| 파일                            | 원본 노드 | 표시                          |
+| ------------------------------- | --------- | ----------------------------- |
+| images/shell-symbol.svg         | 594:21249 | 레일 28×30, 모바일 검색 22×24 |
+| images/worldcup-intro.png       | 594:21264 | 타임라인 시작 구역 349×128    |
+| icons/shell-map.svg             | 594:21252 | 레일 지도 20×20               |
+| icons/shell-versus-selected.svg | 594:21253 | 레일 월드컵 20×20             |
+| icons/shell-ranking.svg         | 594:21254 | 검토용 비활성 메뉴 20×20      |
+| icons/shell-report.svg          | 594:21255 | 검토용 비활성 메뉴 20×20      |
+
+SVG/PNG 원본 바이트를 보존한다. 지도·월드컵 nav의 SVG는 mask로 원본 path를
+유지하고 Rail/Item 설명(`460:905`)의 text/tertiary·선택 text/brand 상태 색을 적용한다.
+기존 공통 Icon 컴포넌트의 색상 API를 변경하지 않는다.

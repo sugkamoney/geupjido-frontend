@@ -1,6 +1,6 @@
 # 디자인 시스템 작업 인수인계
 
-> 날짜: 2026-10-13 · 상태: 새 Codex 세션에 구현 작업 전달
+> 날짜: 2026-10-13 · 상태: 당시 전달 기록 · 현재 PR #2 develop 병합 완료
 
 ## 작업 환경
 
@@ -8,8 +8,9 @@
 `origin/develop`으로 push했다. `feature/design-system`은 이 `develop`에서 분기했다.
 후속 PR의 대상은 `develop`이다.
 
-Orca workspace는 `/Users/user/orca/workspaces/geupjido-frontend/feature-design-system`이다.
-이 workspace에 `codex --yolo` 터미널을 생성해 아래 범위를 전달한다.
+당시 Orca workspace는 `/Users/user/orca/workspaces/geupjido-frontend/feature-design-system`이다.
+당시 이 workspace에 `codex --yolo` 터미널을 생성해 아래 범위를 전달했다.
+현재 디자인 시스템 PR #2는 develop `2c3a1f4`에 병합됐고 해당 workspace는 사용자 요청으로 제거했다.
 초기화 workspace와 개발 서버는 기존 환경으로 남아 있다.
 
 ## 전달 범위
@@ -45,5 +46,5 @@ Figma Foundations·Components를 기준으로 디자인 토큰과 재사용 가�
 검증할 수 있어야 한다. docs의 구조·범위·사용 방법·모바일 제한과 INDEX를 갱신한다.
 사용자의 커밋 규칙을 따르고 변경을 검토 가능한 상태로 정리한다.
 
-push·PR·merge를 요청받은 단계는 아니므로 구현을 마친 뒤 결과와 다음 통합 단계가
-필요함을 보고한다. 현재 `develop`의 원격 기본 브랜치 설정은 변경하지 않았다.
+당시 전달은 push·PR·merge 요청이 아니었다. 이후 PR #2의 develop 병합까지 완료했다.
+현재 후속 작업은 [앱 화면 틀 인수인계](app-shell-handoff.md)를 따른다. 현재 `develop`의 원격 기본 브랜치 설정은 변경하지 않았다.
