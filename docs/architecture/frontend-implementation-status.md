@@ -1,6 +1,6 @@
 # 프론트엔드 기반 구축 현황과 다음 단계
 
-> 상태: **프로젝트 초기화 구현·로컬 검증 완료, 제품 화면 구현 대기** · 기준 날짜: 2026-10-13
+> 상태: **프로젝트 초기화·디자인 시스템 기반 구현, 제품 화면 구현 대기** · 기준 날짜: 2026-10-13
 
 ## 최신 준비 점검
 
@@ -12,6 +12,12 @@ React·TypeScript·Vite 앱과 pnpm lockfile, Router·Query provider, Tailwind, 
 단위·브라우저 테스트 및 GitHub CI 설정을 추가했다. 로컬 검사는 통과했고 실제
 GitHub CI 실행·운영 배포 설정과 제품 화면은 후속 작업이다.
 자세한 구성과 실행 방법은 [프로젝트 초기화](project-initialization.md)를 따른다.
+
+초기화 PR #1은 main에 병합됐고 develop을 통합 기준으로 생성했다.
+`feature/design-system`에서 Figma semantic tokens와 Button·GradeChip/Card/Stage·
+SearchField·닫기/패널/지도 조작 버튼, 로컬 자산과 검토 카탈로그를 구현했다.
+원본 대응·접근성·반응형 제한은 [디자인 시스템](design-system.md)에 기록한다.
+지도·검색 결과·월드컵의 제품 기능과 SDK/API 연동은 아직 구현하지 않았다.
 
 새 핸드오프의 라벨·단지 핀·실수 zoom 기준은 아래 9월 지도 설계와 다르다.
 아래 기준과 순서는 당시 기록이며 현재 화면 규칙으로 그대로 적용하지 않는다.
@@ -84,6 +90,7 @@ GitHub CI 실행·운영 배포 설정과 제품 화면은 후속 작업이다.
 현재 Orca CLI는 workspace 생성의 `--yolo`를 지원하지 않아 workspace 안에
 `codex --yolo` 터미널을 따로 준비했다. 구현 파일은 Orca worktree에 있다.
 
-다음에는 초기화 브랜치의 변경을 검토·통합한 뒤 Figma tokens·공통 컴포넌트와
-데스크톱·모바일 화면 틀을 구현한다. 새 디자인의 모바일 세부 배치와 지도 API 계약은
-별도로 확인한다. 실제 BE OpenAPI 전까지 mock은 임시 계약임을 명시한다.
+다음에는 디자인 시스템 브랜치를 develop 기준으로 검토·통합하고, 기능 SDD에 따라
+지도·검색·패널의 공통 UI를 구성한다. 디자인 시스템 기반은 로컬 커밋 단계이며
+feature push·PR·merge는 별도 요청이 필요하다. 새 디자인의 모바일 세부 배치와
+지도 API 계약은 별도로 확인한다. 실제 BE OpenAPI 전까지 mock은 임시 계약임을 명시한다.

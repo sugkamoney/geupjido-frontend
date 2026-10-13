@@ -1,9 +1,11 @@
 import { Link, Route, Routes } from 'react-router';
+import { DesignSystemPage } from './design-system-page';
 
 export function App() {
   return (
     <Routes>
       <Route path="/" element={<HomePage />} />
+      <Route path="/design-system" element={<DesignSystemPage />} />
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
   );
