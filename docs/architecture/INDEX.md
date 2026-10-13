@@ -17,3 +17,4 @@
 - [2026-10-13 백엔드·디자인 구현 준비 점검](2026-10-13-implementation-readiness.md)
 
 - [프로젝트 초기화](project-initialization.md)
+- [디자인 시스템 작업 인수인계](design-system-handoff.md)
