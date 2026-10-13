@@ -14,3 +14,4 @@
 
 - [프론트엔드 기반 기술 구조](frontend-foundation.md)
 - [프론트엔드 기반 구축 현황과 다음 단계](frontend-implementation-status.md)
+- [2026-10-13 백엔드·디자인 구현 준비 점검](2026-10-13-implementation-readiness.md)
