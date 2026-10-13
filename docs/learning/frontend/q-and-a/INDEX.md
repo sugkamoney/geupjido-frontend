@@ -15,3 +15,5 @@
 - [QA-FE-002: 모바일 개발자가 알아야 할 급지도 웹 기술 용어는 무엇인가?](QA-FE-002-web-stack-glossary-for-mobile-developers.md)
 - [QA-FE-003: 지도 서비스는 URL 상태를 어떻게 관리하는가?](QA-FE-003-map-url-state.md)
 - [QA-FE-004: 문서 변경만 병합했는데 Frontend CI가 왜 실패했나?](QA-FE-004-ci-document-format-check.md)
+
+- [QA-FE-005: 로컬 터치 검사는 통과했는데 Linux CI는 왜 실패했나?](QA-FE-005-touch-release-ci.md)
