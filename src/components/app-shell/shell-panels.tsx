@@ -127,6 +127,11 @@ export function DetailPanel({
           {(!compact || expanded) && detail.expandedSummary}
           {detail.actions}
         </div>
+        {compact && !expanded && detail.collapsedSelection && (
+          <div className="shell-detail-selection">
+            {detail.collapsedSelection}
+          </div>
+        )}
         <header className="shell-list-title">
           {detail.listTitle ?? (
             <>

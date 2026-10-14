@@ -103,6 +103,24 @@ export function AppShell({
     else mapButtonRef.current?.focus({ preventScroll: true });
   }, [detail]);
 
+  useLayoutEffect(() => {
+    if (!detail || !compact || sheetExpanded) return;
+    const active =
+      document.activeElement === document.body
+        ? lastFocused.current
+        : document.activeElement;
+    if (
+      active instanceof HTMLElement &&
+      detailRef.current?.contains(active) &&
+      hasHiddenAncestor(active)
+    ) {
+      const selection = detailRef.current.querySelector<HTMLElement>(
+        '.shell-detail-selection button, .shell-detail-selection a',
+      );
+      (selection ?? closeRef.current)?.focus({ preventScroll: true });
+    }
+  }, [detail, compact, sheetExpanded]);
+
   const closeDetail = (restoreFocus = true) => {
     setSheetExpanded(false);
     restoreDetailFocus.current = restoreFocus;

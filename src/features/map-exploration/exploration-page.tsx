@@ -41,10 +41,10 @@ export function ExplorationPage({
     };
   }, [adapter]);
   const detail = useZoneDetail(zoneId, source);
-  const zone = data.zones.find((x) => x.id === zoneId);
+  const zone = detail.value?.zone ?? data.zones.find((x) => x.id === zoneId);
   const apartment =
-    data.apartments.find((x) => x.id === apartmentId) ??
-    detail.value?.apartments.find((x) => x.id === apartmentId);
+    detail.value?.apartments.find((x) => x.id === apartmentId) ??
+    data.apartments.find((x) => x.id === apartmentId);
   const clear = () => {
     setZoneId(undefined);
     setApartmentId(undefined);
@@ -116,12 +116,19 @@ export function ExplorationPage({
         <MapSurface
           adapter={adapter}
           frame={frame}
-          data={
-            apartment &&
-            !data.apartments.some((item) => item.id === apartment.id)
-              ? { ...data, apartments: [...data.apartments, apartment] }
-              : data
-          }
+          data={{
+            ...data,
+            zones: data.zones.map((item) =>
+              item.id === zone?.id ? zone : item,
+            ),
+            apartments: [
+              ...new Map(
+                [...data.apartments, ...(detail.value?.apartments ?? [])].map(
+                  (item) => [item.id, item],
+                ),
+              ).values(),
+            ],
+          }}
           zoneId={zoneId}
           apartmentId={apartmentId}
           onLabel={selectLabel}

@@ -1,10 +1,10 @@
 # 지도 탐색 구조·구현 계획·검증
 
-> 상태: 검토 UI 구현·검증 완료 · 실제 SDK/API 연동 대기 · 버전: 0.2 · 갱신: 2026-10-14
+> 상태: 검토 UI 구현·검증 완료 · 실제 SDK/API 연동 대기 · 버전: 0.3 · 갱신: 2026-10-14
 
 ## 목표와 구현 경계
 
-[제품 SDD](../product/specs/map-exploration/README.md)를 구현한다. React/TS·기존 AppShell·공통 UI·Figma 토큰을 재사용한다. 사용자 승인 범위에 따라 이 workspace에서 직접 구현·검증·커밋하며 push/PR/merge는 하지 않는다.
+[제품 SDD](../product/specs/map-exploration/README.md)를 구현한다. React/TS·기존 AppShell·공통 UI·Figma 토큰을 재사용한다. 사용자 승인 범위에 따라 구현·검증·커밋했고 후속 요청으로 push와 PR #4 생성을 진행했다. 이번 코드리뷰 보완도 기존 PR에 반영하며 merge는 하지 않는다.
 
 ## 데이터와 어댑터
 
@@ -115,9 +115,31 @@ RAF와 같은 window.performance clock을 사용한다. 새 명령은 이전 RAF
 
 모션 단위 검사 5개는 중간값·완료, frame retarget, 연속 zoom/직접 입력 취소, reduced-motion/release/destroy를 확인한다. 브라우저는 desktop/mobile Chromium·WebKit에서 실제 구 클릭의 중간 zoom과 reduced-motion 전환을 확인한다. 기존 선택·focus·sheet·gesture 회귀도 유지한다. 기존 위치 검사는 중간 프레임이 아닌 최종 목적지를 기다려 확인한다. 지도 브라우저 검사는 21개 통과·6개 플랫폼 적용 제외를 확인했다. 추가 독립 리뷰에서 직접 wheel/pinch가 클릭의 목표 zoom을 참조하던 Important 1건을 재현해 현재 표시 zoom에서 중단·delta 적용하도록 실패→성공으로 수정했다. 애니메이션 clock은 RAF와 같은 window clock으로 일관되게 읽고 테스트 clock도 동일하게 제어한다.
 
+## PR #4 전체 코드리뷰 보완
+
+2026-10-14 사용자 요청으로 requesting-code-review 스킬의 독립 읽기 전용 리뷰를 수행했다. 범위는 develop `d3971c5`부터 PR head `63c0c74`까지다. Critical 0건·Important 5건·Minor 0건을 보고받았고, 아래 5건을 실패로 재현한 뒤 수정했다.
+
+| 문제 | 수정과 기대 결과 | 실제 검증 |
+| --- | --- | --- |
+| drag 중 마커가 제거되면 pointer가 남음 | document capture에서 map 밖 pointerup/cancel/lostcapture와 blur 종료, unmount listener 정리 | 외부 종료 3개 단위 검사 및 desktop 실제 mouse 회귀 통과 |
+| 667×375 펼친 시트 목록 높이가 0 | 높이 500 이하 모바일에서 펼친 시트를 하단 탐색 위까지 늘리고 summary/list를 별도 scroll, 목록 최소 65px | 모바일 Chromium/WebKit에서 목록 마지막 18번째 행·고정 제목 접근 통과 |
+| 320×568 접힌 선택 행이 summary 아래에서 잘림 | `ShellDetail.collapsedSelection`을 scroll 밖 고정 영역에 렌더, 접혀 숨겨진 목록 focus를 선택 버튼으로 복귀 | 모바일 Chromium/WebKit에서 선택 행 전체 노출·Enter 선택 후 focus·재선택 확대 통과 |
+| source의 최신 권역·단지 표시값 무시 | 상세 값을 viewport 요약보다 우선하고 지도에도 ID별 최신 항목 병합. 다른 권역/소속의 응답은 error/retry 처리 | 최신 grade/value/stage·단지 이름 반영 및 다른 권역 응답 거부 단위 검사 통과 |
+| 긴 선택 이름의 충돌 영역이 150px로 잘림 | 선택 이름의 전체 추정 폭 예약, 일반 이름만 150px 제한 | 이웃 이름 겹침을 재현한 단위 검사 통과 |
+
+수정 후 같은 독립 리뷰어가 코드·회귀 검사·문서를 다시 읽고 Important 5건 해결 및 신규 Critical/Important 없음으로 확인했다. 재검토는 테스트를 다시 실행하지 않았으며 위 실행 결과는 부모가 직접 검증했다.
+
+좁은 모바일 회귀를 검증하면서 WebKit에서 pointerup 선택 직후 바뀐 배치의 시트 손잡이로 compatibility click이 전달되는 문제도 확인했다. MapTarget의 touchend 기본 동작을 막고 선택은 기존 pointerup 경로로 유지한다. 합성 click에 의존하지 않으며 키보드 click은 유지한다.
+
+최종 `pnpm check`: 토큰·타입·lint·format·단위 48개/8파일·production build 통과. 이어 순차 실행한 `pnpm test:e2e --workers=3`: 기존 UI/shell 회귀를 포함해 desktop Chromium·mobile Chromium/WebKit 66개 통과, 24개 플랫폼 적용 제외. 추가 테스트는 단위 6개, 브라우저 5개 통과/4개 제외다. 제외 24개는 기존 20개와 마커 제거 mouse 회귀의 모바일 2개, 작은 모바일 배치 회귀의 desktop 2개다.
+
+실제 SDK/API·CRS·geometry·급지/단계/시세 계산·검색/월드컵·실기기 gesture/VoiceOver·운영 대규모 성능과 전체 Figma pixel 승인은 이번 fixture 리뷰에서 판단할 수 없다. 운영 source/adapter 연결 및 정책 합의 시 별도 검증한다. 이번 수정은 지원 최소 viewport 정책을 확정하지 않는다.
+
+
 ## 변경 이력
 
 | 버전 | 날짜 | 변경 |
 | --- | --- | --- |
+| 0.3 | 2026-10-14 | PR #4 전체 리뷰 Important 5건 재현·수정, 모바일 focus/touch 보완, 단위 48·브라우저 66/24 검증 |
 | 0.2 | 2026-10-14 | 클릭 카메라 300ms 전환·중단/retarget·이동 효과 줄이기와 회귀 검증 추가 |
 | 0.1 | 2026-10-14 | 최신 MD/Figma에 따른 지도 adapter·선택/상세 구현, 실패→성공 검증과 독립 리뷰·연동 경계 기록 |

@@ -344,3 +344,75 @@ test('district clicks animate through intermediate zoom levels and reduced motio
     Number(await map(page).getAttribute('data-zoom')),
   ).toBeGreaterThanOrEqual(12.55);
 });
+
+test('a marker removed during drag cannot leave pointer movement active', async ({
+  page,
+  isMobile,
+}) => {
+  test.skip(
+    isMobile,
+    'mouse drag lifecycle; touch cancellation is covered separately',
+  );
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await zoneView(page);
+  const label = page.getByRole('button', { name: '권역 압구정', exact: true }),
+    box = (await label.boundingBox())!;
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(20, 350, { steps: 15 });
+  await expect(label).toHaveCount(0);
+  await page.mouse.up();
+  const released = await camera(page);
+  await page.mouse.move(1100, 500, { steps: 3 });
+  expect(await camera(page)).toEqual(released);
+});
+
+test('short mobile details retain a scrollable apartment list and fixed list heading', async ({
+  page,
+  isMobile,
+}) => {
+  test.skip(!isMobile, 'mobile sheet geometry');
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.setViewportSize({ width: 667, height: 375 });
+  await zoneView(page);
+  await page.getByRole('button', { name: '권역 압구정', exact: true }).tap();
+  await page.getByRole('button', { name: '상세 펼치기' }).tap();
+  const list = page.getByLabel('권역 단지 목록');
+  expect(
+    await list.evaluate((node) => node.clientHeight),
+  ).toBeGreaterThanOrEqual(65);
+  await list.focus();
+  await page.keyboard.press('End');
+  await expect(
+    page.getByRole('button', {
+      name: '목록 단지 압구정 검토 단지 18',
+      exact: true,
+    }),
+  ).toBeInViewport();
+  await expect(
+    page.getByRole('heading', { name: /권역 안 단지 순위/ }),
+  ).toBeInViewport();
+});
+
+test('selected apartment summary is fully visible after collapsing a narrow mobile detail', async ({
+  page,
+  isMobile,
+}) => {
+  test.skip(!isMobile, 'mobile selected summary');
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.setViewportSize({ width: 320, height: 568 });
+  await zoneView(page);
+  await page.getByRole('button', { name: '권역 압구정', exact: true }).tap();
+  await page.getByRole('button', { name: '상세 펼치기' }).tap();
+  await page
+    .getByRole('button', { name: '목록 단지 압구정 검토 단지 1', exact: true })
+    .focus();
+  await page.keyboard.press('Enter');
+  const summary = page.getByRole('button', {
+    name: '선택 단지 확대 압구정 검토 단지 1',
+  });
+  await expect(summary).toBeInViewport({ ratio: 1 });
+  await expect(summary).toBeFocused();
+  await summary.tap();
+  await expect(map(page)).toHaveAttribute('data-zoom', '15');
+});

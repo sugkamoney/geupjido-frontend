@@ -132,3 +132,28 @@ describe('substitutable fixture camera', () => {
     expect(map.getSnapshot()).toBe(final);
   });
 });
+
+it('reserves the complete selected apartment name before placing neighboring names', () => {
+  const selected = {
+    ...fixtures.apartments[0]!,
+    id: 'long',
+    name: '아주 긴 이름을 가진 압구정 재건축 검토 단지 이름',
+    point: { x: 250, y: 250 },
+  };
+  const other = {
+    ...fixtures.apartments[1]!,
+    id: 'other',
+    name: '다른 단지',
+    point: { x: 395, y: 250 },
+  };
+  const placed = layoutOverlays(
+    [],
+    [selected, other],
+    (point) => point,
+    { width: 600, height: 400 },
+    undefined,
+    'long',
+  );
+  expect(placed.pins.find((x) => x.item.id === 'long')?.showName).toBe(true);
+  expect(placed.pins.find((x) => x.item.id === 'other')?.showName).toBe(false);
+});

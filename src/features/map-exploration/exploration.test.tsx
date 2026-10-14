@@ -269,3 +269,63 @@ it('restores focus to the map menu when a selected pin is removed below 14.5 on 
   await user.click(screen.getByRole('button', { name: '권역 상세 닫기' }));
   expect(screen.getByRole('button', { name: '지도' })).toHaveFocus();
 });
+
+it('uses the selected source zone display fields and current apartment fields instead of stale viewport summaries', async () => {
+  const updatedZone = {
+    ...fixtures.zones[0]!,
+    grade: 5 as const,
+    value: '5.5',
+    stage: 'Confirmed' as const,
+  };
+  const updatedApartment = {
+    ...fixtures.apartments[0]!,
+    name: '상세 공급자의 최신 단지',
+    households: 2345,
+  };
+  const source: ExplorationSource = {
+    loadZone: async () => ({
+      zone: updatedZone,
+      apartments: [updatedApartment],
+    }),
+  };
+  const map = adapter(),
+    user = userEvent.setup();
+  render(<ExplorationPage adapter={map} source={source} />);
+  await user.click(screen.getByRole('button', { name: '권역 압구정' }));
+  const row = await screen.findByRole('button', {
+    name: '목록 단지 상세 공급자의 최신 단지',
+  });
+  expect(document.querySelector('.ui-grade-card')).toHaveAttribute(
+    'data-grade',
+    '5',
+  );
+  expect(
+    document.querySelector('.ui-grade-card .ui-grade-value'),
+  ).toHaveTextContent('5.5');
+  expect(
+    document.querySelector('.ui-grade-stage [aria-current="step"]'),
+  ).toHaveTextContent('민심급지');
+  await user.click(row);
+  expect(
+    await screen.findByRole('button', {
+      name: '지도 단지 상세 공급자의 최신 단지',
+    }),
+  ).toHaveAttribute('aria-pressed', 'true');
+});
+
+it('rejects a detail response for a different zone without replacing the current selection', async () => {
+  const source: ExplorationSource = {
+    loadZone: async () => ({
+      zone: fixtures.zones[1]!,
+      apartments: fixtures.apartments.slice(0, 1),
+    }),
+  };
+  const user = userEvent.setup();
+  render(<ExplorationPage adapter={adapter()} source={source} />);
+  await user.click(screen.getByRole('button', { name: '권역 압구정' }));
+  await screen.findByText('권역 정보를 불러오지 못했어요.');
+  expect(screen.getByRole('heading', { name: '압구정' })).toBeVisible();
+  expect(
+    screen.queryByRole('button', { name: /^목록 단지/ }),
+  ).not.toBeInTheDocument();
+});

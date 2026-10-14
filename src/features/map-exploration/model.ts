@@ -86,7 +86,9 @@ export function layoutOverlays(
         Number(a.item.id === selectedApartment) ||
       b.item.households - a.item.households,
   )) {
-    const width = Math.min(150, pin.item.name.length * 12 + 16);
+    const fullWidth = pin.item.name.length * 12 + 16;
+    const width =
+      pin.item.id === selectedApartment ? fullWidth : Math.min(150, fullWidth);
     const name = {
       x: pin.point.x - width / 2,
       y: pin.point.y - 59,
