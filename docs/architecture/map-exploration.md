@@ -1,6 +1,6 @@
 # 지도 탐색 구조·구현 계획·검증
 
-> 상태: 검토 UI 구현·검증 완료 · 실제 SDK/API 연동 대기 · 버전: 0.1 · 갱신: 2026-10-14
+> 상태: 검토 UI 구현·검증 완료 · 실제 SDK/API 연동 대기 · 버전: 0.2 · 갱신: 2026-10-14
 
 ## 목표와 구현 경계
 
@@ -68,9 +68,9 @@ NAVER 공식 [MapOptions](https://navermaps.github.io/maps.js.ncp/docs/naver.map
 | 검사 | 기대 | 실제 결과 |
 | --- | --- | --- |
 | frozen install·baseline | lockfile 그대로, 기존 검사 통과 | baseline check RTL 15개, 브라우저 40 통과/14 적용 제외 |
-| pnpm check | 토큰·TS·lint·format·RTL·build 모두 통과 | 통과, RTL 37개·7파일, production build 성공 |
-| 전체 Playwright | UI·shell 기존 회귀와 지도 동작 통과 | 58개 통과·20개 플랫폼 적용 제외·실패 0. 지도는 18개 통과/6개 제외 |
-| 지도 RTL | 경계/충돌/카메라·선택·취소·hover·cleanup | model 7, 입력 5, 선택/상세 10: 22개 통과 |
+| pnpm check | 토큰·TS·lint·format·RTL·build 모두 통과 | 통과, RTL 42개·8파일, production build 성공 |
+| 전체 Playwright | UI·shell 기존 회귀와 지도 동작 통과 | 61개 통과·20개 플랫폼 적용 제외·실패 0. 지도는 21개 통과/6개 제외 |
+| 지도 RTL | 경계/충돌/카메라·선택·취소·hover·cleanup | model 7, 입력 5, 선택/상세 10, 클릭 모션 5: 27개 통과 |
 | 모바일 Chromium 터치 스트림 | pan/pinch/double tap과 sheet/list scrolling 분리 | CDP 실제 touch stream 통과, tap 줌 1회·camera 불변 목록 scroll |
 | 모바일 WebKit | tap·keyboard·선택·시트·focus·작은 화면 | repository Playwright 통과, 물리 swipe 대체로 주장하지 않음 |
 | 실제 SDK/API smoke | credentials/계약/geometry로 통합 확인 | 미실행: 제품 API·검증된 CRS·SDK key/style 환경 미연결 |
@@ -107,8 +107,17 @@ requesting-code-review 스킬에 따라 독립 읽기 전용 리뷰를 수행했
 
 결정 배경은 [ADR-005](../history/ADR-005-map-fixture-boundary.md)를 따른다. 계획의 inline 실행과 사용자 승인된 커밋 범위를 유지했다. 별도의 계획 승인 대기로 중단하지 않았으며 정상 동작 테스트 완료 후 로컬 한국어 커밋으로 마무리한다. push/PR/merge는 수행하지 않는다.
 
+## 클릭 카메라 전환
+
+사용자의 후속 요청으로 클릭 경로의 center/fit/zoom은 선택적 `animate` 옵션을 전달한다. FixtureMapAdapter는 300ms ease-out cubic으로 현재 center/zoom에서 목표를 보간한다. 이 시간은 현재 구현값이며 실제 SDK 연동 후 체감을 다시 검토한다. 초기 fit/측정과 wheel/pan/pinch/키보드 입력은 즉시 처리한다. NAVER 실제 SDK 효과 연결은 별도 대기다.
+
+RAF와 같은 window.performance clock을 사용한다. 새 명령은 이전 RAF를 취소하고 generation을 변경해 이미 큐에 담긴 stale callback도 무시한다. 연속 zoom 버튼은 이전 목표 zoom에 누적하고 직접 gesture·지도 pin 선택·닫기·destroy는 취소한다. 패널/시트가 바뀌면 원래 목표 zoom을 보존해 새 frame으로 retarget한다. reduced-motion 설정은 명령 시작 시 확인해 즉시 적용한다.
+
+모션 단위 검사 5개는 중간값·완료, frame retarget, 연속 zoom/직접 입력 취소, reduced-motion/release/destroy를 확인한다. 브라우저는 desktop/mobile Chromium·WebKit에서 실제 구 클릭의 중간 zoom과 reduced-motion 전환을 확인한다. 기존 선택·focus·sheet·gesture 회귀도 유지한다. 기존 위치 검사는 중간 프레임이 아닌 최종 목적지를 기다려 확인한다. 지도 브라우저 검사는 21개 통과·6개 플랫폼 적용 제외를 확인했다. 추가 독립 리뷰에서 직접 wheel/pinch가 클릭의 목표 zoom을 참조하던 Important 1건을 재현해 현재 표시 zoom에서 중단·delta 적용하도록 실패→성공으로 수정했다. 애니메이션 clock은 RAF와 같은 window clock으로 일관되게 읽고 테스트 clock도 동일하게 제어한다.
+
 ## 변경 이력
 
 | 버전 | 날짜 | 변경 |
 | --- | --- | --- |
+| 0.2 | 2026-10-14 | 클릭 카메라 300ms 전환·중단/retarget·이동 효과 줄이기와 회귀 검증 추가 |
 | 0.1 | 2026-10-14 | 최신 MD/Figma에 따른 지도 adapter·선택/상세 구현, 실패→성공 검증과 독립 리뷰·연동 경계 기록 |

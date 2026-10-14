@@ -10,6 +10,9 @@ export class FixtureMapAdapter implements MapAdapter {
   private listeners = new Set<() => void>();
   private destroyed = false;
   private anchor: Point | undefined;
+  private animationFrame: number | undefined;
+  private motionGeneration = 0;
+  private destination: { center: Point; zoom: number } | undefined;
   private fitted:
     { bounds: Bounds; padding: number; limits: [number, number] } | undefined;
   constructor(overview?: Bounds) {
@@ -32,6 +35,49 @@ export class FixtureMapAdapter implements MapAdapter {
     };
     this.listeners.forEach((x) => x());
   }
+  private cancelMotion() {
+    this.motionGeneration++;
+    if (this.animationFrame !== undefined)
+      cancelAnimationFrame(this.animationFrame);
+    this.animationFrame = undefined;
+    this.destination = undefined;
+  }
+  private move(center: Point, zoom: number, animate: boolean) {
+    this.cancelMotion();
+    if (this.destroyed) return;
+    zoom = clamp(zoom);
+    if (
+      !animate ||
+      typeof requestAnimationFrame === 'undefined' ||
+      window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+    ) {
+      this.update(center, zoom);
+      return;
+    }
+    const from = this.camera;
+    const started = window.performance.now();
+    const generation = this.motionGeneration;
+    this.destination = { center, zoom };
+    const step = () => {
+      const now = window.performance.now();
+      if (this.destroyed || generation !== this.motionGeneration) return;
+      const progress = Math.max(0, Math.min(1, (now - started) / 300));
+      const eased = 1 - (1 - progress) ** 3;
+      this.update(
+        {
+          x: from.center.x + (center.x - from.center.x) * eased,
+          y: from.center.y + (center.y - from.center.y) * eased,
+        },
+        from.zoom + (zoom - from.zoom) * eased,
+      );
+      if (progress < 1) this.animationFrame = requestAnimationFrame(step);
+      else {
+        this.animationFrame = undefined;
+        this.destination = undefined;
+      }
+    };
+    this.animationFrame = requestAnimationFrame(step);
+  }
   private scale() {
     return 2 ** (this.camera.zoom - 12.9);
   }
@@ -53,6 +99,7 @@ export class FixtureMapAdapter implements MapAdapter {
         ))
     )
       return;
+    const destinationZoom = this.destination?.zoom;
     this.size = size;
     this.frame = frame;
     if (frame.width <= 0 || frame.height <= 0) {
@@ -60,11 +107,21 @@ export class FixtureMapAdapter implements MapAdapter {
       return;
     }
     if (this.fitted)
-      this.fit(this.fitted.bounds, this.fitted.padding, this.fitted.limits);
-    else if (this.anchor) this.center(this.anchor);
+      this.fit(
+        this.fitted.bounds,
+        this.fitted.padding,
+        this.fitted.limits,
+        destinationZoom !== undefined,
+      );
+    else if (this.anchor)
+      this.center(
+        this.anchor,
+        destinationZoom ?? this.camera.zoom,
+        destinationZoom !== undefined,
+      );
     else this.update(this.camera.center);
   }
-  center(point: Point, zoom = this.camera.zoom) {
+  center(point: Point, zoom = this.camera.zoom, animate = false) {
     this.anchor = point;
     this.fitted = undefined;
     const scale = 2 ** (clamp(zoom) - 12.9);
@@ -75,15 +132,21 @@ export class FixtureMapAdapter implements MapAdapter {
             y: this.frame.y + this.frame.height / 2,
           }
         : { x: this.size.width / 2, y: this.size.height / 2 };
-    this.update(
+    this.move(
       {
         x: point.x - (target.x - this.size.width / 2) / scale,
         y: point.y - (target.y - this.size.height / 2) / scale,
       },
       zoom,
+      animate,
     );
   }
-  fit(bounds: Bounds, padding = 48, limits: [number, number] = [9.5, 12.49]) {
+  fit(
+    bounds: Bounds,
+    padding = 48,
+    limits: [number, number] = [9.5, 12.49],
+    animate = false,
+  ) {
     const scale = Math.min(
       Math.max(1, this.frame.width - padding * 2) /
         Math.max(1, bounds.max.x - bounds.min.x),
@@ -96,28 +159,36 @@ export class FixtureMapAdapter implements MapAdapter {
         y: (bounds.min.y + bounds.max.y) / 2,
       },
       clamp(12.9 + Math.log2(scale), ...limits),
+      animate,
     );
     this.fitted = { bounds, padding, limits };
   }
   releaseAnchor() {
+    this.cancelMotion();
     this.anchor = undefined;
     this.fitted = undefined;
   }
-  zoom(delta: number, around?: Point) {
+  zoom(delta: number, around?: Point, animate = false) {
     const pixel = around ?? {
       x: this.frame.x + this.frame.width / 2,
       y: this.frame.y + this.frame.height / 2,
     };
+    const nextZoom = clamp(
+      (animate
+        ? (this.destination?.zoom ?? this.camera.zoom)
+        : this.camera.zoom) + delta,
+    );
     const point = this.unproject(pixel);
     this.releaseAnchor();
-    const zoom = clamp(this.camera.zoom + delta),
+    const zoom = nextZoom,
       scale = 2 ** (zoom - 12.9);
-    this.update(
+    this.move(
       {
         x: point.x - (pixel.x - this.size.width / 2) / scale,
         y: point.y - (pixel.y - this.size.height / 2) / scale,
       },
       zoom,
+      animate,
     );
   }
   pan(delta: Point) {

@@ -46,13 +46,14 @@ export interface MapAdapter {
   setViewport: (size: Size, frame: MapFrame) => void;
   project: (point: Point) => Point;
   unproject: (point: Point) => Point;
-  center: (point: Point, zoom?: number) => void;
+  center: (point: Point, zoom?: number, animate?: boolean) => void;
   fit: (
     bounds: Bounds,
     padding?: number,
     zoomLimits?: [number, number],
+    animate?: boolean,
   ) => void;
-  zoom: (delta: number, around?: Point) => void;
+  zoom: (delta: number, around?: Point, animate?: boolean) => void;
   pan: (delta: Point) => void;
   releaseAnchor: () => void;
   destroy: () => void;

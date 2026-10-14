@@ -6,7 +6,7 @@
 
 디자인 시스템 PR #2는 `2c3a1f4`, AppShell PR #3은 `d3971c5`로 develop에 병합됐다. PR #3의 터치 합성 click 누락은 pointerup 처리와 Linux 재현으로 보완했고 지도 구현에서도 유지한다. 이전 app-shell workspace와 서버는 정리됐다.
 
-`feature/map-exploration`은 develop `d3971c5`에서 시작했다(인수인계 기록 `36adf0c`). `/`와 `/map-exploration`은 명시적인 검토용 지도·데이터로 구/권역 라벨·핀·선택 면·제스처·상세/목록 선택을 제공한다. `/app-shell`, `/design-system` 기존 검토·회귀 경로도 유지한다. 코드 작성·수정은 100% AI로 수행했다. `pnpm check` RTL 37개와 production build, 전체 브라우저 58개가 통과했다(20개 플랫폼 적용 제외). 독립 리뷰의 pointer 종료/focus 복귀 2건은 회귀 실패→성공으로 보완했다.
+`feature/map-exploration`은 develop `d3971c5`에서 시작했다(인수인계 기록 `36adf0c`). `/`와 `/map-exploration`은 명시적인 검토용 지도·데이터로 구/권역 라벨·핀·선택 면·제스처·상세/목록 선택을 제공한다. `/app-shell`, `/design-system` 기존 검토·회귀 경로도 유지한다. 코드 작성·수정은 100% AI로 수행했다. `pnpm check` RTL 42개와 production build, 전체 브라우저 61개가 통과했다(20개 플랫폼 적용 제외). 독립 리뷰의 pointer 종료/focus 복귀 2건은 회귀 실패→성공으로 보완했다. 후속 사용자 요청으로 클릭 확대·이동을 300ms에 걸쳐 전환하며, 이동 효과 줄이기·연속 클릭·직접 gesture 중단도 검증했다.
 
 2026-10-14 백엔드 develop 읽기 전용 재확인은 `dfb7cc4`이며 batch 데이터 수집 기반 외 제품 지도·검색·상세 API는 아직 없다. 잠정 UI source와 지도 adapter를 분리했고 실제 NAVER 지도·검증된 좌표계·API·시세·단계·투표 집계는 연결하지 않았다. 검토 데이터가 실제 가격이나 집계라는 안내는 없다. [지도 구조·검증 결과](map-exploration.md)와 [현재 제품 SDD](../product/specs/map-exploration/README.md)를 따른다.
 

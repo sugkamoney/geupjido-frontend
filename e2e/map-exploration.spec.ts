@@ -10,25 +10,31 @@ async function camera(page: Page) {
 }
 async function zoneView(page: Page) {
   await page.getByRole('button', { name: '권역', exact: true }).click();
+  await expect
+    .poll(async () => Number(await map(page).getAttribute('data-zoom')))
+    .toBeGreaterThanOrEqual(12.9);
   await expect(
     page.getByRole('button', { name: '권역 압구정', exact: true }),
   ).toBeVisible();
 }
 async function centerInFrame(page: Page, target: string) {
-  const position = await page
-    .getByRole('button', { name: target, exact: true })
-    .evaluate((node) => ({
-      x: parseFloat((node as HTMLElement).style.left),
-      y: parseFloat((node as HTMLElement).style.top),
-    }));
-  const frame = JSON.parse((await map(page).getAttribute('data-frame'))!) as {
-    x: number;
-    y: number;
-    width: number;
-    height: number;
-  };
-  expect(Math.abs(position.x - (frame.x + frame.width / 2))).toBeLessThan(1);
-  expect(Math.abs(position.y - (frame.y + frame.height / 2))).toBeLessThan(1);
+  await expect
+    .poll(async () => {
+      const position = await page
+        .getByRole('button', { name: target, exact: true })
+        .evaluate((node) => ({
+          x: parseFloat((node as HTMLElement).style.left),
+          y: parseFloat((node as HTMLElement).style.top),
+        }));
+      const frame = JSON.parse(
+        (await map(page).getAttribute('data-frame'))!,
+      ) as { x: number; y: number; width: number; height: number };
+      return Math.max(
+        Math.abs(position.x - frame.x - frame.width / 2),
+        Math.abs(position.y - frame.y - frame.height / 2),
+      );
+    })
+    .toBeLessThan(1);
 }
 
 test.beforeEach(async ({ page }) => {
@@ -297,4 +303,44 @@ test('releasing a marker drag outside the map ends the gesture and allows later 
   await expect(
     page.getByRole('heading', { name: '압구정', exact: true }),
   ).toBeVisible();
+});
+
+test('district clicks animate through intermediate zoom levels and reduced motion applies the target immediately', async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  const samples = await page.evaluate(async () => {
+    const surface = document.querySelector<HTMLElement>('.exploration-map')!;
+    const label = document.querySelector<HTMLButtonElement>(
+      '[aria-label="구 강남구"]',
+    )!;
+    const zoom = () => Number(surface.dataset.zoom);
+    const before = zoom();
+    label.click();
+    const immediate = zoom();
+    const values: number[] = [];
+    await new Promise<void>((resolve) => {
+      const start = performance.now();
+      const sample = (now: number) => {
+        values.push(zoom());
+        if (now - start < 400) requestAnimationFrame(sample);
+        else resolve();
+      };
+      requestAnimationFrame(sample);
+    });
+    return { before, immediate, values };
+  });
+  expect(samples.immediate).toBe(samples.before);
+  const final = samples.values.at(-1)!;
+  expect(final).toBeGreaterThanOrEqual(12.55);
+  expect(final).toBeLessThanOrEqual(13.5);
+  expect(
+    samples.values.some((value) => value > samples.before && value < final),
+  ).toBe(true);
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.getByRole('button', { name: '구', exact: true }).click();
+  await page.getByRole('button', { name: '구 강남구', exact: true }).click();
+  expect(
+    Number(await map(page).getAttribute('data-zoom')),
+  ).toBeGreaterThanOrEqual(12.55);
 });

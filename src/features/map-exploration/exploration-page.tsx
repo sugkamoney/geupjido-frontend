@@ -56,10 +56,10 @@ export function ExplorationPage({
     if (label.kind === 'gu') {
       setZoneId(undefined);
       setSheetExpanded(false);
-      adapter.fit(label.bounds, 48, [12.55, 13.5]);
+      adapter.fit(label.bounds, 48, [12.55, 13.5], true);
     } else {
       setZoneId(label.id);
-      adapter.center(label.point, Math.max(camera.zoom, 12.5));
+      adapter.center(label.point, Math.max(camera.zoom, 12.5), true);
     }
   };
   const selectApartment = (item: Apartment, origin: 'map' | 'list') => {
@@ -68,7 +68,7 @@ export function ExplorationPage({
     if (origin === 'map') adapter.releaseAnchor();
     else {
       setSheetExpanded(false);
-      adapter.center(item.point, Math.max(camera.zoom, 15));
+      adapter.center(item.point, Math.max(camera.zoom, 15), true);
     }
   };
   return (
@@ -86,17 +86,18 @@ export function ExplorationPage({
       onLevelChange={(level) => {
         if (level === 'gu') {
           clear();
-          adapter.fit(data.overview);
+          adapter.fit(data.overview, 48, [9.5, 12.49], true);
         } else
           adapter.center(
             zone?.point ?? { x: 0, y: 0 },
             Math.max(camera.zoom, 12.9),
+            true,
           );
       }}
       onMapCommand={(command) => {
         if (command === 'fit') {
-          adapter.fit(data.overview);
-        } else adapter.zoom(command === 'zoom-in' ? 1 : -1);
+          adapter.fit(data.overview, 48, [9.5, 12.49], true);
+        } else adapter.zoom(command === 'zoom-in' ? 1 : -1, undefined, true);
       }}
       detail={
         zone

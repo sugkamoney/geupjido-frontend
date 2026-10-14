@@ -47,7 +47,7 @@ describe('exploration selection and lifecycle', () => {
     await user.click(
       screen.getByRole('button', { name: '목록 단지 압구정 검토 단지 2' }),
     );
-    expect(map.getSnapshot().zoom).toBe(15);
+    await waitFor(() => expect(map.getSnapshot().zoom).toBe(15));
     await user.click(screen.getByRole('button', { name: '권역 상세 닫기' }));
     expect(
       screen.queryByRole('heading', { name: '압구정' }),
