@@ -19,3 +19,5 @@
 - [QA-FE-005: 로컬 터치 검사는 통과했는데 Linux CI는 왜 실패했나?](QA-FE-005-touch-release-ci.md)
 
 - [QA-FE-006: Vite preview와 병렬 빌드의 asset 경합](QA-FE-006-preview-build-race.md)
+
+- [QA-FE-007: Linux WebKit 검색 재진입과 반응형 전환 완료 조건](QA-FE-007-responsive-test-readiness.md)

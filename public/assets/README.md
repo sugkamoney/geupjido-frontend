@@ -62,3 +62,7 @@ Figma `187:273` Map/Label, `490:2113` Map/Apartment Pin의 context에서 원본 
 | map/pin-tail.svg          | 490:2104                         | 12.4142×6.20711, 원본 inset을 10×5 꼬리 slot에 적용 |
 
 root width/height와 path를 보존한다. `MapSurface`의 해당 slot에서 사용하며 temporary URL은 저장하지 않는다. hover 점은 원본을 담은 wrapper를 1.25배 확대한다. 공통 GradeChip/Card·지도 컨트롤·레일 자산은 기존 것을 재사용한다.
+
+## 검색 결과 자산
+
+`icons/search-apartment.svg`는 Figma Search/Result Row `595:6566`의 원본16×16 단지 아이콘이다. 검색 인스턴스는 text/tertiary (#9AA0A8) override를 사용하므로 text/primary 기본 `apartment-16.svg`와 구분한다. 원본 width/height를 유지하고 30×20 슬롯의 가운데에 놓는다. 검색창 search-field/close-field와 GradeChip은 기존 공통 자산·토큰을 재사용한다.

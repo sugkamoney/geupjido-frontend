@@ -18,6 +18,8 @@
 - [지도 탐색](map-exploration/README.md) · 검토 UI 구현·검증 완료, 실제 연동 대기 · v0.5
   - 최신 Figma·MD의 라벨/핀·선택 상세를 구현하며 실제 지도·API 연결은 별도 추적
 
+- [검색](search/README.md) · 검토용 검색 구현·검증 완료, 실제 API 연결 대기 · v0.3
+
 ## 문서 템플릿
 
 - [_templates/README.template.md](_templates/README.template.md)

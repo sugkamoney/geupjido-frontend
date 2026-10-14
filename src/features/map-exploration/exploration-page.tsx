@@ -1,4 +1,7 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import { useSearch } from '../search/use-search';
+import { fixtureSearchSource, type SearchSource } from '../search/source';
+import type { SearchTarget } from '../search/model';
 import { AppShell } from '../../components/app-shell/app-shell';
 import { FixtureMapAdapter } from './fixture-adapter';
 import { fixtures, fixtureSource } from './fixtures';
@@ -17,10 +20,12 @@ export function ExplorationPage({
   adapter: providedAdapter,
   source = fixtureSource,
   data = fixtures,
+  searchSource = fixtureSearchSource,
 }: {
   adapter?: MapAdapter;
   source?: ExplorationSource;
   data?: ExplorationData;
+  searchSource?: SearchSource;
 }) {
   const [adapter] = useState(
     () => providedAdapter ?? new FixtureMapAdapter(data.overview),
@@ -28,7 +33,7 @@ export function ExplorationPage({
   const camera = useSyncExternalStore(adapter.subscribe, adapter.getSnapshot);
   const [zoneId, setZoneId] = useState<string>();
   const [apartmentId, setApartmentId] = useState<string>();
-  const [query, setQuery] = useState('');
+  const [searchTarget, setSearchTarget] = useState<SearchTarget>();
   const [sheetExpanded, setSheetExpanded] = useState(false);
   const mounted = useRef(false);
   useEffect(() => {
@@ -41,10 +46,22 @@ export function ExplorationPage({
     };
   }, [adapter]);
   const detail = useZoneDetail(zoneId, source);
-  const zone = detail.value?.zone ?? data.zones.find((x) => x.id === zoneId);
+  const searchZone =
+    searchTarget?.kind === 'zone'
+      ? searchTarget.item
+      : searchTarget?.kind === 'apartment'
+        ? searchTarget.zone
+        : undefined;
+  const zone =
+    detail.value?.zone ??
+    data.zones.find((x) => x.id === zoneId) ??
+    (searchZone?.id === zoneId ? searchZone : undefined);
   const apartment =
     detail.value?.apartments.find((x) => x.id === apartmentId) ??
-    data.apartments.find((x) => x.id === apartmentId);
+    data.apartments.find((x) => x.id === apartmentId) ??
+    (searchTarget?.kind === 'apartment' && searchTarget.item.id === apartmentId
+      ? searchTarget.item
+      : undefined);
   const clear = () => {
     setZoneId(undefined);
     setApartmentId(undefined);
@@ -71,15 +88,31 @@ export function ExplorationPage({
       adapter.center(item.point, Math.max(camera.zoom, 15), true);
     }
   };
+  const search = useSearch(searchSource, (target) => {
+    setSearchTarget(target);
+    if (target.kind === 'apartment') selectApartment(target.item, 'list');
+    else selectLabel(target.item);
+  });
+  const mapData = {
+    ...data,
+    zones: [
+      ...new Map(
+        [...data.zones, ...(zone ? [zone] : [])].map((item) => [item.id, item]),
+      ).values(),
+    ],
+    apartments: [
+      ...new Map(
+        [
+          ...data.apartments,
+          ...(apartment ? [apartment] : []),
+          ...(detail.value?.apartments ?? []),
+        ].map((item) => [item.id, item]),
+      ).values(),
+    ],
+  };
   return (
     <AppShell
-      search={{
-        value: query,
-        onValueChange: setQuery,
-        results: query ? (
-          <p className="shell-empty">검색 결과 연결은 후속 작업이에요.</p>
-        ) : undefined,
-      }}
+      search={search}
       displayLevel={zoneId || camera.zoom >= 12.5 ? 'zone' : 'gu'}
       sheetExpanded={sheetExpanded}
       onSheetExpandedChange={setSheetExpanded}
@@ -116,19 +149,7 @@ export function ExplorationPage({
         <MapSurface
           adapter={adapter}
           frame={frame}
-          data={{
-            ...data,
-            zones: data.zones.map((item) =>
-              item.id === zone?.id ? zone : item,
-            ),
-            apartments: [
-              ...new Map(
-                [...data.apartments, ...(detail.value?.apartments ?? [])].map(
-                  (item) => [item.id, item],
-                ),
-              ).values(),
-            ],
-          }}
+          data={mapData}
           zoneId={zoneId}
           apartmentId={apartmentId}
           onLabel={selectLabel}

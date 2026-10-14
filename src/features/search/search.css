@@ -1,0 +1,71 @@
+.shell-search-row[data-search-feature] .shell-search-results {
+  padding: 6px 0 10px;
+}
+.search-group-title {
+  padding: 10px 12px 6px;
+  color: var(--text-tertiary);
+  font: var(--type-caption-12-medium);
+}
+.search-result {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  min-height: 40px;
+  padding: 8px 12px;
+  cursor: pointer;
+  color: var(--text-primary);
+  font: var(--type-body-14-regular);
+  touch-action: pan-y;
+}
+.search-result[aria-selected='true'] {
+  background: var(--bg-hover);
+}
+.search-result:focus-visible {
+  outline: 2px solid var(--control-focus);
+  outline-offset: -2px;
+}
+.search-result strong {
+  font-weight: 600;
+}
+.search-result-name {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.search-result-context {
+  min-width: 0;
+  color: var(--text-tertiary);
+  font: var(--type-caption-12-regular);
+  overflow-wrap: anywhere;
+}
+.search-apartment-icon {
+  display: flex;
+  width: 30px;
+  height: 20px;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+.search-message {
+  margin: 0;
+  padding: 12px 14px;
+  font: var(--type-paragraph-14);
+  overflow-wrap: anywhere;
+}
+.search-message button {
+  padding: 8px;
+  color: var(--text-brand);
+  cursor: pointer;
+}
+.search-message button:focus-visible {
+  outline: 2px solid var(--control-focus);
+}
+@media (hover: hover) {
+  .search-result:hover {
+    background: var(--bg-hover);
+  }
+}
+@media (pointer: coarse) {
+  .search-result {
+    min-height: 44px;
+  }
+}

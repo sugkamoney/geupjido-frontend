@@ -1,10 +1,10 @@
 # 지도 탐색 구조·구현 계획·검증
 
-> 상태: 검토 UI 구현·검증 완료 · 실제 SDK/API 연동 대기 · 버전: 0.3 · 갱신: 2026-10-14
+> 상태: 검토 UI 구현·검증 완료 · 실제 SDK/API 연동 대기 · 버전: 0.4 · 갱신: 2026-10-14
 
 ## 목표와 구현 경계
 
-[제품 SDD](../product/specs/map-exploration/README.md)를 구현한다. React/TS·기존 AppShell·공통 UI·Figma 토큰을 재사용한다. 사용자 승인 범위에 따라 구현·검증·커밋했고 후속 요청으로 push와 PR #4 생성을 진행했다. 이번 코드리뷰 보완도 기존 PR에 반영하며 merge는 하지 않는다.
+[제품 SDD](../product/specs/map-exploration/README.md)를 구현한다. React/TS·기존 AppShell·공통 UI·Figma 토큰을 재사용한다. 사용자 승인 범위에 따라 구현·검증·커밋했고 후속 요청으로 push와 PR #4 생성을 진행했다. 코드리뷰 보완은 PR #4에 반영됐고, 2026-10-14 develop 1cf3013에 병합됐다. 검색은 이 기준에서 통합한다.
 
 ## 데이터와 어댑터
 
@@ -115,6 +115,10 @@ RAF와 같은 window.performance clock을 사용한다. 새 명령은 이전 RAF
 
 모션 단위 검사 5개는 중간값·완료, frame retarget, 연속 zoom/직접 입력 취소, reduced-motion/release/destroy를 확인한다. 브라우저는 desktop/mobile Chromium·WebKit에서 실제 구 클릭의 중간 zoom과 reduced-motion 전환을 확인한다. 기존 선택·focus·sheet·gesture 회귀도 유지한다. 기존 위치 검사는 중간 프레임이 아닌 최종 목적지를 기다려 확인한다. 지도 브라우저 검사는 21개 통과·6개 플랫폼 적용 제외를 확인했다. 추가 독립 리뷰에서 직접 wheel/pinch가 클릭의 목표 zoom을 참조하던 Important 1건을 재현해 현재 표시 zoom에서 중단·delta 적용하도록 실패→성공으로 수정했다. 애니메이션 clock은 RAF와 같은 window clock으로 일관되게 읽고 테스트 clock도 동일하게 제어한다.
 
+## 검색 연결
+
+검색 선택도 selectLabel/selectApartment의 기존 zoneId/apartmentId를 사용한다. 구 fit padding/zoom 제한, 권역 max(현재,12.5), 단지 max(현재,15), motion interruption과 frame retarget을 유지한다. 검색 권역/단지가 viewport 데이터에 없으면 선택 대상을 overlay data에 보완한다. 상세 source 값을 viewport/search 후보보다 우선하고 상세 단지 목록도 ID별 최신 값으로 병합한다. 선택 해제 시 추가된 overlay도 제거한다. [검색 구조·검증](search.md)을 따른다.
+
 ## PR #4 전체 코드리뷰 보완
 
 2026-10-14 사용자 요청으로 requesting-code-review 스킬의 독립 읽기 전용 리뷰를 수행했다. 범위는 develop `d3971c5`부터 PR head `63c0c74`까지다. Critical 0건·Important 5건·Minor 0건을 보고받았고, 아래 5건을 실패로 재현한 뒤 수정했다.
@@ -140,6 +144,7 @@ RAF와 같은 window.performance clock을 사용한다. 새 명령은 이전 RAF
 
 | 버전 | 날짜 | 변경 |
 | --- | --- | --- |
-| 0.3 | 2026-10-14 | PR #4 전체 리뷰 Important 5건 재현·수정, 모바일 focus/touch 보완, 단위 48·브라우저 66/24 검증 |
+| 0.4 | 2026-10-14 | 지도 PR #4 develop 통합 후 검색 소스와 최신 상세 우선순위 조합 |
+| 0.3 | 2026-10-14 | 지도 PR #4 리뷰 5건 보완 (48/66/24 검증) 및 viewport 독립 검색 연결 (분기별 기록 통합) |
 | 0.2 | 2026-10-14 | 클릭 카메라 300ms 전환·중단/retarget·이동 효과 줄이기와 회귀 검증 추가 |
 | 0.1 | 2026-10-14 | 최신 MD/Figma에 따른 지도 adapter·선택/상세 구현, 실패→성공 검증과 독립 리뷰·연동 경계 기록 |

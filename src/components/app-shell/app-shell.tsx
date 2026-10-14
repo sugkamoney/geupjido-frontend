@@ -61,6 +61,7 @@ export function AppShell({
     if (detailRef.current?.contains(active))
       closeRef.current?.focus({ preventScroll: true });
     if (searchEditing) inputRef.current?.focus({ preventScroll: true });
+    search.onResultsOpenChange?.(false);
     setSearchEditing(false);
     setMobileNotice(false);
   });
@@ -73,7 +74,7 @@ export function AppShell({
     panelOpen,
     detail?.id,
     sheetExpanded,
-    !!search.value || editing,
+    (search.resultsOpen ?? !!search.value) || editing,
   );
 
   useEffect(() => {
@@ -154,9 +155,9 @@ export function AppShell({
       }}
       onPointerDownCapture={(event) => {
         if (!detail && event.target instanceof Element)
-          interactionOrigin.current = event.target.closest<HTMLElement>(
-            'button, a, input, [tabindex]',
-          );
+          interactionOrigin.current = event.target.closest('.shell-search-row')
+            ? inputRef.current
+            : event.target.closest<HTMLElement>('button, a, input, [tabindex]');
       }}
     >
       <div
@@ -237,6 +238,10 @@ export function AppShell({
         compact={compact}
         editing={editing}
         onEditingChange={setSearchEditing}
+        onSelection={() => {
+          detailOrigin.current = inputRef.current;
+          interactionOrigin.current = inputRef.current;
+        }}
         level={detail ? 'zone' : level}
         onLevelChange={changeLevel}
         inputRef={inputRef}

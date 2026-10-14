@@ -1,6 +1,6 @@
 # 앱 화면 틀 구조와 구현 계획
 
-> 상태: develop 통합 완료 (PR #3 · d3971c5) · 버전: 0.6 · 갱신: 2026-10-14
+> 상태: 기존 틀 develop 통합 완료 (PR #3 · d3971c5), 검색 슬롯 확장은 feature/search · 버전: 0.8 · 갱신: 2026-10-14
 
 제품 기준은 [앱 화면 틀 SDD](../product/specs/app-shell/README.md)다.
 `feature/app-shell` 구현은 PR #3으로 develop에 병합됐다. 기존 workspace와 개발 서버는 사용자 요청으로 정리했다. 지도 후속은 `feature/map-exploration`에서 진행한다.
@@ -181,6 +181,10 @@ click은 발생하지 않았다. 탭 처리를 합성 click에 맡긴 구현이 
 
 지도 탐색은 기존 frame/MapCommand·detail/search 계약을 재사용한다. `displayLevel`과 제어형 `sheetExpanded`/`onSheetExpandedChange`를 선택적으로 추가해 지도 zoom에 따른 표시 및 모바일 목록 선택 시 접힘을 연결했다. 기존 자체 상태 소비자와 pointerup 동작은 유지한다. 상세 닫기는 선택 상태가 제거된 렌더 후 origin 생존 여부를 확인한다. 낮은 zoom에서 origin 라벨/핀이 사라지면 지도 메뉴로 복귀한다. 현재 홈은 명시적 지도 검토 화면, `/app-shell`은 기존 회귀 fixture다. [지도 구현](map-exploration.md)을 따른다.
 
+## 검색 소비자 확장
+
+검색은 기존 슬롯의 optional resultsOpen/onResultsOpenChange/inputProps/onKeyDown과 결과 render callback을 소비한다. finishSelection은 모바일 편집을 닫고 입력으로 복귀시키며 focusInput은 편집을 유지한 채 재시도 focus만 복원한다. 기존 preview ReactNode 결과는 유지한다. frame은 실제 결과 열림으로도 재측정해 카메라 anchor를 갱신한다. 검색 pointer origin은 제거될 option이 아닌 입력으로 기록한다. 검색 실제 선택의 onSelection callback은 상세가 이미 열렸어도 복귀 origin을 입력으로 갱신한다. 모바일에서 닫힌 focused 입력의 새 입력·방향키는 편집을 다시 열고, IME가 소비한 키는 제외한다. 기존 배치 전환 callback은 편집과 결과 열림을 함께 닫아 숨은 결과와 ARIA 상태가 어긋나지 않게 한다. [검색 구조](search.md)를 따른다.
+
 ## 지도 리뷰의 모바일 상세 보완
 
 `ShellDetail.collapsedSelection`은 접힌 모바일에서 summary scroll 밖에 렌더하는 선택적 슬롯이다. 상세 목록이 시트 접힘으로 숨겨져 focus가 남으면 layout effect에서 선택 슬롯의 button/a, 없으면 닫기 버튼으로 복귀한다. 기존 자체 상태 소비자와 데스크톱 배치를 유지한다. 667×375 목록 마지막 행, 320×568 선택 행 전체 노출·키보드 focus를 Chromium/WebKit에서 확인했다. [리뷰 결과](map-exploration.md#pr-4-전체-코드리뷰-보완)를 따른다.
@@ -189,7 +193,9 @@ click은 발생하지 않았다. 탭 처리를 합성 click에 맡긴 구현이 
 
 | 버전 | 날짜 | 변경 |
 |---|---|---|
-| 0.6 | 2026-10-14 | PR #4 짧은 모바일 목록·고정 선택 슬롯·접힘 focus 보완 |
+| 0.8 | 2026-10-14 | develop 지도 리뷰 보완과 검색 슬롯 통합 |
+| 0.7 | 2026-10-14 | 모바일 검색 재진입·실제 선택의 상세 focus origin 갱신 |
+| 0.6 | 2026-10-14 | 검색 슬롯 확장 및 지도 PR #4 짧은 목록·고정 선택 슬롯·접힘 focus 보완 (분기별 기록 통합) |
 | 0.1 | 2026-10-13 | 상태/슬롯/반응형 기술 경계와 구현 계획, baseline 기록 |
 | 0.2 | 2026-10-13 | 화면 틀 구현·독립 리뷰 보완·브라우저/시각 검증 결과와 후속 제한 기록 |
 | 0.5 | 2026-10-14 | 저줌 선택 overlay 제거 후 focus 복귀를 닫힌 렌더에서 처리 |

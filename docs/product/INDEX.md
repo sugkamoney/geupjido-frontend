@@ -11,3 +11,5 @@
 - [지도 탐색 표시 단계](map-exploration.md) · 최신 라벨/핀·실수 줌 기준
 - [지도 탐색 SDD](specs/map-exploration/README.md) · 상세/목록 선택, 모바일 동작
 - [디자인 핸드오프 기준](design-handoff.md)
+
+- [검색 SDD](specs/search/README.md) · 권역/구/단지 검색, 키보드·모바일 선택
