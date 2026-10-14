@@ -1,4 +1,5 @@
-import type { ReactNode } from 'react';
+import type { KeyboardEvent, ReactNode } from 'react';
+import type { SearchFieldProps } from '../ui/search-field';
 
 export type DisplayLevel = 'gu' | 'zone';
 export type MapCommand = 'zoom-in' | 'zoom-out' | 'fit';
@@ -17,7 +18,22 @@ export type ShellDetail = {
 export type ShellSearch = {
   value: string;
   onValueChange: (value: string) => void;
-  results?: ReactNode;
+  results?:
+    | ReactNode
+    | ((context: {
+        finishSelection: () => void;
+        focusInput: () => void;
+      }) => ReactNode);
+  onKeyDown?: (
+    event: KeyboardEvent<HTMLInputElement>,
+    finishSelection: () => void,
+  ) => void;
+  resultsOpen?: boolean;
+  onResultsOpenChange?: (open: boolean) => void;
+  inputProps?: Omit<
+    SearchFieldProps,
+    'value' | 'onValueChange' | 'label' | 'ref'
+  >;
 };
 export type AppShellProps = {
   map: (context: { frame: MapFrame; level: DisplayLevel }) => ReactNode;

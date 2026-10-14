@@ -1,6 +1,6 @@
 # 지도 탐색 구조·구현 계획·검증
 
-> 상태: 검토 UI 구현·검증 완료 · 실제 SDK/API 연동 대기 · 버전: 0.2 · 갱신: 2026-10-14
+> 상태: 검토 UI 구현·검증 완료 · 실제 SDK/API 연동 대기 · 버전: 0.3 · 갱신: 2026-10-14
 
 ## 목표와 구현 경계
 
@@ -115,9 +115,14 @@ RAF와 같은 window.performance clock을 사용한다. 새 명령은 이전 RAF
 
 모션 단위 검사 5개는 중간값·완료, frame retarget, 연속 zoom/직접 입력 취소, reduced-motion/release/destroy를 확인한다. 브라우저는 desktop/mobile Chromium·WebKit에서 실제 구 클릭의 중간 zoom과 reduced-motion 전환을 확인한다. 기존 선택·focus·sheet·gesture 회귀도 유지한다. 기존 위치 검사는 중간 프레임이 아닌 최종 목적지를 기다려 확인한다. 지도 브라우저 검사는 21개 통과·6개 플랫폼 적용 제외를 확인했다. 추가 독립 리뷰에서 직접 wheel/pinch가 클릭의 목표 zoom을 참조하던 Important 1건을 재현해 현재 표시 zoom에서 중단·delta 적용하도록 실패→성공으로 수정했다. 애니메이션 clock은 RAF와 같은 window clock으로 일관되게 읽고 테스트 clock도 동일하게 제어한다.
 
+## 검색 연결
+
+검색 선택도 selectLabel/selectApartment의 기존 zoneId/apartmentId를 사용한다. 구 fit padding/zoom 제한, 권역 max(현재,12.5), 단지 max(현재,15), motion interruption과 frame retarget을 유지한다. 검색 권역/단지가 viewport 데이터에 없으면 선택 대상만 overlay data에 보완한다. 선택 해제 시 추가된 overlay도 제거한다. [검색 구조·검증](search.md)을 따른다.
+
 ## 변경 이력
 
 | 버전 | 날짜 | 변경 |
 | --- | --- | --- |
+| 0.3 | 2026-10-14 | viewport와 독립된 검색 선택·상세/목록/카메라 연결 |
 | 0.2 | 2026-10-14 | 클릭 카메라 300ms 전환·중단/retarget·이동 효과 줄이기와 회귀 검증 추가 |
 | 0.1 | 2026-10-14 | 최신 MD/Figma에 따른 지도 adapter·선택/상세 구현, 실패→성공 검증과 독립 리뷰·연동 경계 기록 |

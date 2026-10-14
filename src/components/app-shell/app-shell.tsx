@@ -73,7 +73,7 @@ export function AppShell({
     panelOpen,
     detail?.id,
     sheetExpanded,
-    !!search.value || editing,
+    (search.resultsOpen ?? !!search.value) || editing,
   );
 
   useEffect(() => {
@@ -136,9 +136,9 @@ export function AppShell({
       }}
       onPointerDownCapture={(event) => {
         if (!detail && event.target instanceof Element)
-          interactionOrigin.current = event.target.closest<HTMLElement>(
-            'button, a, input, [tabindex]',
-          );
+          interactionOrigin.current = event.target.closest('.shell-search-row')
+            ? inputRef.current
+            : event.target.closest<HTMLElement>('button, a, input, [tabindex]');
       }}
     >
       <div

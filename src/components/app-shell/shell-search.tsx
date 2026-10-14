@@ -22,6 +22,7 @@ export function ShellSearchRow({
   const suppressOpen = useRef(false);
   const close = () => {
     onEditingChange(false);
+    search.onResultsOpenChange?.(false);
     suppressOpen.current = true;
     inputRef.current?.focus({ preventScroll: true });
     queueMicrotask(() => {
@@ -29,7 +30,8 @@ export function ShellSearchRow({
     });
   };
   const keyboard = (event: KeyboardEvent<HTMLDivElement>) => {
-    if (event.nativeEvent.isComposing) return;
+    if (event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229)
+      return;
     if (event.key === 'Escape') {
       if (editing) {
         event.preventDefault();
@@ -37,7 +39,7 @@ export function ShellSearchRow({
       }
       return;
     }
-    if (!editing || event.key !== 'Tab') return;
+    if (event.defaultPrevented || !editing || event.key !== 'Tab') return;
     const controls = [
       ...event.currentTarget.querySelectorAll<HTMLElement>(
         'input, button:not(:disabled), [tabindex="0"]',
@@ -62,6 +64,11 @@ export function ShellSearchRow({
       aria-modal={editing || undefined}
       aria-label={editing ? '지역 검색' : undefined}
       onKeyDown={keyboard}
+      data-search-feature={search.resultsOpen !== undefined || undefined}
+      onBlur={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget))
+          search.onResultsOpenChange?.(false);
+      }}
     >
       <div className="shell-search-input-row">
         {compact && (
@@ -72,14 +79,23 @@ export function ShellSearchRow({
           />
         )}
         <SearchField
+          {...search.inputProps}
           ref={inputRef}
           label="지역 검색"
+          onKeyDown={(event) => {
+            search.inputProps?.onKeyDown?.(event);
+            search.onKeyDown?.(event, close);
+          }}
           value={search.value}
           onValueChange={search.onValueChange}
           onFocus={() => {
-            if (compact && !suppressOpen.current) onEditingChange(true);
+            if (!suppressOpen.current) {
+              search.onResultsOpenChange?.(true);
+              if (compact) onEditingChange(true);
+            }
           }}
           onPointerDown={() => {
+            search.onResultsOpenChange?.(true);
             if (compact) onEditingChange(true);
           }}
         />
@@ -105,15 +121,33 @@ export function ShellSearchRow({
           </button>
         </div>
       )}
-      {(editing || search.value) && (
+      {(search.resultsOpen ?? (editing || !!search.value)) && (
         <div
           className="shell-search-results"
           data-layout-region
           aria-label="검색 콘텐츠"
         >
-          {search.results ?? <p>검색을 준비하고 있어요.</p>}
+          <SearchContent
+            results={search.results}
+            finishSelection={close}
+            focusInput={() => inputRef.current?.focus({ preventScroll: true })}
+          />
         </div>
       )}
     </div>
   );
+}
+
+function SearchContent({
+  results,
+  finishSelection,
+  focusInput,
+}: {
+  results: ShellSearch['results'];
+  finishSelection: () => void;
+  focusInput: () => void;
+}) {
+  return typeof results === 'function'
+    ? results({ finishSelection, focusInput })
+    : (results ?? <p>검색을 준비하고 있어요.</p>);
 }
