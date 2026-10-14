@@ -1,35 +1,22 @@
 # 프론트엔드 기반 구축 현황과 다음 단계
 
-> 상태: **디자인 시스템 develop 통합 완료, 앱 화면 틀 구현·로컬 검증 완료** · 기준 날짜: 2026-10-13
+> 상태: 디자인 시스템·AppShell develop 통합 완료, 지도 탐색 fixture 구현·검증 완료 · 기준 날짜: 2026-10-14
 
-## 최신 준비 점검
+## 현재 구현
 
-10월 13일 백엔드 `develop`의 `dfb7cc4`와 새 디자인 핸드오프를 확인했다.
-지역·단지·실거래 데이터 수집 기반은 있으나 제품용 지도·검색·월드컵 API는
-아직 없다. Figma·동작 MD를 기준으로 UI/mock 개발은 착수할 수 있다.
-사용자는 모바일 웹도 지원하기로 확정했으며 모바일도 제품·QA 범위에 포함한다.
-React·TypeScript·Vite 앱과 pnpm lockfile, Router·Query provider, Tailwind, 품질 검사,
-단위·브라우저 테스트 및 GitHub CI 설정을 추가했다. 초기화 당시 로컬 검사는 통과했다. 현재 GitHub CI 상태와 운영 배포 설정은
-별도 확인 범위다. 실제 지도/API와 제품 데이터 화면은 후속 작업이다.
-자세한 구성과 실행 방법은 [프로젝트 초기화](project-initialization.md)를 따른다.
+디자인 시스템 PR #2는 `2c3a1f4`, AppShell PR #3은 `d3971c5`로 develop에 병합됐다. PR #3의 터치 합성 click 누락은 pointerup 처리와 Linux 재현으로 보완했고 지도 구현에서도 유지한다. 이전 app-shell workspace와 서버는 정리됐다.
 
-초기화 PR #1은 main에 병합됐고 develop을 통합 기준으로 생성했다.
-`feature/design-system`에서 Figma semantic tokens와 Button·GradeChip/Card/Stage·
-SearchField·닫기/패널/지도 조작 버튼, 로컬 자산과 검토 카탈로그를 구현했다.
-디자인 시스템 PR #2는 develop `2c3a1f4`에 병합됐다. 기존 디자인 시스템 workspace는
-사용자 요청으로 제거했다. 앱 화면 틀은 이 커밋에서 분기한 `feature/app-shell`에서
-SDD를 시작해 레일/하단 탭·패널·상세/시트·검색과 지도 슬롯을 구현했다.
-현재 feature 브랜치 로컬 검증은 RTL 15개와 브라우저 40개 통과(14개 플랫폼 적용 제외)다.
-PR #3 최초 CI는 터치 드래그 후 탭의 합성 click 누락으로 실패했다. Linux 재현 후
-pointerup 처리와 회귀 검사를 보완했으며 원격 최신 상태는 PR checks에서 확인한다.
-화면 틀은 홈의 준비 상태와 별도 `/app-shell` 검토 fixture로 나뉘며 실제 집계 수치는 없다. [앱 화면 틀](app-shell.md)과 [제품 명세](../product/specs/app-shell/README.md)를 따른다.
-원본 대응·접근성·반응형 제한은 [디자인 시스템](design-system.md)에 기록한다.
-지도·검색 결과·월드컵의 제품 기능과 SDK/API 연동은 아직 구현하지 않았다.
+`feature/map-exploration`은 develop `d3971c5`에서 시작했다(인수인계 기록 `36adf0c`). `/`와 `/map-exploration`은 명시적인 검토용 지도·데이터로 구/권역 라벨·핀·선택 면·제스처·상세/목록 선택을 제공한다. `/app-shell`, `/design-system` 기존 검토·회귀 경로도 유지한다. 코드 작성·수정은 100% AI로 수행했다. `pnpm check` RTL 48개와 production build, 전체 브라우저 66개가 통과했다(24개 플랫폼 적용 제외). 독립 리뷰의 pointer 종료/focus 복귀 2건은 회귀 실패→성공으로 보완했다. PR #4 전체 코드리뷰의 중요 결함 5건도 재현·수정했다(마커 제거 후 gesture, 짧은 화면 목록, 접힌 선택 행, 최신 source 표시, 긴 이름 충돌). 키보드 접힘 focus와 WebKit 후속 touch click 회귀도 포함한다. 후속 사용자 요청으로 클릭 확대·이동을 300ms에 걸쳐 전환하며, 이동 효과 줄이기·연속 클릭·직접 gesture 중단도 검증했다.
 
-새 핸드오프의 라벨·단지 핀·실수 zoom 기준은 아래 9월 지도 설계와 다르다.
-아래 기준과 순서는 당시 기록이며 현재 화면 규칙으로 그대로 적용하지 않는다.
-[최신 구현 준비 점검](2026-10-13-implementation-readiness.md)과
-[디자인 핸드오프 기준](../product/design-handoff.md)을 먼저 확인한다.
+2026-10-14 백엔드 develop 읽기 전용 재확인은 `dfb7cc4`이며 batch 데이터 수집 기반 외 제품 지도·검색·상세 API는 아직 없다. 잠정 UI source와 지도 adapter를 분리했고 실제 NAVER 지도·검증된 좌표계·API·시세·단계·투표 집계는 연결하지 않았다. 검토 데이터가 실제 가격이나 집계라는 안내는 없다. [지도 구조·검증 결과](map-exploration.md)와 [현재 제품 SDD](../product/specs/map-exploration/README.md)를 따른다.
+
+## 후속 연결과 정책
+
+공개 지도/상세 API 및 백엔드 생성 OpenAPI, 실제 geometry CRS와 지점 대조, NAVER 키/GL 스타일 metadata를 확보한 뒤 운영 adapter·source와 실제 SDK smoke를 이어 연결한다. 행정동 라벨·아파트 POI 숨김과 실제 fractional zoom은 미검증이다. 독립 검색 알고리즘과 월드컵 투표/대진/집계는 별도 작업이다.
+
+모바일 웹은 지원한다. 기존 breakpoint·시트 높이·좁은 desktop 배치는 검토 가정이다. 실제 iOS/Android gesture·키보드/주소창·접근성 및 최소 viewport/OS는 추가 검토한다. 미정 급지/단계/투표 정책을 임의 계산하지 않는다.
+
+후속 사용자 요청으로 브랜치를 push하고 develop 대상 [PR #4](https://github.com/sugkamoney/geupjido-frontend/pull/4)를 생성했다. 이 workspace의 검토 서버(5174)는 종료했으며 후속 작업은 상위 workspace에서 이어간다. PR은 OPEN이며 병합은 수행하지 않았다. 최신 CI는 [PR checks](https://github.com/sugkamoney/geupjido-frontend/pull/4/checks), 재개 순서는 [인수인계](map-exploration-handoff.md)를 따른다.
 
 ## 9월에 확정한 기반 기준
 
@@ -90,15 +77,3 @@ pointerup 처리와 회귀 검사를 보완했으며 원격 최신 상태는 PR 
    개발 `/api` 프록시, 운영 동일 origin `/api`, SPA deep-link fallback을 설정한다.
    지도 SDK 인증, 경계 캐시, 단지 요청 취소·오래된 응답 차단, 최소 desktop viewport를
    브라우저 테스트와 Safari smoke test로 검증한다.
-
-## 다음 세션 시작 지점
-
-`feature/initialize-project`와 Orca workspace 생성 및 프로젝트 초기화는 완료했다.
-현재 Orca CLI는 workspace 생성의 `--yolo`를 지원하지 않아 workspace 안에
-`codex --yolo` 터미널을 따로 준비했다. 구현 파일은 Orca worktree에 있다.
-
-디자인 시스템 PR #2는 develop 통합을 완료했다. 앱 화면 틀 작업은
-`feature/app-shell`과 전용 Orca workspace에서 구현·검증·커밋을 완료했다.
-후속 사용자 요청으로 feature를 push하고 develop 대상 PR #3을 생성했다. merge는 요청하지 않았다. 후속 PR은 develop 대상이며 기본 템플릿과
-한국어 작성 규칙을 적용한다. 실제 지도/API/검색 결과/월드컵 집계는 후속 SDD 범위다.
-모바일·좁은 데스크톱 배치는 검토용 임시 구현으로 다음 디자인 리뷰에서 확정한다.

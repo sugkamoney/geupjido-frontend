@@ -1,10 +1,9 @@
 # 앱 화면 틀 구조와 구현 계획
 
-> 상태: 구현·검증 완료 · 버전: 0.3 · 갱신: 2026-10-13
+> 상태: develop 통합 완료 (PR #3 · d3971c5) · 버전: 0.6 · 갱신: 2026-10-14
 
 제품 기준은 [앱 화면 틀 SDD](../product/specs/app-shell/README.md)다.
-이번 작업은 기존 Orca linked worktree `feature/app-shell`에서 실행한다.
-사용자가 구현·검증·커밋까지 요청한 범위를 이어 진행한다.
+`feature/app-shell` 구현은 PR #3으로 develop에 병합됐다. 기존 workspace와 개발 서버는 사용자 요청으로 정리했다. 지도 후속은 `feature/map-exploration`에서 진행한다.
 
 ## 구조와 상태 경계
 
@@ -43,7 +42,7 @@ NAVER SDK, 네트워크 API, 검색 결과 알고리즘, 월드컵 모달은 추
 자동 패널 접기는 추가하지 않는다. 768~1100에서는 상세가 있는 검색 줄을 상세 안으로
 이동해 지도와 닫기 버튼 접근을 유지한다. 이는 다음 디자인 리뷰에서 확정할 임시안이다.
 짧은 화면에서는 고정 요약을 제한하고 그 영역의 세로 스크롤을 허용해 닫기를 유지한다.
-모바일 시트는 접힘 min(42%,340px), 펼침은 화면 높이에서 190px와 safe area를 뺀 값이다.
+모바일 시트는 접힘 min(42%,340px), 펼침은 기본적으로 화면 높이에서 190px와 safe area를 뺀 값이다. 높이 500px 이하 모바일에서는 하단 탐색 위까지 펼치고 요약과 목록을 각각 스크롤한다. 목록에는 최소 65px를 확보한다. 이는 검토 배치이며 최소 지원 높이 정책이 아니다.
 짧은 화면은 별도 높이를 사용한다. 모바일 펼침 요약은 본문 높이의 55%까지 사용하고
 넘는 콘텐츠만 요약 내부에서 스크롤한다. 390×844 검토 크기에서는 카드·단계·비교 버튼이 모두 보인다. WebKit 기기 preset의
 664px 높이와 더 짧은 화면에서는 요약 내부 scroll로 나머지 콘텐츠에 접근한다.
@@ -97,7 +96,7 @@ frozen 설치 통과. 기존 `pnpm check`(RTL 8개·토큰/타입/lint/format/bu
 
 코드 작성·수정은 100% AI로 수행했다. `feature/app-shell`에 커밋하며
 통합 대상은 develop이다. 최초 구현 요청은 커밋까지였고, 이후 사용자 요청으로 feature push와 PR #3 생성을 진행했다.
-merge는 요청하지 않았다.
+당시 세션은 merge를 수행하지 않았고, 이후 PR #3이 develop `d3971c5`에 병합됐다.
 후속 PR은 `.github/pull_request_template.md`와 [PR 규칙](pull-request-convention.md)을 적용한다.
 
 | 검사 | 기대 | 실제 결과 |
@@ -174,14 +173,25 @@ click은 발생하지 않았다. 탭 처리를 합성 click에 맡긴 구현이 
 중복 처리를 막는다. detail=0 활성화와 마우스 click은 유지한다. 클릭이 없는 탭/후속 클릭/
 키보드 활성화를 검증하는 회귀 2개를 먼저 실패시키고 수정 후 통과시켰다.
 수정 후 Linux 같은 재현은 10회 모두 통과했다. 테스트 제외·재시도·대기 시간은 늘리지 않았다.
-컨테이너는 GitHub amd64 runner의 대체가 아니며 원격 결과는
+컨테이너는 GitHub amd64 runner의 대체가 아니며 최종 PR #3은 병합됐으며 원격 검사 기록은
 [PR #3 checks](https://github.com/sugkamoney/geupjido-frontend/pull/3/checks)에서 별도로 확인한다.
 설명은 [QA-FE-005](../learning/frontend/q-and-a/QA-FE-005-touch-release-ci.md)에 보존한다.
+
+## 지도 소비자 연결
+
+지도 탐색은 기존 frame/MapCommand·detail/search 계약을 재사용한다. `displayLevel`과 제어형 `sheetExpanded`/`onSheetExpandedChange`를 선택적으로 추가해 지도 zoom에 따른 표시 및 모바일 목록 선택 시 접힘을 연결했다. 기존 자체 상태 소비자와 pointerup 동작은 유지한다. 상세 닫기는 선택 상태가 제거된 렌더 후 origin 생존 여부를 확인한다. 낮은 zoom에서 origin 라벨/핀이 사라지면 지도 메뉴로 복귀한다. 현재 홈은 명시적 지도 검토 화면, `/app-shell`은 기존 회귀 fixture다. [지도 구현](map-exploration.md)을 따른다.
+
+## 지도 리뷰의 모바일 상세 보완
+
+`ShellDetail.collapsedSelection`은 접힌 모바일에서 summary scroll 밖에 렌더하는 선택적 슬롯이다. 상세 목록이 시트 접힘으로 숨겨져 focus가 남으면 layout effect에서 선택 슬롯의 button/a, 없으면 닫기 버튼으로 복귀한다. 기존 자체 상태 소비자와 데스크톱 배치를 유지한다. 667×375 목록 마지막 행, 320×568 선택 행 전체 노출·키보드 focus를 Chromium/WebKit에서 확인했다. [리뷰 결과](map-exploration.md#pr-4-전체-코드리뷰-보완)를 따른다.
 
 ## 변경 이력
 
 | 버전 | 날짜 | 변경 |
 |---|---|---|
+| 0.6 | 2026-10-14 | PR #4 짧은 모바일 목록·고정 선택 슬롯·접힘 focus 보완 |
 | 0.1 | 2026-10-13 | 상태/슬롯/반응형 기술 경계와 구현 계획, baseline 기록 |
 | 0.2 | 2026-10-13 | 화면 틀 구현·독립 리뷰 보완·브라우저/시각 검증 결과와 후속 제한 기록 |
+| 0.5 | 2026-10-14 | 저줌 선택 overlay 제거 후 focus 복귀를 닫힌 렌더에서 처리 |
+| 0.4 | 2026-10-14 | PR #3 병합 현황과 지도 소비자의 선택적 제어 계약 반영 |
 | 0.3 | 2026-10-13 | PR #3 Linux 터치 CI 실패를 재현하고 pointerup 처리·회귀 2개 추가 |

@@ -4,6 +4,7 @@
 @import '../app/design-system-page.css' layer(components);
 @import '../components/ui/ui.css' layer(components);
 @import '../components/app-shell/app-shell.css' layer(components);
+@import '../features/map-exploration/map-exploration.css' layer(components);
 
 @font-face {
   font-family: 'Pretendard';

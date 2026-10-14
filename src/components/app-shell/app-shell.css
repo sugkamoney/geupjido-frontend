@@ -241,6 +241,10 @@
   overflow-y: auto;
   border-bottom: 8px solid var(--bg-panel);
 }
+.shell-detail-selection {
+  flex-shrink: 0;
+  padding: 0 16px 12px;
+}
 .shell-list-title {
   padding: var(--space-12) var(--space-16);
   flex-shrink: 0;
@@ -589,5 +593,19 @@
   }
   .app-shell .shell-sheet-handle {
     min-height: 32px;
+  }
+}
+
+@media (max-width: 767px) and (max-height: 500px) {
+  .shell-detail[data-expanded='true'] {
+    height: calc(100% - 62px - env(safe-area-inset-bottom));
+  }
+  .shell-detail[data-expanded='true'] .shell-detail-body {
+    display: grid;
+    grid-template-rows: minmax(0, 1fr) auto minmax(65px, 1fr);
+  }
+  .shell-detail[data-expanded='true'] .shell-detail-summary {
+    min-height: 0;
+    max-height: none;
   }
 }

@@ -10,6 +10,8 @@ export type ShellDetail = {
   location: string;
   summary?: ReactNode;
   expandedSummary?: ReactNode;
+  /** Fixed below the scrollable summary when the mobile sheet is collapsed. */
+  collapsedSelection?: ReactNode;
   actions?: ReactNode;
   listTitle?: ReactNode;
   content: ReactNode;
@@ -25,6 +27,9 @@ export type AppShellProps = {
   detail?: ShellDetail;
   onDetailClose?: () => void;
   search: ShellSearch;
+  displayLevel?: DisplayLevel;
+  sheetExpanded?: boolean;
+  onSheetExpandedChange?: (expanded: boolean) => void;
   onLevelChange?: (level: DisplayLevel) => void;
   onMapCommand?: (command: MapCommand) => void;
   /** Only the review route exposes undecided menu placeholders. */

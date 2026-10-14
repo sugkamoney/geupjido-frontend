@@ -8,5 +8,6 @@
 - [플랫폼 지원 범위](platform-support.md)
 - [SDD 제품 문서 구조](sdd-document-structure.md)
 - [SDD 기능 명세](specs/INDEX.md)
-- [지도 탐색 표시 단계](map-exploration.md)
+- [지도 탐색 표시 단계](map-exploration.md) · 최신 라벨/핀·실수 줌 기준
+- [지도 탐색 SDD](specs/map-exploration/README.md) · 상세/목록 선택, 모바일 동작
 - [디자인 핸드오프 기준](design-handoff.md)
