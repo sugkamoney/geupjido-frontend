@@ -302,8 +302,16 @@ for (const action of ['type', 'arrow'] as const) {
     await page.getByRole('button', { name: '권역 상세 닫기' }).tap();
     await expect(field(page)).toBeFocused();
     await page.setViewportSize({ width: 1280, height: 720 });
+    await expect(page.locator('.app-shell')).toHaveAttribute(
+      'data-compact',
+      'false',
+    );
     await expect(field(page)).toHaveAttribute('aria-expanded', 'false');
     await page.setViewportSize({ width: 390, height: 844 });
+    await expect(page.locator('.app-shell')).toHaveAttribute(
+      'data-compact',
+      'true',
+    );
     await expect(page.getByRole('dialog', { name: '지역 검색' })).toHaveCount(
       0,
     );

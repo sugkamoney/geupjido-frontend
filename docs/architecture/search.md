@@ -1,6 +1,6 @@
 # 검색 구조와 실행 계획
 
-> 상태: 검토용 구현·검증 완료, 실제 API/SDK 연결 대기 · 버전: 0.3 · 갱신: 2026-10-14
+> 상태: 검토용 구현·검증 완료, 실제 API/SDK 연결 대기 · 버전: 0.4 · 갱신: 2026-10-14
 
 제품 기준은 [검색 SDD](../product/specs/search/README.md)다. 이 문서가 inline 실행 계획과 검증 기록을 겸한다. 사용자 지정 workspace/feature/search를 유지하며 origin/feature/map-exploration 63c0c74에 stack한다. 시작 HEAD는 검색 핸드오프 문서 f82d708이다. 최초 구현은 로컬 커밋까지였고 후속 사용자 요청으로 push·PR·merge까지 승인됐다. 지도 PR #4는 develop 1cf3013에 병합됐으므로 검색 PR 기준은 develop이다.
 
@@ -102,10 +102,19 @@ Figma 메인 594:21211 screenshot과 결과 594:21324 context, 결과 없음 594
 
 후속 사용자 요청의 범위는 feature/search push, develop 기준 PR 생성, 최신 CI 성공 확인 후 병합이다. 운영 API/SDK와 실기기 검증 대기 범위는 유지한다.
 
+## PR #5 CI의 배치 전환 검사 보완
+
+검색은 [PR #5](https://github.com/sugkamoney/geupjido-frontend/pull/5)에서 develop 통합을 추적한다. 최초 CI 38528955275는 frozen/품질 검사 통과 후 mobile WebKit 재진입 2건이 실패했다(80 통과/29 적용 제외). 각 재시도도 같은 마지막 배치 전환 지점에서 실패했다.
+
+trace의 viewport 1280→390 변경 후 키 입력 시점에는 React의 data-compact가 아직 false였다. 기존 aria-expanded=false와 dialog 없음은 전환 전 desktop 상태에서도 참이므로 전환 완료를 입증하지 못했다. 실제 배치 false/true를 각각 먼저 확인한 뒤 닫힌 결과와 키 입력을 검사하도록 순서를 보완했다. 제품 코드·검사 시나리오·retries·timeout을 바꾸지 않았다.
+
+보완 후 pnpm check 67개·빌드가 통과했다. Playwright 1.64.0 공식 Linux 컨테이너에서 실제 e2e/search.spec.ts의 두 재진입 검사를 각 3회, 6개 모두 통과했다. 로컬 운영 빌드를 연결한 컨테이너 검사는 GitHub runner 자체를 대체하지 않으며 최종 원격 결과는 [PR checks](https://github.com/sugkamoney/geupjido-frontend/pull/5/checks)에서 확인한다. 상세 원인과 검증 원칙은 [QA-FE-007](../learning/frontend/q-and-a/QA-FE-007-responsive-test-readiness.md)에 보존한다.
+
 ## 변경 이력
 
 | 버전 | 날짜       | 변경                                                                 |
 | ---- | ---------- | -------------------------------------------------------------------- |
+| 0.4  | 2026-10-14 | PR #5 Linux WebKit CI trace 분석과 반응형 전환 완료 검사 보완        |
 | 0.3  | 2026-10-14 | 지도 PR #4 병합 후 develop 통합, 최신 상세와 검색 fallback 조합 검증 |
 | 0.2  | 2026-10-14 | 사용자 요청 추가 독립 리뷰와 검색 재진입·focus·응답 revision 보완    |
 | 0.1  | 2026-10-14 | 검색 소스·UI·지도 연결 구현과 백엔드 경계·검증 기록                  |
