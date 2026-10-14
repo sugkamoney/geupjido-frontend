@@ -16,7 +16,7 @@
 
 모바일 웹은 지원한다. 기존 breakpoint·시트 높이·좁은 desktop 배치는 검토 가정이다. 실제 iOS/Android gesture·키보드/주소창·접근성 및 최소 viewport/OS는 추가 검토한다. 미정 급지/단계/투표 정책을 임의 계산하지 않는다.
 
-사용자는 이번 작업을 로컬 구현·검증·문서·커밋까지 요청했다. push/PR/merge는 요청 범위에 포함되지 않는다. 통합 대상은 develop이다.
+후속 사용자 요청으로 브랜치를 push하고 develop 대상 [PR #4](https://github.com/sugkamoney/geupjido-frontend/pull/4)를 생성했다. 이 workspace의 검토 서버(5174)는 종료했으며 후속 작업은 상위 workspace에서 이어간다. PR은 OPEN이며 병합은 수행하지 않았다. 최신 CI는 [PR checks](https://github.com/sugkamoney/geupjido-frontend/pull/4/checks), 재개 순서는 [인수인계](map-exploration-handoff.md)를 따른다.
 
 ## 9월에 확정한 기반 기준
 

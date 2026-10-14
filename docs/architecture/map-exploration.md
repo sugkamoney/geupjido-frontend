@@ -105,7 +105,7 @@ requesting-code-review 스킬에 따라 독립 읽기 전용 리뷰를 수행했
 | Figma pixel·SVG 원본 | 부모가 context/원본 다운로드·메타데이터/렌더로 확인, fixture 전체 pixel 일치 제외 | 운영 지도와 실제 데이터 연결 후 전체 화면 시각 QA 필요 |
 | 최종 회귀/문서 상태 | 부모가 최종 명령 결과 확인 및 문서 갱신 | 검증되지 않은 완료 주장 없이 실제 결과를 아래/표에 기록 |
 
-결정 배경은 [ADR-005](../history/ADR-005-map-fixture-boundary.md)를 따른다. 계획의 inline 실행과 사용자 승인된 커밋 범위를 유지했다. 별도의 계획 승인 대기로 중단하지 않았으며 정상 동작 테스트 완료 후 로컬 한국어 커밋으로 마무리한다. push/PR/merge는 수행하지 않는다.
+결정 배경은 [ADR-005](../history/ADR-005-map-fixture-boundary.md)를 따른다. 계획의 inline 실행과 사용자 승인된 커밋 범위를 유지했다. 별도의 계획 승인 대기로 중단하지 않았으며 정상 동작 테스트 완료 후 로컬 한국어 커밋으로 마무리한다. 후속 사용자 요청으로 feature를 push하고 [PR #4](https://github.com/sugkamoney/geupjido-frontend/pull/4)를 develop 대상으로 생성했다. 원격 CI는 [checks](https://github.com/sugkamoney/geupjido-frontend/pull/4/checks)에서 최신 head 상태를 확인한다. merge는 수행하지 않았고 이 workspace의 개발 서버를 종료했다. 후속은 [상위 workspace 인수인계](map-exploration-handoff.md)를 따른다.
 
 ## 클릭 카메라 전환
 
