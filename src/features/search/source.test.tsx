@@ -1,4 +1,10 @@
-import { act, render, screen, waitFor } from '@testing-library/react';
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { expect, it } from 'vitest';
 import { AppShell } from '../../components/app-shell/app-shell';
@@ -61,3 +67,38 @@ it('does not show a no-results claim on failure and retries the same query', asy
     await screen.findByRole('option', { name: '청담 강남구' }),
   ).toBeVisible();
 });
+
+it.each(['청', ''])(
+  'keeps a returned query pending after intermediate input %j until its new request completes',
+  async (intermediate) => {
+    const requests: {
+      query: string;
+      resolve: (groups: SearchGroup[]) => void;
+    }[] = [];
+    const source: SearchSource = {
+      search: (query) =>
+        new Promise((resolve) => requests.push({ query, resolve })),
+    };
+    render(<Harness source={source} />);
+    const field = screen.getByRole('combobox');
+    const change = async (value: string) => {
+      const count = requests.length;
+      fireEvent.change(field, { target: { value } });
+      if (value) await waitFor(() => expect(requests).toHaveLength(count + 1));
+    };
+    field.focus();
+    await change('압');
+    await act(async () => requests[0]!.resolve(matchCatalog(fixtures, '압')));
+    expect(screen.getByRole('option', { name: '압구정 강남구' })).toBeVisible();
+    await change(intermediate);
+    await change('압');
+    expect(screen.getByRole('status')).toHaveTextContent('검색 중이에요.');
+    expect(screen.queryByRole('option')).not.toBeInTheDocument();
+    fireEvent.keyDown(field, { key: 'Enter' });
+    expect(field).toHaveValue('압');
+    await act(async () => requests.at(-1)!.resolve([]));
+    expect(screen.getByRole('status')).toHaveTextContent(
+      "'압'에 맞는 권역 · 구 · 단지가 없습니다",
+    );
+  },
+);

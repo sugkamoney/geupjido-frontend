@@ -183,3 +183,20 @@ it('search source can select a zone and apartment absent from viewport data', as
   ).toHaveAttribute('aria-pressed', 'true');
   await waitFor(() => expect(adapter.getSnapshot().zoom).toBe(15));
 });
+
+it.each(['청담', '압구정', '압구정 검토 단지 1'])(
+  'restores search focus when choosing %s with a detail already open',
+  async (query) => {
+    const { user } = setup();
+    await user.click(screen.getByRole('button', { name: '권역 압구정' }));
+    const field = screen.getByRole('combobox');
+    await user.type(field, query);
+    await screen.findByRole('listbox');
+    await user.keyboard('{Enter}');
+    await screen.findByRole('heading', {
+      name: query.includes('검토') ? '압구정' : query,
+    });
+    await user.click(screen.getByRole('button', { name: '권역 상세 닫기' }));
+    expect(field).toHaveFocus();
+  },
+);

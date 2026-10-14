@@ -1,6 +1,6 @@
 # 검색 구조와 실행 계획
 
-> 상태: 검토용 구현·검증 완료, 실제 API/SDK 연결 대기 · 버전: 0.1 · 갱신: 2026-10-14
+> 상태: 검토용 구현·검증 완료, 실제 API/SDK 연결 대기 · 버전: 0.2 · 갱신: 2026-10-14
 
 제품 기준은 [검색 SDD](../product/specs/search/README.md)다. 이 문서가 inline 실행 계획과 검증 기록을 겸한다. 사용자 지정 workspace/feature/search를 유지하며 origin/feature/map-exploration 63c0c74에 stack한다. 시작 HEAD는 검색 핸드오프 문서 f82d708이다. push/PR/merge는 이번 요청 밖이다.
 
@@ -45,7 +45,7 @@ IME compositionend 직후 Enter/229, 공백을 포함한 복합 강조, 요청 �
 
 모델은 정규화된 UTF-16 단위마다 원문 code point의 start/end를 저장한다. 공백 제거·소문자 변환으로 길이가 바뀌어도 원문 span으로 굵게 표시한다. 구+권역은 매칭한 복합 원문 span을 구와 권역 이름에 분리 대응한다. 이름 길이는 원문 code point 수이며 동률 ID는 locale에 의존하지 않는 문자열 비교를 사용한다. ID는 그룹 내 고유해야 하고 단지는 권역 참조와 함께 공급되어야 한다. 유효한 권역 참조가 없는 fixture 단지는 검색에서 제외한다.
 
-SearchSource는 AbortSignal을 받고 입력마다 즉시 호출된다. 이전 effect의 signal을 취소하고 응답의 query/source/retry 식별을 확인하며, 취소를 무시하는 소스의 완료도 effect generation을 통해 배제한다. 로딩/조회 실패를 결과 없음과 구별하고 동일 query 재시도 때 입력 focus를 복원한다. 소스가 제공하는 후보는 전체 검색 범위여야 한다. 현재 보이는 지도 단지 응답을 전체 검색 catalog로 재사용해서는 안 된다. [지도 fixture 경계 ADR](../history/ADR-005-map-fixture-boundary.md)을 유지한다.
+SearchSource는 AbortSignal을 받고 입력마다 즉시 호출된다. 이전 effect의 signal을 취소하고 응답의 query/source/retry/입력 revision 식별을 확인하며, 취소를 무시하는 소스의 완료도 effect generation을 통해 배제한다. 로딩/조회 실패를 결과 없음과 구별하고 동일 query 재시도 때 입력 focus를 복원한다. 소스가 제공하는 후보는 전체 검색 범위여야 한다. 현재 보이는 지도 단지 응답을 전체 검색 catalog로 재사용해서는 안 된다. [지도 fixture 경계 ADR](../history/ADR-005-map-fixture-boundary.md)을 유지한다.
 
 실제 SDK/API smoke는 제품 endpoint/운영 adapter 미연결로 미실행이다. geometry·급지·지표는 fixture 검증이며 운영 데이터 정확성을 증명하지 않는다. 실제 iOS/Android 키보드·IME·VoiceOver와 주소창/회전은 물리 기기 접근이 없어 미실행이다. Playwright desktop Chromium/Pixel 7 Chromium/iPhone 13 WebKit engine 검사는 실제 Chrome/Edge/Safari 최신 안정 버전 보장을 대체하지 않는다. 최소 viewport·OS 정책은 대기다.
 
@@ -58,11 +58,11 @@ SearchSource는 AbortSignal을 받고 입력마다 즉시 호출된다. 이전 e
 | frozen 설치                | package/lock 변경 없음                                        | 통과, pnpm 11.13.0                   |
 | baseline check             | 기존 품질 gate/42 tests/build                                 | 통과                                 |
 | baseline browser           | 기존 지도·시트·UI 회귀                                        | 61 통과, 20 플랫폼 적용 제외         |
-| pnpm check                 | 토큰·타입·lint·format·55 tests/build                          | 통과, 55개 테스트와 운영 빌드 성공   |
-| 최종 browser               | 검색·기존 회귀                                                | 73 통과, 23 플랫폼 적용 제외, 실패 0 |
+| pnpm check                 | 토큰·타입·lint·format·60 tests/build                          | 통과, 60개 테스트와 운영 빌드 성공   |
+| 최종 browser               | 검색·기존 회귀                                                | 77 통과, 25 플랫폼 적용 제외, 실패 0 |
 | 정규화·강조·그룹·순서      | 5/3/6, 동률 ID, 원문 span 대응                                | 모델 5개 통과                        |
-| 검색 상호작용·화면 밖 선택 | IME/229·순환·Enter·Escape·pointerup·focus, 외부 zone/apt 보완 | 통합 6개 통과                        |
-| 비동기 소스                | 취소·stale 응답 배제·실패 재시도/focus                        | 2개 통과                             |
+| 검색 상호작용·화면 밖 선택 | IME/229·순환·Enter·Escape·pointerup·focus, 외부 zone/apt 보완 | 통합 9개 통과                        |
+| 비동기 소스                | 취소·stale 응답 배제·실패 재시도/focus                        | 4개 통과                             |
 
 ## 실패 보완과 독립 리뷰
 
@@ -72,16 +72,31 @@ SearchSource는 AbortSignal을 받고 입력마다 즉시 호출된다. 이전 e
 
 Figma 검색 단지 아이콘은 공통 기본 아이콘과 다른 text/tertiary 인스턴스다. 기존 도형 export geometry 검사 실패(기대16/실제10.3906px) 후 원본16×16 자산을 해당 슬롯에 적용했다. SVG path/색은 수정하지 않았다.
 
-requesting-code-review 스킬의 독립 읽기 전용 리뷰에서 재시도 버튼 제거 시 focus 유실을 확인했다. fixture가 실패하지 않아 리뷰는 Minor로 분류했지만 교체형 비동기 소스의 키보드 흐름을 끊으므로 Important로 재분류했다. keyboard retry→input focus assertion 실패 후 focusInput callback으로 수정했다. touch option focus 후보는 실제 tap E2E와 option.focus 후 pointerup 단위 검사에서 재현되지 않았다. 선택 완료 callback의 입력 focus가 origin을 복원하므로 추가 수정하지 않았다. 미수정 코드 결함은 남기지 않으며 실기기/실제 API·SDK/지원 최소값은 위 검증 경계로 유지한다.
+requesting-code-review 스킬의 독립 읽기 전용 리뷰에서 재시도 버튼 제거 시 focus 유실을 확인했다. fixture가 실패하지 않아 리뷰는 Minor로 분류했지만 교체형 비동기 소스의 키보드 흐름을 끊으므로 Important로 재분류했다. keyboard retry→input focus assertion 실패 후 focusInput callback으로 수정했다. touch option focus 후보는 실제 tap E2E와 option.focus 후 pointerup 단위 검사에서 재현되지 않았다. 선택 완료 callback의 입력 focus가 origin을 복원하므로 추가 수정하지 않았다. 초기 지적은 수정했고 추가 리뷰 보완은 아래 기록을 따른다. 실기기/실제 API·SDK/지원 최소값은 위 검증 경계로 유지한다.
 
 ## 시각 대조
 
 Figma 메인 594:21211 screenshot과 결과 594:21324 context, 결과 없음 594:21154 context/screenshot, Components 82:4 metadata와 595:6572/595:6566 context를 확인했다. 기존 SearchField·GradeChip·Pretendard·토큰과 340×44 field/340 결과 폭/8px gap/32px 제목/40px 행/6·10px padding/Float2 shadow를 대조한다. 긴 이름/글자 확대는 행 높이를 늘려 담고 coarse pointer는 44px로 터치 목표를 확보한다. 실제 지도 바탕·지표는 fixture와 달라 전체 화면 pixel 일치를 주장하지 않는다.
 
-모바일 확정 Figma 화면은 없어 기존 전체 검색과 모바일 참고 HTML/08-mobile 방향을 비교한다. 참고 HTML의 선택 후 query 초기화는 이번 05-search의 선택 이름 유지 정책을 따르므로 채택하지 않았다. 전체 입력/결과 스크롤·상단 닫기·지우기 방향을 재사용하고 390×320 짧은 화면을 검사한다. 실제 가상 키보드·VoiceOver는 별도 대기다. Figma SVG 원본은 [자산 안내](../../public/assets/README.md)에 기록한다. 데스크톱 결과/빈 결과와 Chromium/WebKit 390×320 전체 검색 PNG를 시각 확인했다. 새 검색 시나리오는 12 통과/3 제외이며 기존 61 통과/20 제외를 유지한다. 23건 제외는 desktop 전용 geometry/hover/resize/frame 또는 mobile/CDP 전용 입력 검사이므로 해당 project에서 실행하지 않은 것이다. WebKit은 tap/키보드와 scroll 접근을 확인했지만 물리적 swipe나 실기기 소프트 키보드를 대신하지 않는다.
+모바일 확정 Figma 화면은 없어 기존 전체 검색과 모바일 참고 HTML/08-mobile 방향을 비교한다. 참고 HTML의 선택 후 query 초기화는 이번 05-search의 선택 이름 유지 정책을 따르므로 채택하지 않았다. 전체 입력/결과 스크롤·상단 닫기·지우기 방향을 재사용하고 390×320 짧은 화면을 검사한다. 실제 가상 키보드·VoiceOver는 별도 대기다. Figma SVG 원본은 [자산 안내](../../public/assets/README.md)에 기록한다. 데스크톱 결과/빈 결과와 Chromium/WebKit 390×320 전체 검색 PNG를 시각 확인했다. 새 검색 시나리오는 16 통과/5 제외이며 기존 61 통과/20 제외를 유지한다. 25건 제외는 desktop 전용 geometry/hover/resize/frame 또는 mobile/CDP 전용 입력 검사이므로 해당 project에서 실행하지 않은 것이다. WebKit은 tap/키보드와 scroll 접근을 확인했지만 물리적 swipe나 실기기 소프트 키보드를 대신하지 않는다.
+
+## 추가 독립 리뷰와 보완 (2026-10-14)
+
+사용자 요청으로 requesting-code-review 스킬의 별도 리뷰어가 f82d708..f8b4168을 읽기 전용 검토했다. Critical/Minor는 없고 Important 3건을 확인했다.
+
+| 지적                                                               | 수정                                                                                                   | 재현·검증                                                                        |
+| ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------- |
+| 모바일 편집을 닫은 focused 입력에서 입력/방향키가 숨은 결과만 연다 | 입력 변경·결과 이동이 기존 전체 편집 상태도 열게 연결, IME가 소비한 키는 제외                          | Chromium trusted 입력 재현, Chromium/WebKit type/arrow 회귀 실패→수정            |
+| 이미 열린 상세에서 검색 선택해도 최초 지도 origin을 유지한다       | 실제 검색 선택 완료 callback에서 입력을 detailOrigin/interactionOrigin으로 기록, 단순 닫기는 별도 유지 | 다른 권역·같은 권역·단지 3개 단위 검사 실패→성공                                 |
+| A→B→A 또는 A→빈 값→A에서 완료된 옛 A 응답이 다시 유효해진다        | 입력 revision을 state/응답 식별과 effect dependency에 포함, 현재 요청 결과만 표시                      | deferred source의 두 roundtrip에서 옛 option/Enter 선택 배제·로딩 확인 실패→성공 |
+
+모바일 구 선택 후 재진입 확장 검사에서 후속 호환 mousedown이 사라진 결과 행 아래의 지도에 focus를 주는 경로도 재현했다. 결과 pointerdown 기본 동작을 취소해 호환 마우스 focus 전달을 차단하고 기존 touch-action:pan-y와 결과 스크롤 회귀로 스크롤 보존을 검증했다. 이 변경은 pointerup 1회 선택 및 키보드/보조기술의 click 활성화를 유지한다. 배치 전환에서도 전체 편집만 닫히고 결과/ARIA가 열린 상태로 남는 회귀를 추가 재현했다. 기존 useCompactLayout 전환 callback에서 결과도 닫도록 연결해 검색어와 focus 복구는 유지한다.
+
+리뷰가 판단을 유보한 실제 API·인증·운영 결과, NAVER SDK/좌표/실제 지표, 물리 기기 키보드/IME/VoiceOver, 모바일 지원 최소값은 기존 연동·실기기 대기 범위로 유지한다. 이번 보완은 CSS·자산을 바꾸지 않아 전체 Figma pixel 대조를 반복하지 않고 기존 geometry/자산·모바일 검사를 유지한다. 최종 check/build/E2E는 부모가 순차 실행했다. `pnpm check` 60개 테스트·타입·lint·format·토큰·운영 빌드와 전체 브라우저 77개가 통과했다(25개 플랫폼 적용 제외). 신규 5개 단위 회귀와 Chromium/WebKit 4개 재진입 회귀의 실패→성공을 확인했으며, 같은 브라우저 회귀 안에서 구 선택 뒤 focus·같은 권역 재선택·양방향 배치 전환도 검증했다. 확인된 Important 3건과 그 흐름에서 재현한 후속 경계를 모두 수정했고 남은 확정 Critical/Important/Minor는 없다. 반복 선택·source 변경·취소 무시·IME·터치 스크롤은 리뷰에서 제외하지 않았다.
 
 ## 변경 이력
 
-| 버전 | 날짜       | 변경                                                |
-| ---- | ---------- | --------------------------------------------------- |
-| 0.1  | 2026-10-14 | 검색 소스·UI·지도 연결 구현과 백엔드 경계·검증 기록 |
+| 버전 | 날짜       | 변경                                                              |
+| ---- | ---------- | ----------------------------------------------------------------- |
+| 0.2  | 2026-10-14 | 사용자 요청 추가 독립 리뷰와 검색 재진입·focus·응답 revision 보완 |
+| 0.1  | 2026-10-14 | 검색 소스·UI·지도 연결 구현과 백엔드 경계·검증 기록               |

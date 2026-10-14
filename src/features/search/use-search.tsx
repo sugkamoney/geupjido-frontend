@@ -12,6 +12,7 @@ type Response = {
   query: string;
   source: SearchSource;
   retry: number;
+  revision: number;
   groups?: SearchGroup[];
   failed?: boolean;
 };
@@ -19,7 +20,9 @@ export function useSearch(
   source: SearchSource,
   onSelect: (target: SearchTarget) => void,
 ): ShellSearch {
-  const [query, setQuery] = useState('');
+  const [{ query, revision }, setInput] = useState({ query: '', revision: 0 });
+  const setQuery = (query: string) =>
+    setInput((previous) => ({ query, revision: previous.revision + 1 }));
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState<number>();
   const [response, setResponse] = useState<Response>();
@@ -31,7 +34,8 @@ export function useSearch(
   const current =
     response?.query === query &&
     response.source === source &&
-    response.retry === retry
+    response.retry === retry &&
+    response.revision === revision
       ? response
       : undefined;
   const groups = current?.groups ?? [];
@@ -48,17 +52,17 @@ export function useSearch(
       .then(() => source.search(query, request.signal))
       .then((groups) => {
         if (valid && !request.signal.aborted)
-          setResponse({ query, source, retry, groups });
+          setResponse({ query, source, retry, revision, groups });
       })
       .catch(() => {
         if (valid && !request.signal.aborted)
-          setResponse({ query, source, retry, failed: true });
+          setResponse({ query, source, retry, revision, failed: true });
       });
     return () => {
       valid = false;
       request.abort();
     };
-  }, [query, source, retry]);
+  }, [query, source, retry, revision]);
   useEffect(() => {
     if (open && activeId)
       document.getElementById(activeId)?.scrollIntoView?.({ block: 'nearest' });

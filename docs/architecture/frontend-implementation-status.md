@@ -14,7 +14,7 @@
 
 `feature/search`는 지도 브랜치 `63c0c74`에 stack한 기존 Orca workspace에서 구현했다(시작 HEAD는 핸드오프 문서 `f82d708`). 검색은 공백/대소문자 정규화·부분 일치·그룹 제한·정렬·원문 강조와 IME/키보드·touch 선택을 제공한다. 모바일 전체 검색·기존 SearchField/토큰·지도 selection/motion/frame을 재사용한다. viewport와 무관한 교체형 비동기 SearchSource로 화면 밖 대상을 찾는다. source는 직접 작성한 frontend 계약이며 실제 제품 API나 backend 생성 타입이 아니다. 코드는 100% AI 작성·수정이다. SDD는 [검색](../product/specs/search/README.md)을 따른다.
 
-`pnpm check`(55개 테스트·품질 gate·빌드)와 desktop/mobile 브라우저 73개가 통과했다(23개 플랫폼 적용 제외). Figma 검색 컴포넌트·데스크톱 결과/빈 결과와 모바일 전체 검색을 시각 대조했다. 결과와 실제 API/SDK·실기기 IME/키보드/VoiceOver 미실행 사유는 [검증 기록](search.md)에 기록한다. 검색 feature push/PR/merge는 수행하지 않는다. 지도 PR #4 상태/base 판단은 향후 검색 PR 생성 직전에 다시 확인한다.
+`pnpm check`(60개 테스트·품질 gate·빌드)와 desktop/mobile 브라우저 77개가 통과했다(25개 플랫폼 적용 제외). 사용자 요청의 추가 독립 리뷰에서 확인한 Important 3건(모바일 재진입·이미 열린 상세의 focus 복귀·동일 검색어의 옛 응답 재활성화)을 회귀 실패→성공으로 수정했다. Figma 검색 컴포넌트·데스크톱 결과/빈 결과와 모바일 전체 검색을 시각 대조했다. 결과와 실제 API/SDK·실기기 IME/키보드/VoiceOver 미실행 사유는 [검증 기록](search.md)에 기록한다. 검색 feature push/PR/merge는 수행하지 않는다. 지도 PR #4 상태/base 판단은 향후 검색 PR 생성 직전에 다시 확인한다.
 
 ## 후속 연결과 정책
 

@@ -7,6 +7,7 @@ export function ShellSearchRow({
   compact,
   editing,
   onEditingChange,
+  onSelection,
   level,
   onLevelChange,
   inputRef,
@@ -15,6 +16,7 @@ export function ShellSearchRow({
   compact: boolean;
   editing: boolean;
   onEditingChange: (open: boolean) => void;
+  onSelection: () => void;
   level: DisplayLevel;
   onLevelChange: (level: DisplayLevel) => void;
   inputRef: RefObject<HTMLInputElement | null>;
@@ -28,6 +30,10 @@ export function ShellSearchRow({
     queueMicrotask(() => {
       suppressOpen.current = false;
     });
+  };
+  const finishSelection = () => {
+    onSelection();
+    close();
   };
   const keyboard = (event: KeyboardEvent<HTMLDivElement>) => {
     if (event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229)
@@ -84,10 +90,20 @@ export function ShellSearchRow({
           label="지역 검색"
           onKeyDown={(event) => {
             search.inputProps?.onKeyDown?.(event);
-            search.onKeyDown?.(event, close);
+            search.onKeyDown?.(event, finishSelection);
+            if (
+              compact &&
+              event.defaultPrevented &&
+              !event.isPropagationStopped() &&
+              (event.key === 'ArrowDown' || event.key === 'ArrowUp')
+            )
+              onEditingChange(true);
           }}
           value={search.value}
-          onValueChange={search.onValueChange}
+          onValueChange={(value) => {
+            search.onValueChange(value);
+            if (compact) onEditingChange(true);
+          }}
           onFocus={() => {
             if (!suppressOpen.current) {
               search.onResultsOpenChange?.(true);
@@ -129,7 +145,7 @@ export function ShellSearchRow({
         >
           <SearchContent
             results={search.results}
-            finishSelection={close}
+            finishSelection={finishSelection}
             focusInput={() => inputRef.current?.focus({ preventScroll: true })}
           />
         </div>

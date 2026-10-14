@@ -1,6 +1,6 @@
 # 앱 화면 틀 구조와 구현 계획
 
-> 상태: 기존 틀 develop 통합 완료 (PR #3 · d3971c5), 검색 슬롯 확장은 feature/search · 버전: 0.6 · 갱신: 2026-10-14
+> 상태: 기존 틀 develop 통합 완료 (PR #3 · d3971c5), 검색 슬롯 확장은 feature/search · 버전: 0.7 · 갱신: 2026-10-14
 
 제품 기준은 [앱 화면 틀 SDD](../product/specs/app-shell/README.md)다.
 `feature/app-shell` 구현은 PR #3으로 develop에 병합됐다. 기존 workspace와 개발 서버는 사용자 요청으로 정리했다. 지도 후속은 `feature/map-exploration`에서 진행한다.
@@ -183,12 +183,13 @@ click은 발생하지 않았다. 탭 처리를 합성 click에 맡긴 구현이 
 
 ## 검색 소비자 확장
 
-검색은 기존 슬롯의 optional resultsOpen/onResultsOpenChange/inputProps/onKeyDown과 결과 render callback을 소비한다. finishSelection은 모바일 편집을 닫고 입력으로 복귀시키며 focusInput은 편집을 유지한 채 재시도 focus만 복원한다. 기존 preview ReactNode 결과는 유지한다. frame은 실제 결과 열림으로도 재측정해 카메라 anchor를 갱신한다. 검색 pointer origin은 제거될 option이 아닌 입력으로 기록한다. [검색 구조](search.md)를 따른다.
+검색은 기존 슬롯의 optional resultsOpen/onResultsOpenChange/inputProps/onKeyDown과 결과 render callback을 소비한다. finishSelection은 모바일 편집을 닫고 입력으로 복귀시키며 focusInput은 편집을 유지한 채 재시도 focus만 복원한다. 기존 preview ReactNode 결과는 유지한다. frame은 실제 결과 열림으로도 재측정해 카메라 anchor를 갱신한다. 검색 pointer origin은 제거될 option이 아닌 입력으로 기록한다. 검색 실제 선택의 onSelection callback은 상세가 이미 열렸어도 복귀 origin을 입력으로 갱신한다. 모바일에서 닫힌 focused 입력의 새 입력·방향키는 편집을 다시 열고, IME가 소비한 키는 제외한다. 기존 배치 전환 callback은 편집과 결과 열림을 함께 닫아 숨은 결과와 ARIA 상태가 어긋나지 않게 한다. [검색 구조](search.md)를 따른다.
 
 ## 변경 이력
 
 | 버전 | 날짜 | 변경 |
 |---|---|---|
+| 0.7 | 2026-10-14 | 모바일 검색 재진입·실제 선택의 상세 focus origin 갱신 |
 | 0.6 | 2026-10-14 | 검색 interaction 슬롯·focus·결과 열림 frame 경계 기록 |
 | 0.1 | 2026-10-13 | 상태/슬롯/반응형 기술 경계와 구현 계획, baseline 기록 |
 | 0.2 | 2026-10-13 | 화면 틀 구현·독립 리뷰 보완·브라우저/시각 검증 결과와 후속 제한 기록 |

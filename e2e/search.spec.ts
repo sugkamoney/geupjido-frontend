@@ -254,3 +254,62 @@ test('desktop result geometry and original assets match Figma search slots', asy
   );
   await page.screenshot({ path: 'test-results/search-empty-desktop.png' });
 });
+
+for (const action of ['type', 'arrow'] as const) {
+  test(`mobile search reopens on ${action} after close and district selection`, async ({
+    page,
+    isMobile,
+  }) => {
+    test.skip(!isMobile, 'Full-screen re-entry is mobile-only');
+    await field(page).fill('청담');
+    await expect(page.getByRole('option')).toHaveCount(2);
+    await page.getByRole('button', { name: '검색 닫기' }).tap();
+    await expect(field(page)).toBeFocused();
+    await field(page).press(action === 'type' ? 'Backspace' : 'ArrowDown');
+    await expect(page.getByRole('dialog', { name: '지역 검색' })).toBeVisible();
+    await expect(page.getByRole('listbox')).toBeVisible();
+    await field(page).fill('성동구');
+    await page
+      .getByRole('option', { name: '성동구 권역 1곳', exact: true })
+      .tap();
+    await expect(page.getByRole('dialog', { name: '지역 검색' })).toHaveCount(
+      0,
+    );
+    await expect(field(page)).toBeFocused();
+    await field(page).press(action === 'type' ? 'Backspace' : 'ArrowDown');
+    await expect(page.getByRole('dialog', { name: '지역 검색' })).toBeVisible();
+    await expect(page.getByRole('listbox')).toBeVisible();
+    await field(page).fill('압구정');
+    await page
+      .getByRole('option', { name: '압구정 강남구', exact: true })
+      .tap();
+    await expect(
+      page.getByRole('heading', { name: '압구정', exact: true }),
+    ).toBeVisible();
+    await field(page).tap();
+    await expect(
+      page.getByRole('option', { name: '압구정 강남구', exact: true }),
+    ).toBeVisible();
+    await field(page).press('Enter');
+    await expect(page.getByRole('dialog', { name: '지역 검색' })).toHaveCount(
+      0,
+    );
+    await expect(field(page)).toBeFocused();
+    await field(page).press(action === 'type' ? 'Backspace' : 'ArrowDown');
+    await expect(page.getByRole('dialog', { name: '지역 검색' })).toBeVisible();
+    await expect(page.getByRole('listbox')).toBeVisible();
+    await page.getByRole('button', { name: '검색 닫기' }).tap();
+    await page.getByRole('button', { name: '권역 상세 닫기' }).tap();
+    await expect(field(page)).toBeFocused();
+    await page.setViewportSize({ width: 1280, height: 720 });
+    await expect(field(page)).toHaveAttribute('aria-expanded', 'false');
+    await page.setViewportSize({ width: 390, height: 844 });
+    await expect(page.getByRole('dialog', { name: '지역 검색' })).toHaveCount(
+      0,
+    );
+    await expect(field(page)).toHaveAttribute('aria-expanded', 'false');
+    await field(page).press(action === 'type' ? 'Backspace' : 'ArrowDown');
+    await expect(page.getByRole('dialog', { name: '지역 검색' })).toBeVisible();
+    await expect(page.getByRole('listbox')).toBeVisible();
+  });
+}

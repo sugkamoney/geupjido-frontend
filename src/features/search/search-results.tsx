@@ -32,8 +32,10 @@ function ResultRow({
       aria-label={`${result.name} ${result.context}`}
       title={`${result.name} ${result.context}`}
       onPointerDown={(event) => {
+        // Prevent compatibility mouse focus from falling through after touch selection.
+        // Native vertical panning remains governed by touch-action: pan-y.
+        event.preventDefault();
         if (event.pointerType === 'mouse') {
-          event.preventDefault();
           suppressClick.current = false;
           return;
         }
