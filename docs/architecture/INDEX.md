@@ -26,6 +26,6 @@
 
 - [앱 화면 틀 구조·구현 계획·검증](app-shell.md)
 
-- [지도 탐색 구조·잠정 UI 계약·검증](map-exploration.md)
+- [지도 탐색 구조·잠정 UI 계약·PR #4 리뷰 검증](map-exploration.md)
 
 - [검색 구조·소스 계약·검증](search.md)

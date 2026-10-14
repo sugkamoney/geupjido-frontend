@@ -1,4 +1,4 @@
-import { useRef, type RefObject } from 'react';
+import { useEffect, useRef, type RefObject } from 'react';
 import type { DOMAttributes } from 'react';
 import type { MapAdapter, Point } from './types';
 
@@ -16,6 +16,35 @@ export function useMapInput(
     tapPoint?: Point;
     touch: boolean;
   }>({ moved: false, lastTap: 0, distance: 0, touch: false });
+  useEffect(() => {
+    const cancelOutsidePointer = (event: PointerEvent) => {
+      // Removed capture owners deliver termination to document, outside the map tree.
+      if (event.target instanceof Node && root.current?.contains(event.target))
+        return;
+      if (!pointers.current.delete(event.pointerId)) return;
+      gesture.current.moved = true;
+      gesture.current.lastTap = 0;
+    };
+    const cancelAll = () => {
+      pointers.current.clear();
+      gesture.current.moved = true;
+      gesture.current.lastTap = 0;
+    };
+    const events = [
+      'pointerup',
+      'pointercancel',
+      'lostpointercapture',
+    ] as const;
+    for (const event of events)
+      document.addEventListener(event, cancelOutsidePointer, true);
+    window.addEventListener('blur', cancelAll);
+    return () => {
+      for (const event of events)
+        document.removeEventListener(event, cancelOutsidePointer, true);
+      window.removeEventListener('blur', cancelAll);
+      cancelAll();
+    };
+  }, [root]);
   const pixel = (x: number, y: number): Point => {
     const bounds = root.current?.getBoundingClientRect();
     return { x: x - (bounds?.left ?? 0), y: y - (bounds?.top ?? 0) };

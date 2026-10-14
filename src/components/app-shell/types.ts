@@ -11,6 +11,8 @@ export type ShellDetail = {
   location: string;
   summary?: ReactNode;
   expandedSummary?: ReactNode;
+  /** Fixed below the scrollable summary when the mobile sheet is collapsed. */
+  collapsedSelection?: ReactNode;
   actions?: ReactNode;
   listTitle?: ReactNode;
   content: ReactNode;

@@ -23,6 +23,11 @@ export function useZoneDetail(
     void Promise.resolve()
       .then(() => source.loadZone(id, request.signal))
       .then((value) => {
+        if (
+          value.zone.id !== id ||
+          value.apartments.some((item) => item.zoneId !== id)
+        )
+          throw new Error('Detail response does not match the selected zone');
         if (current && !request.signal.aborted)
           setResult({
             id,

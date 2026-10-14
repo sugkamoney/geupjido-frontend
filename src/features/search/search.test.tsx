@@ -200,3 +200,49 @@ it.each(['청담', '압구정', '압구정 검토 단지 1'])(
     expect(field).toHaveFocus();
   },
 );
+
+it('prefers the latest detail fields over a search candidate and merges them into selected map overlays', async () => {
+  const updatedZone = {
+    ...fixtures.zones[0]!,
+    grade: 5 as const,
+    value: '5.5',
+  };
+  const updatedApartment = {
+    ...fixtures.apartments[0]!,
+    name: '상세 최신 검색 단지',
+  };
+  const adapter = new FixtureMapAdapter();
+  adapter.setViewport(
+    { width: 1000, height: 800 },
+    { x: 0, y: 0, width: 1000, height: 800 },
+  );
+  adapter.center({ x: 0, y: 0 }, 13);
+  render(
+    <ExplorationPage
+      adapter={adapter}
+      source={{
+        loadZone: async () => ({
+          zone: updatedZone,
+          apartments: [updatedApartment],
+        }),
+      }}
+    />,
+  );
+  const user = userEvent.setup();
+  await user.type(screen.getByRole('combobox'), '압구정 검토 단지 1');
+  await screen.findByRole('listbox');
+  await user.keyboard('{Enter}');
+  expect(
+    await screen.findByRole('button', {
+      name: '목록 단지 상세 최신 검색 단지',
+    }),
+  ).toHaveAttribute('aria-pressed', 'true');
+  expect(
+    await screen.findByRole('button', {
+      name: '지도 단지 상세 최신 검색 단지',
+    }),
+  ).toHaveAttribute('aria-pressed', 'true');
+  expect(
+    document.querySelector('.ui-grade-card .ui-grade-value'),
+  ).toHaveTextContent('5.5');
+});

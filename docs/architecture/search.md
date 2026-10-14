@@ -1,8 +1,8 @@
 # 검색 구조와 실행 계획
 
-> 상태: 검토용 구현·검증 완료, 실제 API/SDK 연결 대기 · 버전: 0.2 · 갱신: 2026-10-14
+> 상태: 검토용 구현·검증 완료, 실제 API/SDK 연결 대기 · 버전: 0.3 · 갱신: 2026-10-14
 
-제품 기준은 [검색 SDD](../product/specs/search/README.md)다. 이 문서가 inline 실행 계획과 검증 기록을 겸한다. 사용자 지정 workspace/feature/search를 유지하며 origin/feature/map-exploration 63c0c74에 stack한다. 시작 HEAD는 검색 핸드오프 문서 f82d708이다. push/PR/merge는 이번 요청 밖이다.
+제품 기준은 [검색 SDD](../product/specs/search/README.md)다. 이 문서가 inline 실행 계획과 검증 기록을 겸한다. 사용자 지정 workspace/feature/search를 유지하며 origin/feature/map-exploration 63c0c74에 stack한다. 시작 HEAD는 검색 핸드오프 문서 f82d708이다. 최초 구현은 로컬 커밋까지였고 후속 사용자 요청으로 push·PR·merge까지 승인됐다. 지도 PR #4는 develop 1cf3013에 병합됐으므로 검색 PR 기준은 develop이다.
 
 ## 데이터·상태 경계
 
@@ -58,10 +58,10 @@ SearchSource는 AbortSignal을 받고 입력마다 즉시 호출된다. 이전 e
 | frozen 설치                | package/lock 변경 없음                                        | 통과, pnpm 11.13.0                   |
 | baseline check             | 기존 품질 gate/42 tests/build                                 | 통과                                 |
 | baseline browser           | 기존 지도·시트·UI 회귀                                        | 61 통과, 20 플랫폼 적용 제외         |
-| pnpm check                 | 토큰·타입·lint·format·60 tests/build                          | 통과, 60개 테스트와 운영 빌드 성공   |
-| 최종 browser               | 검색·기존 회귀                                                | 77 통과, 25 플랫폼 적용 제외, 실패 0 |
+| pnpm check                 | 토큰·타입·lint·format·67 tests/build                          | 통과, 67개 테스트와 운영 빌드 성공   |
+| 최종 browser               | 검색·기존 회귀                                                | 82 통과, 29 플랫폼 적용 제외, 실패 0 |
 | 정규화·강조·그룹·순서      | 5/3/6, 동률 ID, 원문 span 대응                                | 모델 5개 통과                        |
-| 검색 상호작용·화면 밖 선택 | IME/229·순환·Enter·Escape·pointerup·focus, 외부 zone/apt 보완 | 통합 9개 통과                        |
+| 검색 상호작용·화면 밖 선택 | IME/229·순환·Enter·Escape·pointerup·focus, 외부 zone/apt 보완 | 통합 10개 통과                       |
 | 비동기 소스                | 취소·stale 응답 배제·실패 재시도/focus                        | 4개 통과                             |
 
 ## 실패 보완과 독립 리뷰
@@ -78,7 +78,7 @@ requesting-code-review 스킬의 독립 읽기 전용 리뷰에서 재시도 버
 
 Figma 메인 594:21211 screenshot과 결과 594:21324 context, 결과 없음 594:21154 context/screenshot, Components 82:4 metadata와 595:6572/595:6566 context를 확인했다. 기존 SearchField·GradeChip·Pretendard·토큰과 340×44 field/340 결과 폭/8px gap/32px 제목/40px 행/6·10px padding/Float2 shadow를 대조한다. 긴 이름/글자 확대는 행 높이를 늘려 담고 coarse pointer는 44px로 터치 목표를 확보한다. 실제 지도 바탕·지표는 fixture와 달라 전체 화면 pixel 일치를 주장하지 않는다.
 
-모바일 확정 Figma 화면은 없어 기존 전체 검색과 모바일 참고 HTML/08-mobile 방향을 비교한다. 참고 HTML의 선택 후 query 초기화는 이번 05-search의 선택 이름 유지 정책을 따르므로 채택하지 않았다. 전체 입력/결과 스크롤·상단 닫기·지우기 방향을 재사용하고 390×320 짧은 화면을 검사한다. 실제 가상 키보드·VoiceOver는 별도 대기다. Figma SVG 원본은 [자산 안내](../../public/assets/README.md)에 기록한다. 데스크톱 결과/빈 결과와 Chromium/WebKit 390×320 전체 검색 PNG를 시각 확인했다. 새 검색 시나리오는 16 통과/5 제외이며 기존 61 통과/20 제외를 유지한다. 25건 제외는 desktop 전용 geometry/hover/resize/frame 또는 mobile/CDP 전용 입력 검사이므로 해당 project에서 실행하지 않은 것이다. WebKit은 tap/키보드와 scroll 접근을 확인했지만 물리적 swipe나 실기기 소프트 키보드를 대신하지 않는다.
+모바일 확정 Figma 화면은 없어 기존 전체 검색과 모바일 참고 HTML/08-mobile 방향을 비교한다. 참고 HTML의 선택 후 query 초기화는 이번 05-search의 선택 이름 유지 정책을 따르므로 채택하지 않았다. 전체 입력/결과 스크롤·상단 닫기·지우기 방향을 재사용하고 390×320 짧은 화면을 검사한다. 실제 가상 키보드·VoiceOver는 별도 대기다. Figma SVG 원본은 [자산 안내](../../public/assets/README.md)에 기록한다. 데스크톱 결과/빈 결과와 Chromium/WebKit 390×320 전체 검색 PNG를 시각 확인했다. 새 검색 시나리오는 16 통과/5 제외이며 지도 리뷰를 포함한 기존 66 통과/24 제외를 유지한다. 29건 제외는 desktop 전용 geometry/hover/resize/frame 또는 mobile/CDP 전용 입력 검사이므로 해당 project에서 실행하지 않은 것이다. WebKit은 tap/키보드와 scroll 접근을 확인했지만 물리적 swipe나 실기기 소프트 키보드를 대신하지 않는다.
 
 ## 추가 독립 리뷰와 보완 (2026-10-14)
 
@@ -94,9 +94,18 @@ Figma 메인 594:21211 screenshot과 결과 594:21324 context, 결과 없음 594
 
 리뷰가 판단을 유보한 실제 API·인증·운영 결과, NAVER SDK/좌표/실제 지표, 물리 기기 키보드/IME/VoiceOver, 모바일 지원 최소값은 기존 연동·실기기 대기 범위로 유지한다. 이번 보완은 CSS·자산을 바꾸지 않아 전체 Figma pixel 대조를 반복하지 않고 기존 geometry/자산·모바일 검사를 유지한다. 최종 check/build/E2E는 부모가 순차 실행했다. `pnpm check` 60개 테스트·타입·lint·format·토큰·운영 빌드와 전체 브라우저 77개가 통과했다(25개 플랫폼 적용 제외). 신규 5개 단위 회귀와 Chromium/WebKit 4개 재진입 회귀의 실패→성공을 확인했으며, 같은 브라우저 회귀 안에서 구 선택 뒤 focus·같은 권역 재선택·양방향 배치 전환도 검증했다. 확인된 Important 3건과 그 흐름에서 재현한 후속 경계를 모두 수정했고 남은 확정 Critical/Important/Minor는 없다. 반복 선택·source 변경·취소 무시·IME·터치 스크롤은 리뷰에서 제외하지 않았다.
 
+## 지도 PR 병합 이후 통합
+
+2026-10-14 PR #4의 MERGED 상태와 develop 1cf3013 반영을 확인했다. 검색 분기 후 추가된 지도 리뷰 수정 203c0b4를 검색 브랜치에 merge해 지도 commit이 검색 PR 변경으로 중복되지 않게 했다. 기존 지도 branch/PR은 변경하지 않았다.
+
+상세 source의 최신 zone/단지 값을 viewport/search 후보보다 우선하고, 지도 overlay에 ID별 최신 상세 목록과 viewport 밖 검색 선택을 함께 병합했다. 검색 후보가 이전 이름/급지라도 상세·핀은 최신 source 값으로 표시하는 통합 검사를 추가했다. 지도 최신값 회귀와 새 검색 회귀가 이전 해법에서 실패한 뒤 양쪽 정책을 보존한 해결에서 통과했다. 모바일 collapsedSelection·접힘 focus·짧은 화면 목록과 종료 gesture 보완도 유지한다. 새 통합 두 파일의 독립 읽기 전용 검토에서 확정 Critical/Important는 없었다. Frozen 설치와 pnpm check 67개·운영 빌드가 통과했고 이어 전체 브라우저 82개 통과/29개 플랫폼 적용 제외/실패 0을 확인했다.
+
+후속 사용자 요청의 범위는 feature/search push, develop 기준 PR 생성, 최신 CI 성공 확인 후 병합이다. 운영 API/SDK와 실기기 검증 대기 범위는 유지한다.
+
 ## 변경 이력
 
-| 버전 | 날짜       | 변경                                                              |
-| ---- | ---------- | ----------------------------------------------------------------- |
-| 0.2  | 2026-10-14 | 사용자 요청 추가 독립 리뷰와 검색 재진입·focus·응답 revision 보완 |
-| 0.1  | 2026-10-14 | 검색 소스·UI·지도 연결 구현과 백엔드 경계·검증 기록               |
+| 버전 | 날짜       | 변경                                                                 |
+| ---- | ---------- | -------------------------------------------------------------------- |
+| 0.3  | 2026-10-14 | 지도 PR #4 병합 후 develop 통합, 최신 상세와 검색 fallback 조합 검증 |
+| 0.2  | 2026-10-14 | 사용자 요청 추가 독립 리뷰와 검색 재진입·focus·응답 revision 보완    |
+| 0.1  | 2026-10-14 | 검색 소스·UI·지도 연결 구현과 백엔드 경계·검증 기록                  |

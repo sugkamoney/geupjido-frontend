@@ -39,6 +39,9 @@ export function MapTarget({
         )
           onActivate();
       }}
+      // Layout can place another control under the released finger in WebKit.
+      // Touch activation already happened on pointerup; suppress its retargeted click.
+      onTouchEnd={(event) => event.preventDefault()}
       onPointerCancel={() => {
         start.current = undefined;
       }}

@@ -1,10 +1,10 @@
 # 지도 탐색 구조·구현 계획·검증
 
-> 상태: 검토 UI 구현·검증 완료 · 실제 SDK/API 연동 대기 · 버전: 0.3 · 갱신: 2026-10-14
+> 상태: 검토 UI 구현·검증 완료 · 실제 SDK/API 연동 대기 · 버전: 0.4 · 갱신: 2026-10-14
 
 ## 목표와 구현 경계
 
-[제품 SDD](../product/specs/map-exploration/README.md)를 구현한다. React/TS·기존 AppShell·공통 UI·Figma 토큰을 재사용한다. 사용자 승인 범위에 따라 이 workspace에서 직접 구현·검증·커밋하며 push/PR/merge는 하지 않는다.
+[제품 SDD](../product/specs/map-exploration/README.md)를 구현한다. React/TS·기존 AppShell·공통 UI·Figma 토큰을 재사용한다. 사용자 승인 범위에 따라 구현·검증·커밋했고 후속 요청으로 push와 PR #4 생성을 진행했다. 코드리뷰 보완은 PR #4에 반영됐고, 2026-10-14 develop 1cf3013에 병합됐다. 검색은 이 기준에서 통합한다.
 
 ## 데이터와 어댑터
 
@@ -117,12 +117,34 @@ RAF와 같은 window.performance clock을 사용한다. 새 명령은 이전 RAF
 
 ## 검색 연결
 
-검색 선택도 selectLabel/selectApartment의 기존 zoneId/apartmentId를 사용한다. 구 fit padding/zoom 제한, 권역 max(현재,12.5), 단지 max(현재,15), motion interruption과 frame retarget을 유지한다. 검색 권역/단지가 viewport 데이터에 없으면 선택 대상만 overlay data에 보완한다. 선택 해제 시 추가된 overlay도 제거한다. [검색 구조·검증](search.md)을 따른다.
+검색 선택도 selectLabel/selectApartment의 기존 zoneId/apartmentId를 사용한다. 구 fit padding/zoom 제한, 권역 max(현재,12.5), 단지 max(현재,15), motion interruption과 frame retarget을 유지한다. 검색 권역/단지가 viewport 데이터에 없으면 선택 대상을 overlay data에 보완한다. 상세 source 값을 viewport/search 후보보다 우선하고 상세 단지 목록도 ID별 최신 값으로 병합한다. 선택 해제 시 추가된 overlay도 제거한다. [검색 구조·검증](search.md)을 따른다.
+
+## PR #4 전체 코드리뷰 보완
+
+2026-10-14 사용자 요청으로 requesting-code-review 스킬의 독립 읽기 전용 리뷰를 수행했다. 범위는 develop `d3971c5`부터 PR head `63c0c74`까지다. Critical 0건·Important 5건·Minor 0건을 보고받았고, 아래 5건을 실패로 재현한 뒤 수정했다.
+
+| 문제 | 수정과 기대 결과 | 실제 검증 |
+| --- | --- | --- |
+| drag 중 마커가 제거되면 pointer가 남음 | document capture에서 map 밖 pointerup/cancel/lostcapture와 blur 종료, unmount listener 정리 | 외부 종료 3개 단위 검사 및 desktop 실제 mouse 회귀 통과 |
+| 667×375 펼친 시트 목록 높이가 0 | 높이 500 이하 모바일에서 펼친 시트를 하단 탐색 위까지 늘리고 summary/list를 별도 scroll, 목록 최소 65px | 모바일 Chromium/WebKit에서 목록 마지막 18번째 행·고정 제목 접근 통과 |
+| 320×568 접힌 선택 행이 summary 아래에서 잘림 | `ShellDetail.collapsedSelection`을 scroll 밖 고정 영역에 렌더, 접혀 숨겨진 목록 focus를 선택 버튼으로 복귀 | 모바일 Chromium/WebKit에서 선택 행 전체 노출·Enter 선택 후 focus·재선택 확대 통과 |
+| source의 최신 권역·단지 표시값 무시 | 상세 값을 viewport 요약보다 우선하고 지도에도 ID별 최신 항목 병합. 다른 권역/소속의 응답은 error/retry 처리 | 최신 grade/value/stage·단지 이름 반영 및 다른 권역 응답 거부 단위 검사 통과 |
+| 긴 선택 이름의 충돌 영역이 150px로 잘림 | 선택 이름의 전체 추정 폭 예약, 일반 이름만 150px 제한 | 이웃 이름 겹침을 재현한 단위 검사 통과 |
+
+수정 후 같은 독립 리뷰어가 코드·회귀 검사·문서를 다시 읽고 Important 5건 해결 및 신규 Critical/Important 없음으로 확인했다. 재검토는 테스트를 다시 실행하지 않았으며 위 실행 결과는 부모가 직접 검증했다.
+
+좁은 모바일 회귀를 검증하면서 WebKit에서 pointerup 선택 직후 바뀐 배치의 시트 손잡이로 compatibility click이 전달되는 문제도 확인했다. MapTarget의 touchend 기본 동작을 막고 선택은 기존 pointerup 경로로 유지한다. 합성 click에 의존하지 않으며 키보드 click은 유지한다.
+
+최종 `pnpm check`: 토큰·타입·lint·format·단위 48개/8파일·production build 통과. 이어 순차 실행한 `pnpm test:e2e --workers=3`: 기존 UI/shell 회귀를 포함해 desktop Chromium·mobile Chromium/WebKit 66개 통과, 24개 플랫폼 적용 제외. 추가 테스트는 단위 6개, 브라우저 5개 통과/4개 제외다. 제외 24개는 기존 20개와 마커 제거 mouse 회귀의 모바일 2개, 작은 모바일 배치 회귀의 desktop 2개다.
+
+실제 SDK/API·CRS·geometry·급지/단계/시세 계산·검색/월드컵·실기기 gesture/VoiceOver·운영 대규모 성능과 전체 Figma pixel 승인은 이번 fixture 리뷰에서 판단할 수 없다. 운영 source/adapter 연결 및 정책 합의 시 별도 검증한다. 이번 수정은 지원 최소 viewport 정책을 확정하지 않는다.
+
 
 ## 변경 이력
 
 | 버전 | 날짜 | 변경 |
 | --- | --- | --- |
-| 0.3 | 2026-10-14 | viewport와 독립된 검색 선택·상세/목록/카메라 연결 |
+| 0.4 | 2026-10-14 | 지도 PR #4 develop 통합 후 검색 소스와 최신 상세 우선순위 조합 |
+| 0.3 | 2026-10-14 | 지도 PR #4 리뷰 5건 보완 (48/66/24 검증) 및 viewport 독립 검색 연결 (분기별 기록 통합) |
 | 0.2 | 2026-10-14 | 클릭 카메라 300ms 전환·중단/retarget·이동 효과 줄이기와 회귀 검증 추가 |
 | 0.1 | 2026-10-14 | 최신 MD/Figma에 따른 지도 adapter·선택/상세 구현, 실패→성공 검증과 독립 리뷰·연동 경계 기록 |

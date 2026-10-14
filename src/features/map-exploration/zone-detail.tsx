@@ -23,23 +23,21 @@ export function buildZoneDetail({
     title: zone.name,
     location: `서울 › ${zone.district ?? ''}`,
     summary: (
-      <>
-        <GradeCard
-          grade={zone.grade}
-          value={zone.value}
-          rankText="검토용 예시 · 실제 급지·순위 미연결"
-        />
-        {selected && (
-          <button
-            className="exploration-selected-summary"
-            onClick={() => onSelect(selected)}
-            aria-label={`선택 단지 확대 ${selected.name}`}
-          >
-            {selected.name}
-          </button>
-        )}
-      </>
+      <GradeCard
+        grade={zone.grade}
+        value={zone.value}
+        rankText="검토용 예시 · 실제 급지·순위 미연결"
+      />
     ),
+    collapsedSelection: selected ? (
+      <button
+        className="exploration-selected-summary"
+        onClick={() => onSelect(selected)}
+        aria-label={`선택 단지 확대 ${selected.name}`}
+      >
+        {selected.name}
+      </button>
+    ) : undefined,
     expandedSummary: zone.stage ? (
       <GradeStage stage={zone.stage} />
     ) : (

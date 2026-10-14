@@ -53,11 +53,12 @@ export function ExplorationPage({
         ? searchTarget.zone
         : undefined;
   const zone =
+    detail.value?.zone ??
     data.zones.find((x) => x.id === zoneId) ??
     (searchZone?.id === zoneId ? searchZone : undefined);
   const apartment =
-    data.apartments.find((x) => x.id === apartmentId) ??
     detail.value?.apartments.find((x) => x.id === apartmentId) ??
+    data.apartments.find((x) => x.id === apartmentId) ??
     (searchTarget?.kind === 'apartment' && searchTarget.item.id === apartmentId
       ? searchTarget.item
       : undefined);
@@ -94,14 +95,20 @@ export function ExplorationPage({
   });
   const mapData = {
     ...data,
-    zones:
-      zone && !data.zones.some((item) => item.id === zone.id)
-        ? [...data.zones, zone]
-        : data.zones,
-    apartments:
-      apartment && !data.apartments.some((item) => item.id === apartment.id)
-        ? [...data.apartments, apartment]
-        : data.apartments,
+    zones: [
+      ...new Map(
+        [...data.zones, ...(zone ? [zone] : [])].map((item) => [item.id, item]),
+      ).values(),
+    ],
+    apartments: [
+      ...new Map(
+        [
+          ...data.apartments,
+          ...(apartment ? [apartment] : []),
+          ...(detail.value?.apartments ?? []),
+        ].map((item) => [item.id, item]),
+      ).values(),
+    ],
   };
   return (
     <AppShell

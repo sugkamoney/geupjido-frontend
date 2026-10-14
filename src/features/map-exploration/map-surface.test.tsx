@@ -116,3 +116,21 @@ describe('map hover and input isolation', () => {
     expect(vi.getTimerCount()).toBe(0);
   });
 });
+
+it.each(['pointerup', 'pointercancel', 'lostpointercapture'])(
+  'cleans an active pointer when %s is delivered outside the map',
+  (type) => {
+    const { adapter, onLabel } = setup(),
+      root = screen.getByRole('region', { name: '검토용 지도' }),
+      label = screen.getByRole('button', { name: '권역 압구정' });
+    pointer(label, 'pointerdown', 100, 100, 'mouse');
+    pointer(root, 'pointermove', 120, 100, 'mouse');
+    pointer(document.body, type, 120, 100, 'mouse');
+    const stopped = adapter.getSnapshot();
+    pointer(root, 'pointermove', 180, 100, 'mouse');
+    expect(adapter.getSnapshot()).toBe(stopped);
+    pointer(label, 'pointerdown');
+    pointer(label, 'pointerup');
+    expect(onLabel).toHaveBeenCalledOnce();
+  },
+);

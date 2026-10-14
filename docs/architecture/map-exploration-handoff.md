@@ -1,6 +1,6 @@
 # 지도 탐색 작업 인수인계
 
-> 갱신: 2026-10-14 · 상태: PR #4 생성, 이 workspace 작업 종료 · 상위 workspace에서 재개
+> 갱신: 2026-10-14 · 상태: PR #4 리뷰 보완·검증 완료, 이 workspace 작업 종료 · 상위 workspace에서 재개
 
 ## 브랜치와 PR
 
@@ -20,10 +20,11 @@
 
 ## 검증과 문서
 
-- frozen install, `pnpm check` 통과: 단위 42개·8파일, production build 성공.
-- 전체 Playwright: desktop Chromium, mobile Chromium/WebKit 61개 통과, 플랫폼별 20개 제외.
+- frozen install, `pnpm check` 통과: 단위 48개·8파일, production build 성공.
+- 전체 Playwright: desktop Chromium, mobile Chromium/WebKit 66개 통과, 플랫폼별 24개 제외.
 - Figma context·원본 SVG metadata 및 desktop/mobile 렌더 대조.
 - 독립 리뷰의 pointer 종료/focus 복귀·직접 zoom 중단 결함을 실패→성공으로 수정.
+- PR #4 전체 리뷰 Important 5건을 재현·수정했다: 제거된 마커 pointer 정리, 짧은 모바일 목록, 접힌 선택 행·focus, 최신 상세 값, 긴 선택 이름 충돌. WebKit compatibility click 보완도 포함한다.
 - 원격 CI 최신 head의 상태는 [PR #4 checks](https://github.com/sugkamoney/geupjido-frontend/pull/4/checks)에서 확인한다.
 
 [지도 기술 구조·상세 검증](map-exploration.md), [통합 현황](frontend-implementation-status.md), [지도 SDD](../product/specs/map-exploration/README.md), [ADR-005](../history/ADR-005-map-fixture-boundary.md)를 먼저 읽는다. `pnpm check`와 브라우저 검사 모두 dist를 빌드하므로 순차 실행한다([QA-FE-006](../learning/frontend/q-and-a/QA-FE-006-preview-build-race.md)).
