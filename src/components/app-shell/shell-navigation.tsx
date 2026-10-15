@@ -10,7 +10,7 @@ export function ShellNavigation({
   panelOpen: boolean;
   review: boolean;
   onMap: () => void;
-  onWorldcup: () => void;
+  onWorldcup: (origin: HTMLElement) => void;
   mapButtonRef: RefObject<HTMLButtonElement | null>;
 }) {
   return (
@@ -31,7 +31,7 @@ export function ShellNavigation({
         <button
           className="shell-nav-item"
           aria-pressed={panelOpen}
-          onClick={onWorldcup}
+          onClick={(event) => onWorldcup(event.currentTarget)}
         >
           <span
             className="shell-nav-icon shell-nav-versus"

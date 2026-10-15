@@ -10,6 +10,7 @@ export function buildZoneDetail({
   retry,
   selected,
   onSelect,
+  onCompare,
 }: {
   zone: Zone;
   value?: ZoneDetail;
@@ -17,6 +18,7 @@ export function buildZoneDetail({
   retry: () => void;
   selected?: Apartment;
   onSelect: (item: Apartment) => void;
+  onCompare?: (origin: HTMLElement) => void;
 }): ShellDetail {
   return {
     id: zone.id,
@@ -46,7 +48,12 @@ export function buildZoneDetail({
       </p>
     ),
     actions: (
-      <Button variant="Outline" className="w-full" disabled>
+      <Button
+        variant="Outline"
+        className="w-full"
+        disabled={!onCompare}
+        onClick={(event) => onCompare?.(event.currentTarget)}
+      >
         이 권역 단지 비교하기
       </Button>
     ),

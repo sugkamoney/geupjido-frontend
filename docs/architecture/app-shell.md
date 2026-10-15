@@ -1,9 +1,9 @@
 # 앱 화면 틀 구조와 구현 계획
 
-> 상태: 기존 틀 develop 통합 완료 (PR #3 · d3971c5), 검색 슬롯 확장은 feature/search · 버전: 0.8 · 갱신: 2026-10-14
+> 상태: 기존 틀 develop 통합 완료 (PR #3 · d3971c5), 검색 슬롯 확장도 PR #5로 develop 통합 완료 · 버전: 0.9 · 갱신: 2026-10-15
 
 제품 기준은 [앱 화면 틀 SDD](../product/specs/app-shell/README.md)다.
-`feature/app-shell` 구현은 PR #3으로 develop에 병합됐다. 기존 workspace와 개발 서버는 사용자 요청으로 정리했다. 지도 후속은 `feature/map-exploration`에서 진행한다.
+`feature/app-shell` 구현은 PR #3으로 develop에 병합됐다. 기존 workspace와 개발 서버는 사용자 요청으로 정리했다. 지도 PR #4와 검색 PR #5도 develop에 통합됐다. 현재 월드컵 소비자는 `feature/worldcup`에서 연결한다.
 
 ## 구조와 상태 경계
 
@@ -189,10 +189,15 @@ click은 발생하지 않았다. 탭 처리를 합성 click에 맡긴 구현이 
 
 `ShellDetail.collapsedSelection`은 접힌 모바일에서 summary scroll 밖에 렌더하는 선택적 슬롯이다. 상세 목록이 시트 접힘으로 숨겨져 focus가 남으면 layout effect에서 선택 슬롯의 button/a, 없으면 닫기 버튼으로 복귀한다. 기존 자체 상태 소비자와 데스크톱 배치를 유지한다. 667×375 목록 마지막 행, 320×568 선택 행 전체 노출·키보드 focus를 Chromium/WebKit에서 확인했다. [리뷰 결과](map-exploration.md#pr-4-전체-코드리뷰-보완)를 따른다.
 
+## 월드컵 소비자 확장
+
+월드컵은 optional onWorldcupStart·timelineHeader·timelineVisible 슬롯을 추가한다. 데스크톱 시작 버튼과 모바일 직접 진입 callback에 trigger 요소를 전달해 모달 focus 복귀에 사용한다. timeline 표시 여부는 source가 정하고 기존 AppShell 검토 경로는 callback이 없으면 기존 준비 안내를 유지한다. [월드컵 구조](worldcup.md)를 따른다.
+
 ## 변경 이력
 
 | 버전 | 날짜 | 변경 |
 |---|---|---|
+| 0.9 | 2026-10-15 | 월드컵 시작·타임라인 슬롯과 모바일 직접 진입 연결 |
 | 0.8 | 2026-10-14 | develop 지도 리뷰 보완과 검색 슬롯 통합 |
 | 0.7 | 2026-10-14 | 모바일 검색 재진입·실제 선택의 상세 focus origin 갱신 |
 | 0.6 | 2026-10-14 | 검색 슬롯 확장 및 지도 PR #4 짧은 목록·고정 선택 슬롯·접힘 focus 보완 (분기별 기록 통합) |

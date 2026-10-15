@@ -13,3 +13,5 @@
 - [디자인 핸드오프 기준](design-handoff.md)
 
 - [검색 SDD](specs/search/README.md) · 권역/구/단지 검색, 키보드·모바일 선택
+
+- [월드컵 SDD](specs/worldcup/README.md) · 설명·대진·누적 선택·데스크톱 타임라인

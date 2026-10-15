@@ -4,6 +4,8 @@
 
 제품 기준은 [검색 SDD](../product/specs/search/README.md)다. 이 문서가 inline 실행 계획과 검증 기록을 겸한다. 사용자 지정 workspace/feature/search를 유지하며 origin/feature/map-exploration 63c0c74에 stack한다. 시작 HEAD는 검색 핸드오프 문서 f82d708이다. 최초 구현은 로컬 커밋까지였고 후속 사용자 요청으로 push·PR·merge까지 승인됐다. 지도 PR #4는 develop 1cf3013에 병합됐으므로 검색 PR 기준은 develop이다.
 
+2026-10-15 현재 검색 PR #5는 develop `49f9e5b`에 병합됐고 검색 workspace는 정리됐다. 위 stack·승인 기록은 당시 작업 경로이며 현재 후속 구현은 feature/worldcup이다.
+
 ## 데이터·상태 경계
 
 백엔드 develop dfb7cc4282979232f616113dd25704ee0b38b405를 2026-10-14 읽기 전용 tree 검사했다. OpenApiConfig는 있으나 공개 product/search controller는 없다. SearchSource.search(query, signal)는 viewport와 무관한 전체 후보에서 그룹 결과를 반환하는 교체 가능한 비동기 프런트엔드 계약이다. backend-generated OpenAPI가 아니다. fixture 소스는 기존 지도 전체 fixture를 사용하며 실제 가격/급지/좌표로 주장하지 않는다.

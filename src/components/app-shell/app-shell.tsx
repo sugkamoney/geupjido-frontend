@@ -13,6 +13,9 @@ import type { AppShellProps, DisplayLevel } from './types';
 export function AppShell({
   map,
   timeline,
+  timelineHeader,
+  timelineVisible = true,
+  onWorldcupStart,
   detail,
   onDetailClose,
   search,
@@ -136,8 +139,9 @@ export function AppShell({
     handleRef.current?.focus({ preventScroll: true });
     setPanelOpen((open) => !open);
   };
-  const worldcup = () => {
-    if (compact) setMobileNotice(true);
+  const worldcup = (origin: HTMLElement) => {
+    if (compact && onWorldcupStart) onWorldcupStart(origin);
+    else if (compact) setMobileNotice(true);
     else setPanelOpen(true);
   };
 
@@ -180,7 +184,13 @@ export function AppShell({
           onWorldcup={worldcup}
         />
         {!compact && panelOpen && (
-          <TimelinePanel panelRef={panelRef} content={timeline} />
+          <TimelinePanel
+            panelRef={panelRef}
+            content={timeline}
+            header={timelineHeader}
+            visible={timelineVisible}
+            onStart={onWorldcupStart}
+          />
         )}
         {!compact && (
           <PanelHandle

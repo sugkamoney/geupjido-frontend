@@ -21,6 +21,7 @@
 - [앱 화면 틀 작업 인수인계](app-shell-handoff.md)
 - [지도 탐색 작업 인수인계](map-exploration-handoff.md)
 - [검색 작업 인수인계](search-handoff.md)
+- [월드컵 작업 인수인계](worldcup-handoff.md)
 - [디자인 시스템 코드 기반과 사용법](design-system.md)
 - [PR 작성 규칙](pull-request-convention.md)
 
@@ -29,3 +30,5 @@
 - [지도 탐색 구조·잠정 UI 계약·PR #4 리뷰 검증](map-exploration.md)
 
 - [검색 구조·소스 계약·검증](search.md)
+
+- [월드컵 구조·UI source·검증](worldcup.md)
