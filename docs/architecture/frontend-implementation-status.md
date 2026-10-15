@@ -1,6 +1,6 @@
 # 프론트엔드 기반 구축 현황과 다음 단계
 
-> 상태: 디자인 시스템·AppShell develop 통합 완료, 지도 탐색·검색 fixture 구현·검증 완료 · 기준 날짜: 2026-10-14
+> 상태: 초기화·디자인 시스템·AppShell·지도·검색 develop 통합 완료, 월드컵 검토 UI 구현·검증 완료 · 기준 날짜: 2026-10-15
 
 ## 현재 구현
 
@@ -16,13 +16,17 @@
 
 `pnpm check`(67개 테스트·품질 gate·빌드)와 desktop/mobile 브라우저 82개가 통과했다(29개 플랫폼 적용 제외). 지도 PR #4 리뷰 수정 통합 후 검색 후보보다 최신 상세 값을 우선하는 통합 회귀도 검증했다. 사용자 요청의 추가 독립 리뷰에서 확인한 Important 3건(모바일 재진입·이미 열린 상세의 focus 복귀·동일 검색어의 옛 응답 재활성화)을 회귀 실패→성공으로 수정했다. Figma 검색 컴포넌트·데스크톱 결과/빈 결과와 모바일 전체 검색을 시각 대조했다. 결과와 실제 API/SDK·실기기 IME/키보드/VoiceOver 미실행 사유는 [검증 기록](search.md)에 기록한다. 후속 사용자 요청으로 검색 feature push·PR·merge까지 승인됐다. 지도 PR #4는 develop 1cf3013에 병합된 것을 확인했고, 추가 지도 리뷰 수정 203c0b4까지 검색 브랜치에 통합해 검색 PR base를 develop으로 정리했다.
 
+## 월드컵 구현
+
+검색 PR #5는 develop `49f9e5b`에 병합됐고 이 기준과 인수인계 `694d98e`에서 현재 `feature/worldcup`에서 검토 UI를 구현·검증했다. 기존 검색 workspace는 정리됐으며 현재 지정된 workspace만 변경한다. 월드컵 설명·권역/단지 대진·선택/넘김·누적 My Picks·데스크톱 타임라인을 구현한다. 제품 기준은 [월드컵 SDD](../product/specs/worldcup/README.md), source·모달·검증은 [월드컵 구조](worldcup.md)다. 실제 투표/대진/비율 공개/급지 갱신 정책은 미확정이며 API·NAVER 연결은 없다. `VITEST_MAX_WORKERS=2 pnpm check`는 78개 단위 테스트와 품질 gate·운영 빌드를 통과했고, 이어 순차 실행한 브라우저는 108개 통과/33개 플랫폼 제외다. 데스크톱 Chromium·모바일 Chromium/WebKit 검증과 실제 기기/API 한계는 구조 문서에 기록했다. 코드 작업은 100% AI다. 이번 요청은 커밋까지이며 push·PR·merge는 포함하지 않는다.
+
 ## 후속 연결과 정책
 
-공개 지도/상세 API 및 백엔드 생성 OpenAPI, 실제 geometry CRS와 지점 대조, NAVER 키/GL 스타일 metadata를 확보한 뒤 운영 adapter·source와 실제 SDK smoke를 이어 연결한다. 행정동 라벨·아파트 POI 숨김과 실제 fractional zoom은 미검증이다. 검색 알고리즘·결과·지도 선택 연결은 [검색 구조](search.md)에서 구현했다. 실제 검색 API 연결과 월드컵 투표/대진/집계는 후속 작업이다.
+공개 지도/상세 API 및 백엔드 생성 OpenAPI, 실제 geometry CRS와 지점 대조, NAVER 키/GL 스타일 metadata를 확보한 뒤 운영 adapter·source와 실제 SDK smoke를 이어 연결한다. 행정동 라벨·아파트 POI 숨김과 실제 fractional zoom은 미검증이다. 검색 알고리즘·결과·지도 선택 연결은 [검색 구조](search.md)에서 구현했다. 실제 검색 API와 월드컵 투표/대진/집계 연결은 후속 작업이다. 월드컵 UI는 위 현재 작업에서 진행한다.
 
 모바일 웹은 지원한다. 기존 breakpoint·시트 높이·좁은 desktop 배치는 검토 가정이다. 실제 iOS/Android gesture·키보드/주소창·접근성 및 최소 viewport/OS는 추가 검토한다. 미정 급지/단계/투표 정책을 임의 계산하지 않는다.
 
-후속 사용자 요청으로 브랜치를 push하고 develop 대상 [PR #4](https://github.com/sugkamoney/geupjido-frontend/pull/4)를 생성했다. 이 workspace의 검토 서버(5174)는 종료했으며 후속 작업은 상위 workspace에서 이어간다. PR #4는 2026-10-14 develop 1cf3013에 병합됐다. 검색 PR의 기준은 develop이다. 최신 CI는 [PR checks](https://github.com/sugkamoney/geupjido-frontend/pull/4/checks), 재개 순서는 [인수인계](map-exploration-handoff.md)를 따른다.
+후속 사용자 요청으로 브랜치를 push하고 develop 대상 [PR #4](https://github.com/sugkamoney/geupjido-frontend/pull/4)를 생성했다. 이 workspace의 검토 서버(5174)는 종료했으며 후속 작업은 상위 workspace에서 이어간다. PR #4는 2026-10-14 develop 1cf3013에 병합됐다. 검색 PR #5는 develop 49f9e5b에 병합됐다. 당시 지도 CI는 [PR checks](https://github.com/sugkamoney/geupjido-frontend/pull/4/checks), 재개 순서는 [인수인계](map-exploration-handoff.md)를 따른다.
 
 ## 9월에 확정한 기반 기준
 

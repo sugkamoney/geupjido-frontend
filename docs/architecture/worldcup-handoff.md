@@ -1,6 +1,6 @@
 # 월드컵 작업 인수인계
 
-> 날짜: 2026-10-15 · 상태: 새 Codex 세션에 구현 작업 전달
+> 날짜: 2026-10-15 · 상태: feature/worldcup 검토 UI 구현·검증 완료, 최종 결과는 worldcup.md 참조
 
 ## 환경
 
@@ -48,3 +48,7 @@ frozen 설치·기존 baseline 이후 의미 있는 상태 전환·중복 입력
 이유·모바일 제약을 기록한다. 코드 작성·수정은 100% AI로 진행하고 한국어 규칙으로
 커밋한 뒤 보고한다. 이번 착수 전달은 feature push·PR·merge를 포함하지 않는다.
 후속 PR에는 기본 템플릿과 [PR 규칙](pull-request-convention.md)을 적용한다.
+
+## 현재 작업 연결
+
+[월드컵 구조·검증 기록](worldcup.md)과 [제품 SDD](../product/specs/worldcup/README.md)가 이번 세션의 현재 기준이다. 초기화·디자인 시스템·화면 틀·지도·검색은 develop에 통합됐고 이 문서의 착수 문구는 당시 전달 기록이다. 실제 NAVER·제품 API/집계 정책은 여전히 미연결·미확정이다.

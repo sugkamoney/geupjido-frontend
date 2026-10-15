@@ -26,3 +26,5 @@
 - [_templates/requirements.template.md](_templates/requirements.template.md)
 - [_templates/acceptance-criteria.template.md](_templates/acceptance-criteria.template.md)
 - [_templates/decisions.template.md](_templates/decisions.template.md)
+
+- [월드컵](worldcup/README.md) · 검토 UI 구현·검증 완료, 실제 투표 API/정책 대기 · v0.1

@@ -4,7 +4,7 @@
 
 ## 목표와 구현 경계
 
-[제품 SDD](../product/specs/map-exploration/README.md)를 구현한다. React/TS·기존 AppShell·공통 UI·Figma 토큰을 재사용한다. 사용자 승인 범위에 따라 구현·검증·커밋했고 후속 요청으로 push와 PR #4 생성을 진행했다. 코드리뷰 보완은 PR #4에 반영됐고, 2026-10-14 develop 1cf3013에 병합됐다. 검색은 이 기준에서 통합한다.
+[제품 SDD](../product/specs/map-exploration/README.md)를 구현한다. React/TS·기존 AppShell·공통 UI·Figma 토큰을 재사용한다. 사용자 승인 범위에 따라 구현·검증·커밋했고 후속 요청으로 push와 PR #4 생성을 진행했다. 코드리뷰 보완은 PR #4에 반영됐고, 2026-10-14 develop 1cf3013에 병합됐다. 검색은 이 기준에서 구현한 PR #5로 develop `49f9e5b`에 통합됐다. 현재 월드컵은 기존 지도 선택 경계로 연결한다.
 
 ## 데이터와 어댑터
 
