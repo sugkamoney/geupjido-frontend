@@ -81,3 +81,7 @@ Figma W-01/W-02/W-03/W-03b/W-04/W-05/W-06/W-08 context·스크린샷과 timeline
 | 0.1 | 2026-10-15 | 월드컵 source/모달/누적/타임라인 구현, SDD·검증과 미확정 정책 경계 기록 |
 
 검증에 사용한 이 workspace의 dev/preview 서버(5175)는 시각 대조 후 종료했다. Playwright preview(4175)도 검사 종료 시 정리됐으며 다른 workspace의 서버는 변경하지 않았다.
+
+## PR 진행 상태
+
+2026-10-15 후속 사용자 요청으로 feature push와 develop 대상 [PR #6](https://github.com/sugkamoney/geupjido-frontend/pull/6) 생성을 진행했다. 최초 커밋 한정 범위는 해당 후속 요청으로 확장됐다. 검토 서버(5175)는 종료했고 workspace와 브랜치는 유지한다. merge는 수행하지 않았다. PR 본문에는 기존 78개 단위/108개 브라우저 검증과 실제 기기·API 미실행 한계를 기록했다.

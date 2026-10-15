@@ -87,3 +87,7 @@
    개발 `/api` 프록시, 운영 동일 origin `/api`, SPA deep-link fallback을 설정한다.
    지도 SDK 인증, 경계 캐시, 단지 요청 취소·오래된 응답 차단, 최소 desktop viewport를
    브라우저 테스트와 Safari smoke test로 검증한다.
+
+## PR 진행 상태
+
+2026-10-15 후속 사용자 요청으로 feature push와 develop 대상 [PR #6](https://github.com/sugkamoney/geupjido-frontend/pull/6) 생성을 진행했다. 최초 커밋 한정 범위는 해당 후속 요청으로 확장됐다. 검토 서버(5175)는 종료했고 workspace와 브랜치는 유지한다. merge는 수행하지 않았다. PR 본문에는 기존 78개 단위/108개 브라우저 검증과 실제 기기·API 미실행 한계를 기록했다.
