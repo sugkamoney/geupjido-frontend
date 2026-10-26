@@ -40,6 +40,9 @@ export type ShellSearch = {
 export type AppShellProps = {
   map: (context: { frame: MapFrame; level: DisplayLevel }) => ReactNode;
   timeline?: ReactNode;
+  timelineHeader?: ReactNode;
+  timelineVisible?: boolean;
+  onWorldcupStart?: (origin: HTMLElement) => void;
   detail?: ShellDetail;
   onDetailClose?: () => void;
   search: ShellSearch;

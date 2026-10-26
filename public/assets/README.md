@@ -66,3 +66,7 @@ root width/height와 path를 보존한다. `MapSurface`의 해당 slot에서 사
 ## 검색 결과 자산
 
 `icons/search-apartment.svg`는 Figma Search/Result Row `595:6566`의 원본16×16 단지 아이콘이다. 검색 인스턴스는 text/tertiary (#9AA0A8) override를 사용하므로 text/primary 기본 `apartment-16.svg`와 구분한다. 원본 width/height를 유지하고 30×20 슬롯의 가운데에 놓는다. 검색창 search-field/close-field와 GradeChip은 기존 공통 자산·토큰을 재사용한다.
+
+## 월드컵 설명 자산
+
+`images/worldcup-explanation.png`는 W-01 `594:20785` image fill 원본(2172×724)이다. 기존 타임라인 그림과 다른 그림이므로 추가했다. 220×181 overflow wrapper 안에서 원본 context대로 width 245.7%, left −120.02%, height 100%로 파란 지도 집만 표시한다. raster를 다시 그리거나 자르지 않았다. 대진 띠는 기존 house-screen.png를 screen 합성하고 버튼·타임라인 왕관도 기존 crown.png를 재사용한다.

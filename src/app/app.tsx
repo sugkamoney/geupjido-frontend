@@ -1,3 +1,4 @@
+import { WorldcupReviewPage } from '../features/worldcup/review-page';
 import { Link, Route, Routes } from 'react-router';
 import { DesignSystemPage } from './design-system-page';
 import { ExplorationPage } from '../features/map-exploration/exploration-page';
@@ -8,6 +9,7 @@ export function App() {
     <Routes>
       <Route path="/" element={<ExplorationPage />} />
       <Route path="/map-exploration" element={<ExplorationPage />} />
+      <Route path="/worldcup" element={<WorldcupReviewPage />} />
       <Route path="/app-shell" element={<ShellPage review />} />
       <Route path="/design-system" element={<DesignSystemPage />} />
       <Route path="*" element={<NotFoundPage />} />

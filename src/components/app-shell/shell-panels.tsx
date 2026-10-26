@@ -1,14 +1,21 @@
-import { useRef, type RefObject, type ReactNode } from 'react';
+import { useRef, useState, type RefObject, type ReactNode } from 'react';
 import { Button, CloseButton } from '../ui';
 import type { ShellDetail } from './types';
 
 export function TimelinePanel({
   content,
   panelRef,
+  header,
+  visible = true,
+  onStart,
 }: {
+  header?: ReactNode;
+  visible?: boolean;
+  onStart?: (origin: HTMLElement) => void;
   content?: ReactNode;
   panelRef: RefObject<HTMLElement | null>;
 }) {
+  const [scrolled, setScrolled] = useState(false);
   return (
     <section
       ref={panelRef}
@@ -16,6 +23,7 @@ export function TimelinePanel({
       className="shell-left-panel"
       aria-label="월드컵 타임라인 패널"
       data-layout-region
+      data-timeline-scrolled={scrolled}
     >
       <header className="shell-timeline-intro">
         <h2>아파트 월드컵</h2>
@@ -25,17 +33,34 @@ export function TimelinePanel({
           고른 결과가 모여 민심급지가 만들어집니다!
         </p>
         <img src="/assets/images/worldcup-intro.png" alt="" />
-        <Button variant="Gradient" className="w-full" disabled>
+        <Button
+          variant="Gradient"
+          className="w-full"
+          disabled={!onStart}
+          onClick={(event) => onStart?.(event.currentTarget)}
+        >
           월드컵 시작
         </Button>
       </header>
-      <header className="shell-list-title shell-timeline-title">
-        <h3>월드컵 타임라인</h3>
-        <p>다른 사람들은 어떤 지역을 골랐는지 확인해 보세요.</p>
-      </header>
-      <div className="shell-panel-list" tabIndex={0} aria-label="타임라인 목록">
-        {content ?? <p className="shell-empty">월드컵을 준비하고 있어요.</p>}
-      </div>
+      {visible && (
+        <>
+          <header className="shell-list-title shell-timeline-title">
+            <h3>월드컵 타임라인</h3>
+            <p>다른 사람들은 어떤 지역을 골랐는지 확인해 보세요.</p>
+            {header}
+          </header>
+          <div
+            className="shell-panel-list"
+            tabIndex={0}
+            aria-label="타임라인 목록"
+            onScroll={(event) => setScrolled(event.currentTarget.scrollTop > 0)}
+          >
+            {content ?? (
+              <p className="shell-empty">월드컵을 준비하고 있어요.</p>
+            )}
+          </div>
+        </>
+      )}
     </section>
   );
 }
