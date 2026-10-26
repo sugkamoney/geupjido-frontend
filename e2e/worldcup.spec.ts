@@ -104,6 +104,17 @@ test('pending close/reopen cancels old success and failure retry commits once', 
   await page.waitForTimeout(5100);
   await expect(page.getByText('아직 담긴 선택이 없어요')).toBeVisible();
   await page.getByRole('button', { name: '월드컵 닫기' }).click();
+  await open(page, isMobile, 'pending');
+  await page.locator('.worldcup-card button').first().click();
+  await expect(page.getByText('선택을 보내고 있어요.')).toBeVisible();
+  const close = page.getByRole('button', { name: '월드컵 닫기' });
+  await close.focus();
+  await expect(page.getByText('1개의 선택이 담겼어요')).toBeVisible({
+    timeout: 7000,
+  });
+  await expect(close).toBeFocused();
+  await page.keyboard.press('Enter');
+  await expect(page.getByRole('dialog')).toHaveCount(0);
   await open(page, isMobile, 'failure');
   await page.locator('.worldcup-card button').first().click();
   await expect(page.getByRole('alert')).toContainText('선택을 보내지 못했어요');

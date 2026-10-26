@@ -147,9 +147,21 @@ function Play({
     onSuccess,
     reduced,
   );
-  // Stable heading focus survives disabled actions and replacement of the next match.
+  // Move focus to the stable heading on entry or when the focused action was disabled or removed.
+  const entered = useRef(false);
   useEffect(() => {
-    heading.current?.focus({ preventScroll: true });
+    const node = heading.current;
+    if (!node) return;
+    const active = document.activeElement as HTMLElement | null;
+    const valid =
+      entered.current &&
+      !!active &&
+      active.isConnected &&
+      !!node.closest('dialog')?.contains(active) &&
+      !active.matches(':disabled') &&
+      active.getClientRects().length > 0;
+    entered.current = true;
+    if (!valid) node.focus({ preventScroll: true });
   }, [heading, state.phase]);
   const revealed = state.phase === 'feedback';
   const blocked = state.phase !== 'ready';

@@ -1,6 +1,6 @@
 # 월드컵 구조·구현 계획
 
-> 상태: 검토 UI 구현·검증 완료, 실제 API 연결 대기 · 버전: 0.1 · 갱신: 2026-10-15
+> 상태: 검토 UI 구현·검증 완료, 실제 API 연결 대기 · 버전: 0.2 · 갱신: 2026-10-27
 
 제품 기준은 [월드컵 SDD](../product/specs/worldcup/README.md)다. 현재 workspace에서 직접 구현하며 추가 worktree·push·PR·merge는 하지 않는다. 코드 작성/수정은 100% AI다.
 
@@ -10,7 +10,7 @@ WorldcupSource는 loadMatch(scope, cursor, signal), submit(match, choice, signal
 
 지도 선택과 월드컵 scope는 분리한다. 상세 진입 scope는 해당 zone 객체이며 source도 권역 제한을 지킨다. 타임라인은 기존 selectLabel 경계로 연결한다. AppShell에는 시작 callback과 타임라인 header slot만 확장하고 기존 sheet pointerup·검색 focus·지도 frame 계산은 유지한다.
 
-모달은 native dialog.showModal로 top layer·배경 inert·focus trap을 사용한다. body overflow를 복원하고 닫힌 trigger가 숨겨졌으면 지도 메뉴로 focus를 돌린다. IME composition 중 Escape는 취소하지 않는다. 비동기 요청은 AbortController와 세션 생존 flag로 응답을 차단한다. submit 동기 잠금으로 bubbling/반복 입력을 차단하며 성공 뒤에만 누적 callback을 호출한다. 진행/피드백 timer는 분리해 다음 대진 뒤에도 2.4초 피드백을 유지하고 teardown에서 모두 취소한다.
+모달은 native dialog.showModal로 top layer·배경 inert·focus trap을 사용한다. body overflow를 복원하고 닫힌 trigger가 숨겨졌으면 지도 메뉴로 focus를 돌린다. IME composition 중 Escape는 취소하지 않는다. 진행 화면 제목 focus는 최초 진입이나 기존 focus 대상이 비활성화·제거·dialog 밖일 때만 옮기고, 닫기 버튼처럼 유효한 대상의 focus는 비동기 상태 변경 뒤에도 유지한다. 비동기 요청은 AbortController와 세션 생존 flag로 응답을 차단한다. submit 동기 잠금으로 bubbling/반복 입력을 차단하며 성공 뒤에만 누적 callback을 호출한다. 진행/피드백 timer는 분리해 다음 대진 뒤에도 2.4초 피드백을 유지하고 teardown에서 모두 취소한다.
 
 첫 설명은 geupjido.worldcup.intro.v1 키를 최초 표시 때 기록한다. 저장 접근/쓰기 오류는 catch하고 모듈 메모리 fallback을 쓴다. 개인 ID·투표 저장과 무관하다. 선택·timeline·수는 ExplorationPage 메모리 소유이며 새로고침 초기화가 잠정 가정이다.
 
@@ -79,6 +79,7 @@ Figma W-01/W-02/W-03/W-03b/W-04/W-05/W-06/W-08 context·스크린샷과 timeline
 | 버전 | 날짜 | 변경 |
 |---|---|---|
 | 0.1 | 2026-10-15 | 월드컵 source/모달/누적/타임라인 구현, SDD·검증과 미확정 정책 경계 기록 |
+| 0.2 | 2026-10-27 | PR 리뷰 반영: 상태 변경 시 유효한 focus를 빼앗지 않도록 제목 focus 조건 제한, pending 중 닫기 focus 유지 e2e 추가 |
 
 검증에 사용한 이 workspace의 dev/preview 서버(5175)는 시각 대조 후 종료했다. Playwright preview(4175)도 검사 종료 시 정리됐으며 다른 workspace의 서버는 변경하지 않았다.
 
