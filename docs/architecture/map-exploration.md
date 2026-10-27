@@ -1,6 +1,6 @@
 # 지도 탐색 구조·구현 계획·검증
 
-> 상태: 실제 NAVER 지도(GL) 연결·자동 검증 완료 · 제품 API·모바일 실기기 대기 · 버전: 0.5 · 갱신: 2026-10-27
+> 상태: 실제 NAVER 지도(GL) 연결·자동 검증 완료 · 제품 API·모바일 실기기 대기 · 버전: 0.6 · 갱신: 2026-10-27
 
 ## 목표와 구현 경계
 
@@ -52,7 +52,7 @@
 
 frozen install과 pnpm check 통과(기존 RTL 15개). 4173 포트가 비어 있음을 확인하고 기존 브라우저 검사를 실행한다.
 
-NAVER 공식 [MapOptions](https://navermaps.github.io/maps.js.ncp/docs/naver.maps.html)는 GL 서브모듈을 로드했을 때 `customStyleId`를 적용한다고 명시한다. 일반 raster map에 해당 옵션만 설정해 POI를 숨겼다고 해석하지 않는다. MD의 행정동 라벨·아파트 POI 개별 숨김은 발행된 Style Editor metadata와 실제 SDK에서 확인해야 한다. 현재 설정 성공이나 fractional zoom 실제 동작을 주장하지 않는다. API·키·공개 style metadata·검증된 CRS가 연결되지 않아 실제 SDK smoke는 미실행이다.
+NAVER 공식 [MapOptions](https://navermaps.github.io/maps.js.ncp/docs/naver.maps.html)는 GL 서브모듈을 로드했을 때 `customStyleId`를 적용한다고 명시한다. 일반 raster map에 해당 옵션만 설정해 POI를 숨겼다고 해석하지 않는다. MD의 행정동 라벨·아파트 POI 개별 숨김은 발행된 Style Editor metadata와 실제 SDK에서 확인해야 한다. (당시, PR #4) 설정 성공이나 fractional zoom 실제 동작을 주장하지 않았고, API·키·공개 style metadata·검증된 CRS가 연결되지 않아 실제 SDK smoke는 미실행이었다. 현재는 NAVER 연결 절의 실제 SDK smoke를 따른다.
 
 
 ## 구현 결과와 검증
@@ -73,7 +73,7 @@ NAVER 공식 [MapOptions](https://navermaps.github.io/maps.js.ncp/docs/naver.map
 | 지도 RTL | 경계/충돌/카메라·선택·취소·hover·cleanup | model 7, 입력 5, 선택/상세 10, 클릭 모션 5: 27개 통과 |
 | 모바일 Chromium 터치 스트림 | pan/pinch/double tap과 sheet/list scrolling 분리 | CDP 실제 touch stream 통과, tap 줌 1회·camera 불변 목록 scroll |
 | 모바일 WebKit | tap·keyboard·선택·시트·focus·작은 화면 | repository Playwright 통과, 물리 swipe 대체로 주장하지 않음 |
-| 실제 SDK/API smoke | credentials/계약/geometry로 통합 확인 | 미실행: 제품 API·검증된 CRS·SDK key/style 환경 미연결 |
+| 실제 SDK/API smoke | credentials/계약/geometry로 통합 확인 | (당시, PR #4) 미실행: 제품 API·검증된 CRS·SDK key/style 환경 미연결. 실제 SDK smoke는 NAVER 연결 절 참조 |
 
 초기 실패와 수정: 목록이 숨겨진 상태의 scroll, 2px tap 흔들림으로 선택 취소, touch double tap 뒤 호환 dblclick의 중복 zoom, 초기 camera와 전체 fit의 불일치를 각각 실패→성공으로 확인했다. 테스트의 이름 충돌 가정(핀 몸통은 이름 바로 아래이므로 동일 위치의 첫 이름은 유지)과 NODE_ENV=test 실행을 바로잡았다. RTL role query의 미지원 exact 옵션·React useRef 초기값을 보완했다. 기존 home 회귀가 모바일 h1 숨김을 발견해 제목과 검토 고지를 함께 유지했다. 테스트를 삭제하거나 retries/timeout을 늘리지 않았다. 최종 검증 중 pnpm check와 Playwright의 build를 병렬 실행해 dist가 교체된 실행은 WebKit shell 3건이 JS 404로 실패했다. trace에서 삭제된 이전 JS asset 요청을 확인해 제품 결함과 구분했고, 같은 dist를 사용하는 검증은 순차 실행했다.
 
@@ -83,7 +83,7 @@ NAVER 공식 [MapOptions](https://navermaps.github.io/maps.js.ncp/docs/naver.map
 
 Figma `594:20791/20846/20951/21033/21099` 및 상세 `594:21005`를 읽고 screenshot을 확인했다. sparse한 줌13 화면은 자식 권역 라벨 `594:20912`와 원본 `187:273`, 핀 `490:2113`, 목록 `460:931`의 고해상도 context로 보완했다. 1920 desktop과 iPhone WebKit 렌더를 대조했으며 원본 집 배경·선택 흰 테두리·26×16 칩·86×53 라벨·28×28 핀 몸통/16 아이콘·22 이름 알약·65 목록행과 공통 상세 카드 자산을 사용한다. 최종 브라우저 측정은 원본 자산 로드 모두 성공, 라벨 53·핀 몸통 28·아이콘 16·desktop 목록행 65 CSS px다. 원본 SVG 자연 크기와 slot metadata는 public/assets/README.md에 남겼다.
 
-지도 바탕은 명시적인 가상 grid, geometry/좌표/grade는 예시다. 화면 전체 pixel 일치·실제 NAVER 지도 일치·실제 급지/시세 일치를 주장하지 않는다. 미연결 단계/비교 버튼 상태는 의도적인 고지다. 모바일 Figma 화면은 없고 HTML/MD는 참고용이다. 320×568, 800×600 및 기존 shell의 320/짧은 높이 검사를 포함하며 최소 지원값으로 확정하지 않는다. 상세가 펼쳐진 작은 화면에서 남는 지도 영역이 작아지는 기존 배치는 다음 디자인 리뷰 대상이다.
+(당시, PR #4) 지도 바탕은 명시적인 가상 grid, geometry/좌표/grade는 예시였다. 현재 지도 바탕은 NAVER 지도이며 좌표는 검토용 WGS84다. 화면 전체 pixel 일치·실제 NAVER 지도 일치·실제 급지/시세 일치를 주장하지 않는다. 미연결 단계/비교 버튼 상태는 의도적인 고지다. 모바일 Figma 화면은 없고 HTML/MD는 참고용이다. 320×568, 800×600 및 기존 shell의 320/짧은 높이 검사를 포함하며 최소 지원값으로 확정하지 않는다. 상세가 펼쳐진 작은 화면에서 남는 지도 영역이 작아지는 기존 배치는 다음 디자인 리뷰 대상이다.
 
 실기기 iOS/Android gesture·가상 키보드/주소창·VoiceOver, 실제 최신 Chrome/Edge/Safari, 대규모 데이터 성능, 운영 배포·이 브랜치 원격 CI는 미실행이다. 실제 기기·데이터·배포 또는 후속 PR 환경이 필요하다. 내장 Browser metadata bootstrap은 이전 작업 및 독립 리뷰에서도 실패해 repository Playwright로 검증했다.
 
@@ -165,6 +165,8 @@ headless SwiftShader는 SDK가 raster·정수 zoom으로 대체하므로 실수 
 
 ### 알려진 한계와 디자인 리뷰 항목
 
+- `다시 시도`는 인증 실패·설정 누락에서 페이지를 새로 불러온다(`map-status.tsx`, `map-surface.tsx`의 `onReload`). 네트워크 오류·시간 초과는 loader 재시도로 처리하지만 인증·설정 오류는 같은 페이지에서 복구할 수 없어 reload한다. 이때 선택·검색·시트 상태는 초기화된다.
+- loader는 인스턴스 단위다. 같은 SPA 세션에서 `ExplorationPage`를 다시 mount하면 `window.naver`가 이미 있어도 `maps.js`·`maps-gl.js`를 다시 삽입·실행한다. 알려진 한계이며 코드는 바꾸지 않았다(전역 단일 loader는 후속 검토).
 - overlay host가 SDK 내부 DOM에 의존한다(위 취약점).
 - 선택 핀 이름 라벨은 `pointer-events: none`이라 핀 몸통으로만 선택한다.
 - 작은 모바일 화면에서 압구정은 강남구→청담→압구정 탭으로만 닿고, 선택이 없을 때 `권역` 단계는 개요 중심으로 이동한다.
@@ -211,6 +213,7 @@ RAF와 같은 window.performance clock을 사용한다. 새 명령은 이전 RAF
 
 | 버전 | 날짜 | 변경 |
 | --- | --- | --- |
+| 0.6 | 2026-10-27 | 최종 리뷰 보완: 과거 서술 정정, 다시 시도 reload·loader 재삽입 한계 기록, 라벨 더블클릭·초기화 실패·빈 frame zoom 보완 |
 | 0.5 | 2026-10-27 | 실제 NAVER GL 지도 연결: provider·loader·adapter 계약·overlay portal·E2E 분리, 실제 SDK smoke와 검증 결과(171/116/34) 기록 |
 | 0.4 | 2026-10-14 | 지도 PR #4 develop 통합 후 검색 소스와 최신 상세 우선순위 조합 |
 | 0.3 | 2026-10-14 | 지도 PR #4 리뷰 5건 보완 (48/66/24 검증) 및 viewport 독립 검색 연결 (분기별 기록 통합) |

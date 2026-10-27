@@ -22,7 +22,7 @@
 
 ## NAVER 지도 연결
 
-`feature/integrate-naver-map-sdk`(develop `5830f1e` 기준)에서 실제 NAVER GL 지도 위에 기존 라벨·핀·선택 면 overlay를 연결했다. 좌표는 실제 서울 기준의 검토용 WGS84이며 제품 API·검증된 geometry·실제 시세는 여전히 미연결이다. 빌드 시점 provider(`VITE_MAP_PROVIDER`)로 NAVER와 fixture를 고르고 실사용 경로에는 grid 대체가 없다. `pnpm check`는 단위 171개(19파일)와 build가 통과했고 전체 브라우저 116개 통과·34개 플랫폼 제외다(NAVER 오류 구성 포함). 실제 SDK는 데스크톱 실제 GPU Chrome에서 수동 smoke했으며 드래그 뒤 창 크기 변경·Slow 3G·이동 효과 줄이기·모바일 핀치는 수동 미검증(자동 테스트만)이다. 모바일 실기기와 NAVER 기본 POI·행정동 라벨 숨김은 후속이다. 코드는 100% AI 작성이며 push·PR은 요청 전이다. 구조·smoke 표·알려진 한계는 [지도 탐색 구조](map-exploration.md#naver-지도-연결-2026-10-27), 결정은 [ADR-007](../history/ADR-007-naver-gl-map-and-react-overlay.md)을 따른다.
+`feature/integrate-naver-map-sdk`(develop `5830f1e` 기준)에서 실제 NAVER GL 지도 위에 기존 라벨·핀·선택 면 overlay를 연결했다. 좌표는 실제 서울 기준의 검토용 WGS84이며 제품 API·검증된 geometry·실제 시세는 여전히 미연결이다. 빌드 시점 provider(`VITE_MAP_PROVIDER`)로 NAVER와 fixture를 고르고 실사용 경로에는 grid 대체가 없다. `pnpm check`는 단위 176개(19파일)와 build가 통과했고 전체 브라우저 116개 통과·34개 플랫폼 제외다(NAVER 오류 구성 포함). 실제 SDK는 데스크톱 실제 GPU Chrome에서 수동 smoke했으며 드래그 뒤 창 크기 변경·Slow 3G·이동 효과 줄이기·모바일 핀치는 수동 미검증(자동 테스트만)이다. 모바일 실기기와 NAVER 기본 POI·행정동 라벨 숨김은 후속이다. 코드는 100% AI 작성이며 브랜치·PR 상태는 GitHub 기준으로 확인한다. 구조·smoke 표·알려진 한계는 [지도 탐색 구조](map-exploration.md#naver-지도-연결-2026-10-27), 결정은 [ADR-007](../history/ADR-007-naver-gl-map-and-react-overlay.md)을 따른다.
 
 ## 후속 연결과 정책
 
