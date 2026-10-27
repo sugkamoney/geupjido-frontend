@@ -21,7 +21,11 @@ class FakeScript {
   }
 }
 
-function setup(clientId: string | undefined = 'test-id', timeoutMs?: number) {
+function setup(
+  clientId: string | undefined = 'test-id',
+  timeoutMs?: number,
+  withMaps = true,
+) {
   const scripts: FakeScript[] = [];
   const doc = {
     createElement: () => new FakeScript(),
@@ -32,7 +36,9 @@ function setup(clientId: string | undefined = 'test-id', timeoutMs?: number) {
       },
     },
   } as unknown as Document;
-  const win = {} as Window & { navermap_authFailure?: () => void };
+  const win = (withMaps ? { naver: { maps: {} } } : {}) as Window & {
+    navermap_authFailure?: () => void;
+  };
   const loader = createNaverLoader({ clientId, timeoutMs, doc, win });
   const listener = vi.fn();
   loader.subscribe(listener);
@@ -70,6 +76,23 @@ describe('createNaverLoader', () => {
     scripts[1]!.fire('load');
     expect(loader.getStatus()).toBe('ready');
     expect(listener).toHaveBeenCalled();
+  });
+
+  it('maps.js load 후 naver.maps가 없으면 GL script 없이 network-error', () => {
+    const { loader, scripts } = setup('test-id', undefined, false);
+    loader.start();
+    scripts[0]!.fire('load');
+    expect(loader.getStatus()).toBe('network-error');
+    expect(scripts).toHaveLength(1);
+  });
+
+  it('GL load 후 naver.maps가 없으면 network-error', () => {
+    const { loader, scripts, win } = setup();
+    loader.start();
+    scripts[0]!.fire('load');
+    delete (win as { naver?: unknown }).naver;
+    scripts[1]!.fire('load');
+    expect(loader.getStatus()).toBe('network-error');
   });
 
   it('maps.js error는 network-error', () => {

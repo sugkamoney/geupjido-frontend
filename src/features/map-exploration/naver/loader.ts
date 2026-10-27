@@ -80,6 +80,11 @@ export function createNaverLoader(options: {
     doc.head.appendChild(script);
   }
 
+  // 빈 응답이나 실행 실패한 script는 load만 발생하므로 전역을 직접 확인한다.
+  function hasMaps() {
+    return !!(win as Window & { naver?: { maps?: unknown } }).naver?.maps;
+  }
+
   function begin() {
     const current = ++attempt;
     started = true;
@@ -109,10 +114,12 @@ export function createNaverLoader(options: {
       `${MAPS_URL}?ncpKeyId=${encodeURIComponent(clientId)}`,
       () => {
         if (!active()) return;
+        if (!hasMaps()) return fail('network-error');
         insert(
           GL_URL,
           () => {
             if (!active()) return;
+            if (!hasMaps()) return fail('network-error');
             if (timer !== undefined) clearTimeout(timer);
             timer = undefined;
             // 이미 auth-error로 끝난 시도는 ready로 되돌리지 않는다.
