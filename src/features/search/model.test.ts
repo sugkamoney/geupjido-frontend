@@ -13,9 +13,10 @@ describe('search matching', () => {
       { text: '구정', match: false },
     ]);
     expect(result.contextParts).toEqual([{ text: '강남구', match: true }]);
+    // 강남구 권역이 12곳이라 같은 위치 일치는 짧은 이름 → ID 순으로 정렬되고 그룹 상한 5개에서 잘린다.
     expect(
       matchCatalog(fixtures, '남구')[0]!.results.map((x) => x.name),
-    ).toEqual(['청담', '압구정']);
+    ).toEqual(['청담', '대치', '도곡', '개포', '일원']);
   });
   it('ignores case and whitespace while preserving original displayed text and offsets', () => {
     expect(highlightParts('Ra e MIAN', 'r a e m')).toEqual([

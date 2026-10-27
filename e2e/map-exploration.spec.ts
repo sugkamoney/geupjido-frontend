@@ -9,10 +9,31 @@ async function camera(page: Page) {
   }));
 }
 async function zoneView(page: Page) {
+  // The unselected zone level centers on the overview, which now spans Seoul plus Gyeonggi/Incheon
+  // and no longer keeps 압구정 in view. Enter through the 강남구 and 청담 labels, switch to the zone
+  // level around the selected 청담, then select and close 압구정 so it is a visible, unselected label.
+  const gu = page.getByRole('button', { name: '구 강남구', exact: true });
+  if (!(await gu.count())) {
+    // Already at the zone level around 압구정 from an earlier call in the same test.
+    await expect(
+      page.getByRole('button', { name: '권역 압구정', exact: true }),
+    ).toBeVisible();
+    return;
+  }
+  await gu.click();
+  await page.getByRole('button', { name: '권역 청담', exact: true }).click();
+  await expect(
+    page.getByRole('heading', { name: '청담', exact: true }),
+  ).toBeVisible();
   await page.getByRole('button', { name: '권역', exact: true }).click();
   await expect
     .poll(async () => Number(await map(page).getAttribute('data-zoom')))
     .toBeGreaterThanOrEqual(12.9);
+  await page.getByRole('button', { name: '권역 압구정', exact: true }).click();
+  await expect(
+    page.getByRole('heading', { name: '압구정', exact: true }),
+  ).toBeVisible();
+  await page.getByRole('button', { name: '권역 상세 닫기' }).click();
   await expect(
     page.getByRole('button', { name: '권역 압구정', exact: true }),
   ).toBeVisible();
@@ -102,10 +123,12 @@ test('zone, list and pin selection preserve their distinct camera and clear cont
       exact: true,
     }),
   ).toHaveAttribute('aria-pressed', 'true');
-  const scroll = await page
-    .getByLabel('권역 단지 목록')
-    .evaluate((node) => ({ top: node.scrollTop, height: node.clientHeight }));
-  expect(scroll.top).toBeGreaterThan(0);
+  // The list scrolls after the selection renders; poll instead of reading once.
+  await expect
+    .poll(() =>
+      page.getByLabel('권역 단지 목록').evaluate((node) => node.scrollTop),
+    )
+    .toBeGreaterThan(0);
   await expect
     .poll(async () => {
       const row = await page
@@ -275,10 +298,48 @@ test('trusted mobile pan, pinch and double tap do not select overlays or scroll 
     .poll(async () => Number(await map(page).getAttribute('data-zoom')))
     .toBeCloseTo(zoom + 1);
   const tapZoom = Number(await map(page).getAttribute('data-zoom'));
-  await send('touchStart', [{ x: rect.x + 45, y }]);
-  await send('touchEnd', []);
-  await send('touchStart', [{ x: rect.x + 45, y }]);
-  await send('touchEnd', []);
+  // Labels and pins are dense with the full data set, so double tap on an empty map spot. Wait
+  // until the pinch animation settles, otherwise a label can move onto the chosen spot.
+  let last = '';
+  await expect
+    .poll(
+      async () => {
+        const now = JSON.stringify(await camera(page));
+        const settled = now === last;
+        last = now;
+        return settled;
+      },
+      { intervals: [300] },
+    )
+    .toBe(true);
+  const spot = await page.evaluate(
+    ({ left, top }) => {
+      // Touch hit testing snaps to nearby buttons, so require a clear neighborhood, not one pixel.
+      const clear = (x: number, y: number) =>
+        [-32, 0, 32].every((dy) =>
+          [-32, 0, 32].every((dx) => {
+            const el = document.elementFromPoint(x + dx, y + dy);
+            return (
+              !!el?.closest('.exploration-map') &&
+              !el.closest('button, [role="button"], input, a, svg')
+            );
+          }),
+        );
+      for (let sy = top; sy < top + 400; sy += 12)
+        for (let sx = left; sx < left + 300; sx += 12)
+          if (clear(sx, sy)) return { x: sx, y: sy };
+      return undefined;
+    },
+    { left: rect.x + 45, top: y },
+  );
+  expect(spot).toBeDefined();
+  // Queue both taps together so the 300ms double-tap window is not eaten by CDP round trips.
+  await Promise.all([
+    send('touchStart', [spot!]),
+    send('touchEnd', []),
+    send('touchStart', [spot!]),
+    send('touchEnd', []),
+  ]);
   await expect
     .poll(async () => Number(await map(page).getAttribute('data-zoom')))
     .toBeCloseTo(tapZoom + 1);
