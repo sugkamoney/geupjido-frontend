@@ -350,6 +350,17 @@ describe('NaverMapAdapter', () => {
       expect(map().center).toEqual(B);
     });
 
+    it('noteUserGesture before ready keeps pending intent', () => {
+      const { adapter, ready } = setup();
+      adapter.center(B, 15);
+      adapter.noteUserGesture();
+      ready();
+      const p = adapter.project(B);
+      near(p.x, 500);
+      near(p.y, 400);
+      expect(adapter.getSnapshot().zoom).toBe(15);
+    });
+
     it.each(['dragstart', 'pinchstart'])(
       'SDK %s ⇒ anchor 해제',
       (eventName) => {
@@ -567,6 +578,78 @@ describe('NaverMapAdapter', () => {
       } finally {
         window.matchMedia = original;
       }
+    });
+  });
+
+  describe('projection', () => {
+    it('SDK offset이 pane 기준이어도 project는 현재 화면 container pixel', () => {
+      const { adapter, ready, map } = setup();
+      ready();
+      adapter.project(A); // pane 원점을 현재 위치로 고정한다.
+      map().userMove(B);
+      const p = adapter.project(B);
+      near(p.x, 500);
+      near(p.y, 400);
+      const back = adapter.unproject({ x: 500, y: 400 });
+      expect(back.lat).toBeCloseTo(B.lat, 6);
+      expect(back.lng).toBeCloseTo(B.lng, 6);
+    });
+  });
+
+  describe('overlay host', () => {
+    it('ready 전에는 없고, ready 뒤 SDK 입력 요소 안에 생기며 destroy로 제거된다', () => {
+      const { adapter, ready, container } = setup({ mount: false });
+      // 실제 SDK의 container > div > div(입력 listener 요소) 구조를 흉내 낸다.
+      const wrapper = document.createElement('div');
+      const input = document.createElement('div');
+      wrapper.appendChild(input);
+      container.appendChild(wrapper);
+      adapter.mount(container);
+      expect(adapter.getOverlayHost()).toBeUndefined();
+      ready();
+      const host = adapter.getOverlayHost()!;
+      expect(host.parentElement).toBe(input);
+      expect(input.lastElementChild).toBe(host);
+      expect(host.style.pointerEvents).toBe('none');
+      adapter.destroy();
+      expect(host.isConnected).toBe(false);
+      expect(adapter.getOverlayHost()).toBeUndefined();
+    });
+
+    it('GL 지도면 mapbox canvas container 안, canvas 위에 둔다', () => {
+      const { adapter, ready, container } = setup({ mount: false });
+      const wrapper = document.createElement('div');
+      const input = document.createElement('div');
+      const gl = document.createElement('div');
+      gl.className = 'mapboxgl-canvas-container';
+      gl.appendChild(document.createElement('canvas'));
+      input.appendChild(gl);
+      wrapper.appendChild(input);
+      container.appendChild(wrapper);
+      adapter.mount(container);
+      ready();
+      const host = adapter.getOverlayHost()!;
+      expect(host.parentElement).toBe(gl);
+      expect(gl.lastElementChild).toBe(host);
+      expect(Number(host.style.zIndex)).toBeGreaterThan(1);
+    });
+
+    it('SDK 구조를 찾지 못하면 container에 둔다', () => {
+      const { adapter, ready, container } = setup();
+      ready();
+      expect(adapter.getOverlayHost()!.parentElement).toBe(container);
+    });
+
+    it('retry로 지도를 다시 만들면 이전 host를 제거한다', () => {
+      const { adapter, ready, l } = setup();
+      ready();
+      const first = adapter.getOverlayHost()!;
+      l.set('network-error');
+      adapter.retry();
+      expect(first.isConnected).toBe(false);
+      expect(adapter.getOverlayHost()).toBeUndefined();
+      ready();
+      expect(adapter.getOverlayHost()).not.toBe(first);
     });
   });
 

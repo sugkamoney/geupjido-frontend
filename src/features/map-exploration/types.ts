@@ -73,4 +73,9 @@ export interface MapAdapter {
   destroy: () => void;
   /** SDK가 처리한 사용자 조작 시작 알림. fixture는 구현하지 않는다. */
   noteUserGesture?: () => void;
+  /**
+   * overlay(면·라벨·핀·hover)를 portal로 렌더할 SDK 내부 요소. 대상 위에서 시작한
+   * 드래그·휠이 SDK 입력 요소로 bubble되게 한다. ready일 때만 값이 있다. fixture는 구현하지 않는다.
+   */
+  getOverlayHost?: () => HTMLElement | undefined;
 }

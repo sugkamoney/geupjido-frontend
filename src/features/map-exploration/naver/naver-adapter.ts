@@ -71,6 +71,7 @@ export class NaverMapAdapter implements MapAdapter {
   private maps: typeof naver.maps | undefined;
   private map: naver.maps.Map | undefined;
   private mapListeners: naver.maps.MapEventListener[] = [];
+  private overlayHost: HTMLElement | undefined;
   /** 지도 생성 시도 번호. 늦게 도착한 이전 지도의 콜백을 무시하는 데 쓴다. */
   private attempt = 0;
   private phase: MapPhase = 'loading';
@@ -143,9 +144,45 @@ export class NaverMapAdapter implements MapAdapter {
     this.intent = undefined;
   }
 
+  /**
+   * 준비된 지도의 사용자 조작만 anchor를 해제한다. 로딩 placeholder 위의 드래그는
+   * 보관 목적을 지우지 않는다(필수 계약 2: 보관 목적은 releaseAnchor만 지운다).
+   */
   noteUserGesture = () => {
+    if (this.status !== 'ready') return;
     this.releaseAnchor();
   };
+
+  getOverlayHost = (): HTMLElement | undefined =>
+    this.live ? this.overlayHost : undefined;
+
+  /**
+   * overlay host 위치(2026-10-27 실제 SDK smoke, 공개 API 아님).
+   * - GL 지도: mapbox 입력 listener가 `.mapboxgl-canvas-container`(z-index 10)에 있고 canvas가
+   *   그 안을 덮는다. host를 그 안 마지막 자식(z-index 2, canvas·내부 layer 위)으로 둔다.
+   * - raster 대체(WebGL 미지원 등): listener가 container > div > div에 있다. 그 안에 둔다.
+   * - 둘 다 못 찾으면 container에 둔다(라벨·핀에서 시작한 지도 이동은 전달되지 않는다).
+   * 라벨·핀에서 시작한 드래그·휠·핀치가 host → SDK 입력 요소로 bubble되게 하는 것이 목적이다.
+   * 좌표 원점은 모두 container 좌상단과 같다.
+   */
+  private attachOverlayHost(container: HTMLElement) {
+    const gl = container.querySelector('.mapboxgl-canvas-container');
+    const input = container.firstElementChild?.firstElementChild;
+    const parent =
+      gl instanceof HTMLElement
+        ? gl
+        : input instanceof HTMLElement
+          ? input
+          : container;
+    const host = container.ownerDocument.createElement('div');
+    host.dataset.overlayHost = '';
+    host.style.position = 'absolute';
+    host.style.inset = '0';
+    host.style.zIndex = '2';
+    host.style.pointerEvents = 'none';
+    parent.appendChild(host);
+    this.overlayHost = host;
+  }
 
   // ---------------------------------------------------------------- status
 
@@ -249,6 +286,8 @@ export class NaverMapAdapter implements MapAdapter {
     } catch {
       // 이미 정리된 지도는 무시한다.
     }
+    this.overlayHost?.remove();
+    this.overlayHost = undefined;
     this.map = undefined;
     this.maps = undefined;
     this.motion = undefined;
@@ -270,6 +309,7 @@ export class NaverMapAdapter implements MapAdapter {
     if (!this.projectionValid()) return;
     this.clearInitTimer();
     this.phase = 'ready';
+    if (this.container) this.attachOverlayHost(this.container);
     const intent = this.intent ?? this.overviewIntent();
     this.intent = undefined;
     if (intent?.kind === 'fit')
@@ -532,18 +572,40 @@ export class NaverMapAdapter implements MapAdapter {
     return new this.maps!.LatLng(point.lat, point.lng);
   }
 
+  /**
+   * 화면(container) pixel 변환. 실제 SDK의 `fromCoordToOffset`은 pane 기준이라 드래그·
+   * setCenter 뒤에도 같은 좌표의 값이 그대로다(zoom 변경 때만 원점이 바뀜). 또 GL 지도의
+   * pixel 배율은 256px world 기준 `2^zoom`과 다르다(2026-10-27 smoke: 2배). 그래서 같은
+   * pane 기준인 현재 center의 offset과의 차이로 계산한다. 배율·원점을 가정하지 않는다.
+   */
+  private centerOffset() {
+    const map = this.map!;
+    const projection = map.getProjection();
+    const center = projection.fromCoordToOffset(map.getCenter());
+    return {
+      projection,
+      center,
+      half: { x: this.size.width / 2, y: this.size.height / 2 },
+    };
+  }
+
   private sdkProject(point: LatLng): Point | undefined {
     if (!this.map) return undefined;
-    const p = this.map.getProjection().fromCoordToOffset(this.latLng(point));
-    return { x: p.x, y: p.y };
+    const { projection, center, half } = this.centerOffset();
+    const p = projection.fromCoordToOffset(this.latLng(point));
+    return { x: p.x - center.x + half.x, y: p.y - center.y + half.y };
   }
 
   private sdkUnproject(point: Point): LatLng | undefined {
     if (!this.map) return undefined;
+    const { projection, center, half } = this.centerOffset();
     return readCoord(
-      this.map
-        .getProjection()
-        .fromOffsetToCoord(new this.maps!.Point(point.x, point.y)),
+      projection.fromOffsetToCoord(
+        new this.maps!.Point(
+          point.x - half.x + center.x,
+          point.y - half.y + center.y,
+        ),
+      ),
     );
   }
 

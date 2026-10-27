@@ -134,3 +134,12 @@ it.each(['pointerup', 'pointercancel', 'lostpointercapture'])(
     expect(onLabel).toHaveBeenCalledOnce();
   },
 );
+
+it('fixture targets keep pointer capture in drive mode', () => {
+  setup();
+  const label = screen.getByRole('button', { name: '권역 압구정' });
+  const capture = vi.fn();
+  label.setPointerCapture = capture;
+  pointer(label, 'pointerdown');
+  expect(capture).toHaveBeenCalledWith(1);
+});

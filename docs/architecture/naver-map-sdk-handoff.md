@@ -1,6 +1,6 @@
 # NAVER 지도 SDK 연결 작업 인수인계
 
-> 상태: 작업 환경 준비·브레인스토밍 시작 · 갱신: 2026-10-27
+> 상태: 구현 중(Task 4 화면 연결 완료) · 갱신: 2026-10-27
 
 ## 시작 기준과 요청
 
@@ -82,3 +82,49 @@ Claude는 superpowers brainstorming을 사용해 기존 코드와 문서를 먼�
 - `submodules=gl`과 `callback=` 비동기 로드를 함께 쓰면 `maps-gl.js`에서 `naver` 미정의 예외가 났다. loader는 callback 대신 script `load` 이후 초기화하거나 GL 준비 신호를 별도로 확인해야 한다.
 - 자동화 드래그는 합성 이동이라 드래그 중 이벤트 빈도는 판단하지 않았다. overlay 동기화 빈도는 구현 시 실제 입력으로 확인한다.
 - GL 준비 신호 probe(2026-10-27, headless Chromium + swiftshader, 동적 `<script>` 삽입, 등록 origin): (a) `maps.js?ncpKeyId=…&submodules=gl` + `naver.maps.onJSContentLoaded`와 (b) `maps.js` load 뒤 `maps-gl.js` 순차 삽입 모두 `new naver.maps.Map(el, { gl: true })`가 예외 없이 `init`됐고 `getProjection().fromCoordToOffset`이 유한한 값을 반환, `navermap_authFailure` 미호출. loader는 실패(script `error`)를 감지할 수 있는 (b)를 채택했다. GL 준비 신호는 `maps-gl.js` script `load`다. (a)는 서브모듈 실패 신호가 없어 timeout에만 의존한다.
+
+## overlay 제스처 실제 SDK smoke (Task 4 Step 4b, 2026-10-27)
+
+`pnpm dev`(`http://localhost:5173`, 등록 origin)에서 Playwright headless Chromium으로 실제 입력
+(`page.mouse` down/move/up, 모바일 에뮬레이션은 CDP `Input.dispatchTouchEvent`)을 보내고 지도
+region의 `data-zoom`/`data-center-*`로 카메라 변화를 확인했다. 버리는 스크립트이며 저장소에 두지 않았다.
+
+**렌더 모드 주의.** SwiftShader(`--use-gl=swiftshader`)에서는 SDK가 GL을 쓰지 않고 raster 지도로
+대체한다(canvas 없음, img 타일, zoom 정수 반올림: 12.5→13, `setZoom(13.37)`→13). 실제 GPU
+(`--use-angle=metal --enable-gpu`, Apple M4 Pro)에서는 `.mapboxgl-canvas` GL 지도가 뜨고 실수 zoom이
+유지된다. loader 방식(순차 `maps-gl.js` / `submodules=gl`)과 무관하게 같았다. GL 검증은 실제 GPU로 한다.
+
+**SDK 입력 요소(CDP `DOMDebugger.getEventListeners`).**
+- 공통: SDK container > div > div에 mouse·touch·`mousewheel` listener. window/document에 drag 중
+  capture listener.
+- GL: 그 안의 `.mapboxgl-canvas-container`(z-index 10)에 mousedown·touchstart·wheel·dblclick 등.
+  canvas가 container 전체를 덮는다.
+
+**결과.**
+
+| 구조 | 라벨에서 마우스 드래그 | 라벨 위 휠 | 짧은 클릭 | 터치 드래그(라벨) | 짧은 탭 | 핀치(라벨) |
+| --- | --- | --- | --- | --- | --- | --- |
+| 형제 배치(canvas 옆 overlay, 출발 구조, raster) | 지도 안 움직임 | 줌 안 됨 | 선택됨 | 지도 안 움직임 | 미확인 | 미확인 |
+| portal(SDK 입력 요소 안 host), GL | 이동, 선택 없음 | 줌 | 선택됨 | 이동, 선택 없음 | 선택됨(zoom 12.55) | 10.10→11.60 줌, 선택 없음 |
+| portal, raster 대체 | 이동, 선택 없음 | 줌 | 선택됨 | 이동, 선택 없음 | 선택됨 | 10→12 줌, 선택 없음 |
+
+빈 지도 드래그·휠은 모든 구조에서 동작했다. 선택 "1회"는 RTL(`exploration-naver.test.tsx`)이 검사하고 smoke는 선택 상태만 봤다. 드래그 120×40px 뒤 라벨도 정확히 120×40px 이동했다
+(overlay 동기화). GL에서 host를 canvas container 밖에 두면 canvas(z-index 10)가 라벨을 덮어
+클릭이 canvas로 갔다.
+
+**채택 구조.** `NaverMapAdapter`가 ready 때 overlay host(`div[data-overlay-host]`, absolute inset 0,
+z-index 2, `pointer-events: none`)를 만든다. GL이면 `.mapboxgl-canvas-container`, raster면
+container > div > div, 둘 다 없으면 container의 마지막 자식으로 둔다. `MapSurface`는 overlay(면·
+라벨·핀·hover)를 `createPortal`로 host에 그린다. 라벨·핀 버튼만 `pointer-events: auto`다. 이
+DOM 위치는 공개 API가 아니므로 SDK 갱신 때 이 smoke를 다시 한다. 고지·상태 UI는 portal 밖
+지도 region에 남는다. NAVER 로고·저작권 표기(SDK z-index 100)는 overlay 위에 보인다.
+
+**projection 수정.** raster 대체에서 `fromCoordToOffset`은 pane 기준이라 drag·`setCenter` 뒤 같은
+좌표의 값이 그대로였다(zoom 변경 때만 원점 갱신). GL에서는 container 기준이었다. 두 경우 모두
+맞도록 adapter는 "좌표 offset − 현재 center offset + 화면 중앙"으로 project/unproject한다.
+위 GL spike 기록의 "fromCoordToOffset이 컨테이너 기준"은 GL에서만 맞다.
+
+**입력 관찰(`observe`).** 지도 region이 pointer down/move/up/cancel·두 번째 pointer·blur·capture
+상실을 관찰만 하고(capture 안 함), 6px 이상 이동·두 번째 pointer·취소 순간과 휠·더블클릭에서
+`adapter.noteUserGesture()`를 부른다. 라벨·핀은 SDK 입력 요소 안에 있으므로 그 위의 휠·더블클릭도
+조작으로 알린다. `noteUserGesture`는 ready 전에는 no-op이라 로딩 중 드래그가 보관 목적을 지우지 않는다.

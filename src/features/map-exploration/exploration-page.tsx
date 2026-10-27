@@ -13,8 +13,8 @@ import { useSearch } from '../search/use-search';
 import { fixtureSearchSource, type SearchSource } from '../search/source';
 import type { SearchTarget } from '../search/model';
 import { AppShell } from '../../components/app-shell/app-shell';
-import { FixtureMapAdapter } from './fixture-adapter';
 import { fixtures, fixtureSource } from './fixtures';
+import { createDefaultMapAdapter } from './map-provider';
 import { MapSurface } from './map-surface';
 import { useZoneDetail } from './use-zone-detail';
 import { buildZoneDetail } from './zone-detail';
@@ -48,7 +48,7 @@ export function ExplorationPage({
   worldcupSource?: WorldcupSource;
 }) {
   const [adapter] = useState(
-    () => providedAdapter ?? new FixtureMapAdapter(data.overview),
+    () => providedAdapter ?? createDefaultMapAdapter(data),
   );
   const camera = useSyncExternalStore(adapter.subscribe, adapter.getSnapshot);
   const [worldcup, setWorldcup] = useState<{

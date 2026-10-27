@@ -10,6 +10,49 @@
   background-size: 64px 64px;
   user-select: none;
 }
+/* NAVER 지도는 실제 지도 타일을 그리므로 검토용 grid 배경을 끈다. */
+.exploration-map[data-provider='naver'] {
+  background-image: none;
+}
+.exploration-map-canvas {
+  position: absolute;
+  inset: 0;
+}
+/*
+ * overlay 빈 영역은 SDK 지도 입력을 막지 않는다. 라벨·핀 버튼만 입력을 받는다.
+ * hover 카드·고지는 기존처럼 pointer-events: none이다. :where()로 특이도를 낮춰
+ * 선택된 핀의 이름 영역 규칙(아래)이 계속 이기게 한다.
+ */
+.exploration-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+:where(.exploration-overlay) > .exploration-label,
+:where(.exploration-overlay) > .exploration-pin {
+  pointer-events: auto;
+}
+.exploration-map-status {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  max-width: min(360px, calc(100% - 32px));
+  padding: 16px 20px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-8);
+  text-align: center;
+  transform: translate(-50%, -50%);
+}
+.exploration-map-status p {
+  margin: 0;
+  font: var(--type-body-15-semibold);
+}
 .exploration-map:focus-visible,
 .exploration-label:focus-visible,
 .exploration-pin:focus-visible,

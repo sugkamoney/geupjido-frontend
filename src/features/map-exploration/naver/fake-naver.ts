@@ -2,6 +2,9 @@
  * 테스트 전용 가짜 `naver.maps`. adapter가 쓰는 SDK 부분집합만 흉내 낸다.
  * projection은 `mercator.ts`(256px 타일 Web Mercator)를 쓰고, `init`·카메라 이벤트는
  * 테스트가 `Event.trigger`나 `FakeMap` 헬퍼로 직접 발생시킨다.
+ *
+ * 실제 SDK처럼 `fromCoordToOffset`은 화면이 아니라 pane 기준이다: pane 원점은 생성·zoom
+ * 변경 때만 다시 잡히고 center 이동에는 따라오지 않는다(2026-10-27 실제 SDK 확인).
  */
 import { fromWorldPixel, worldPixel } from '../mercator';
 
@@ -128,6 +131,8 @@ export function createFakeMaps(): FakeMapsControl {
     size = { width: 0, height: 0 };
     morphing: FakeMap['morphing'];
     calls: string[] = [];
+    /** pane 원점(world pixel). 생성·zoom 변경 때만 갱신된다. */
+    private paneOrigin: { x: number; y: number } | undefined;
     private morphFrom: { center: { lat: number; lng: number }; zoom: number } =
       { center: { lat: 0, lng: 0 }, zoom: 0 };
 
@@ -147,6 +152,7 @@ export function createFakeMaps(): FakeMapsControl {
       );
     }
     private emit(name: string) {
+      if (name === 'zoom_changed') this.paneOrigin = undefined;
       Event.trigger(this, name);
     }
     getCenter() {
@@ -219,11 +225,14 @@ export function createFakeMaps(): FakeMapsControl {
     }
     getProjection() {
       const origin = () => {
-        const c = worldPixel(this.center, this.zoom);
-        return {
-          x: c.x - this.size.width / 2,
-          y: c.y - this.size.height / 2,
-        };
+        if (!this.paneOrigin) {
+          const c = worldPixel(this.center, this.zoom);
+          this.paneOrigin = {
+            x: c.x - this.size.width / 2,
+            y: c.y - this.size.height / 2,
+          };
+        }
+        return this.paneOrigin;
       };
       return {
         fromCoordToOffset: (coord: CoordLike) => {
