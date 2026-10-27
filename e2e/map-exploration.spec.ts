@@ -23,6 +23,21 @@ async function selectApgujeong(page: Page) {
   await page.getByRole('button', { name: '권역 압구정', exact: true }).click();
   await centerInFrame(page, '권역 압구정');
 }
+/**
+ * Reach 압구정 by taps only. On narrow screens the 강남구 fit keeps 압구정 off screen (or under the
+ * search row), so go through the visible 청담 zone label, which brings 압구정 into view.
+ */
+async function tapApgujeongViaCheongdam(page: Page) {
+  await page.getByRole('button', { name: '구 강남구', exact: true }).tap();
+  await page.getByRole('button', { name: '권역 청담', exact: true }).tap();
+  await expect(
+    page.getByRole('heading', { name: '청담', exact: true }),
+  ).toBeVisible();
+  await page.getByRole('button', { name: '권역 압구정', exact: true }).tap();
+  await expect(
+    page.getByRole('heading', { name: '압구정', exact: true }),
+  ).toBeVisible();
+}
 /** Small viewports keep 압구정 outside the overview-centered zone view, so select it by search. */
 async function selectApgujeongBySearch(page: Page) {
   const field = page.getByRole('combobox', { name: '지역 검색' });
@@ -77,13 +92,13 @@ test('zone, list and pin selection preserve their distinct camera and clear cont
   await centerInFrame(page, '지도 단지 압구정 검토 단지 1');
   const before = await camera(page);
   await page
-    .getByRole('button', { name: '지도 단지 압구정 검토 단지 11', exact: true })
+    .getByRole('button', { name: '지도 단지 압구정 검토 단지 6', exact: true })
     .click();
   expect(await camera(page)).toEqual(before);
   if (isMobile) await page.getByRole('button', { name: '상세 펼치기' }).tap();
   await expect(
     page.getByRole('button', {
-      name: '목록 단지 압구정 검토 단지 11',
+      name: '목록 단지 압구정 검토 단지 6',
       exact: true,
     }),
   ).toHaveAttribute('aria-pressed', 'true');
@@ -95,7 +110,7 @@ test('zone, list and pin selection preserve their distinct camera and clear cont
     .poll(async () => {
       const row = await page
         .getByRole('button', {
-          name: '목록 단지 압구정 검토 단지 11',
+          name: '목록 단지 압구정 검토 단지 6',
           exact: true,
         })
         .boundingBox();
@@ -394,6 +409,23 @@ test('short mobile details retain a scrollable apartment list and fixed list hea
   await selectApgujeongBySearch(page);
   await page.getByRole('button', { name: '상세 펼치기' }).tap();
   const list = page.getByLabel('권역 단지 목록');
+  // Wait for the expanded sheet geometry to settle before scrolling the list.
+  await list.evaluate(
+    (node) =>
+      new Promise<void>((resolve) => {
+        let last = '';
+        let stable = 0;
+        const check = () => {
+          const r = node.getBoundingClientRect();
+          const now = `${r.top}|${r.height}|${node.scrollHeight}`;
+          stable = now === last ? stable + 1 : 0;
+          last = now;
+          if (stable >= 5) resolve();
+          else requestAnimationFrame(check);
+        };
+        check();
+      }),
+  );
   expect(
     await list.evaluate((node) => node.clientHeight),
   ).toBeGreaterThanOrEqual(65);
@@ -417,7 +449,7 @@ test('selected apartment summary is fully visible after collapsing a narrow mobi
   test.skip(!isMobile, 'mobile selected summary');
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.setViewportSize({ width: 320, height: 568 });
-  await selectApgujeongBySearch(page);
+  await tapApgujeongViaCheongdam(page);
   await page.getByRole('button', { name: '상세 펼치기' }).tap();
   await page
     .getByRole('button', { name: '목록 단지 압구정 검토 단지 1', exact: true })
@@ -430,4 +462,14 @@ test('selected apartment summary is fully visible after collapsing a narrow mobi
   await expect(summary).toBeFocused();
   await summary.tap();
   await expect(map(page)).toHaveAttribute('data-zoom', '15');
+});
+
+test('mobile taps reach the 압구정 zone through 강남구 and 청담 labels and its detail sheet', async ({
+  page,
+  isMobile,
+}) => {
+  test.skip(!isMobile, 'mobile tap path');
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await tapApgujeongViaCheongdam(page);
+  await expect(page.getByRole('button', { name: '상세 펼치기' })).toBeVisible();
 });

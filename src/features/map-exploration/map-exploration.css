@@ -202,6 +202,14 @@
   background: var(--action-primary);
   box-shadow: var(--shadow-pin);
 }
+.exploration-pin[data-selected='true'] {
+  /* The selected name sits inside the button box; keep it from blocking neighboring pins. */
+  pointer-events: none;
+}
+.exploration-pin[data-selected='true'] .exploration-pin-body,
+.exploration-pin[data-selected='true'] .exploration-pin-tail {
+  pointer-events: auto;
+}
 .exploration-pin[data-selected='true'] .exploration-pin-body {
   border: 2px solid var(--bg-surface);
 }
