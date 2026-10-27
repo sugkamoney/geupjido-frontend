@@ -3,8 +3,8 @@ import { expect, test, type Page } from '@playwright/test';
 const map = (page: Page) => page.getByRole('region', { name: '검토용 지도' });
 async function camera(page: Page) {
   return map(page).evaluate((node) => ({
-    x: node.getAttribute('data-center-x'),
-    y: node.getAttribute('data-center-y'),
+    lat: node.getAttribute('data-center-lat'),
+    lng: node.getAttribute('data-center-lng'),
     zoom: Number(node.getAttribute('data-zoom')),
   }));
 }
@@ -15,6 +15,21 @@ async function zoneView(page: Page) {
     .toBeGreaterThanOrEqual(12.9);
   await expect(
     page.getByRole('button', { name: '권역 압구정', exact: true }),
+  ).toBeVisible();
+}
+/** The unselected zone level now centers on the overview, so center 압구정 by selecting it. */
+async function selectApgujeong(page: Page) {
+  await zoneView(page);
+  await page.getByRole('button', { name: '권역 압구정', exact: true }).click();
+  await centerInFrame(page, '권역 압구정');
+}
+/** Small viewports keep 압구정 outside the overview-centered zone view, so select it by search. */
+async function selectApgujeongBySearch(page: Page) {
+  const field = page.getByRole('combobox', { name: '지역 검색' });
+  await field.fill('압구정');
+  await field.press('Enter');
+  await expect(
+    page.getByRole('heading', { name: '압구정', exact: true }),
   ).toBeVisible();
 }
 async function centerInFrame(page: Page, target: string) {
@@ -62,13 +77,13 @@ test('zone, list and pin selection preserve their distinct camera and clear cont
   await centerInFrame(page, '지도 단지 압구정 검토 단지 1');
   const before = await camera(page);
   await page
-    .getByRole('button', { name: '지도 단지 압구정 검토 단지 6', exact: true })
+    .getByRole('button', { name: '지도 단지 압구정 검토 단지 11', exact: true })
     .click();
   expect(await camera(page)).toEqual(before);
   if (isMobile) await page.getByRole('button', { name: '상세 펼치기' }).tap();
   await expect(
     page.getByRole('button', {
-      name: '목록 단지 압구정 검토 단지 6',
+      name: '목록 단지 압구정 검토 단지 11',
       exact: true,
     }),
   ).toHaveAttribute('aria-pressed', 'true');
@@ -80,7 +95,7 @@ test('zone, list and pin selection preserve their distinct camera and clear cont
     .poll(async () => {
       const row = await page
         .getByRole('button', {
-          name: '목록 단지 압구정 검토 단지 6',
+          name: '목록 단지 압구정 검토 단지 11',
           exact: true,
         })
         .boundingBox();
@@ -127,7 +142,7 @@ test('keyboard selection restores focus, zoom boundaries and low-zoom selection 
     page.getByRole('button', { name: '지도', exact: true }),
   ).toBeFocused();
   // Recenter the known fixture location after closing changes the frame.
-  await zoneView(page);
+  await selectApgujeong(page);
   await map(page).focus();
   for (let i = 0; i < 15; i++) await page.keyboard.press('+');
   await expect(map(page)).toHaveAttribute('data-zoom', '17');
@@ -179,9 +194,11 @@ test('a map pin opening detail leaves camera unchanged while list scrolling stay
   page,
   isMobile,
 }) => {
-  await zoneView(page);
+  // Zoom while the detail frame keeps 압구정 centered, then close it so the pin opens the detail.
+  await selectApgujeong(page);
   await map(page).focus();
   for (let i = 0; i < 2; i++) await page.keyboard.press('+');
+  await page.getByRole('button', { name: '권역 상세 닫기' }).click();
   const before = await camera(page);
   await page
     .getByRole('button', { name: '지도 단지 압구정 검토 단지 2', exact: true })
@@ -227,7 +244,7 @@ test('trusted mobile pan, pinch and double tap do not select overlays or scroll 
   await send('touchStart', [{ x, y }]);
   await send('touchMove', [{ x: x + 45, y }]);
   await send('touchEnd', []);
-  expect((await camera(page)).x).not.toBe(before.x);
+  expect((await camera(page)).lng).not.toBe(before.lng);
   await expect(page.getByRole('button', { name: '상세 펼치기' })).toBeVisible();
   const zoom = Number(await map(page).getAttribute('data-zoom'));
   await send('touchStart', [
@@ -374,8 +391,7 @@ test('short mobile details retain a scrollable apartment list and fixed list hea
   test.skip(!isMobile, 'mobile sheet geometry');
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.setViewportSize({ width: 667, height: 375 });
-  await zoneView(page);
-  await page.getByRole('button', { name: '권역 압구정', exact: true }).tap();
+  await selectApgujeongBySearch(page);
   await page.getByRole('button', { name: '상세 펼치기' }).tap();
   const list = page.getByLabel('권역 단지 목록');
   expect(
@@ -401,8 +417,7 @@ test('selected apartment summary is fully visible after collapsing a narrow mobi
   test.skip(!isMobile, 'mobile selected summary');
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.setViewportSize({ width: 320, height: 568 });
-  await zoneView(page);
-  await page.getByRole('button', { name: '권역 압구정', exact: true }).tap();
+  await selectApgujeongBySearch(page);
   await page.getByRole('button', { name: '상세 펼치기' }).tap();
   await page
     .getByRole('button', { name: '목록 단지 압구정 검토 단지 1', exact: true })

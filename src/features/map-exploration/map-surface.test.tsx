@@ -8,7 +8,7 @@ function setup() {
   const adapter = new FixtureMapAdapter();
   const frame = { x: 0, y: 0, width: 1000, height: 800 };
   adapter.setViewport({ width: 1000, height: 800 }, frame);
-  adapter.center({ x: 0, y: 0 }, 12.9);
+  adapter.center(fixtures.zones[0]!.point, 12.9);
   const onLabel = vi.fn(),
     onApartment = vi.fn();
   const view = render(

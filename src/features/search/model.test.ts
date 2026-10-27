@@ -68,7 +68,7 @@ describe('search matching', () => {
         ...fixtures.apartments[0]!,
         id: `a${i}`,
         name: `검색 단지 ${i}`,
-        point: { x: 100000, y: 100000 },
+        point: { lat: 37.6, lng: 127.2 },
       })),
     };
     const groups = matchCatalog(data, '검색');

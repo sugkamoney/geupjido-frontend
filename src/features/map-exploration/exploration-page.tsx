@@ -22,10 +22,17 @@ import type {
   Apartment,
   ExplorationData,
   ExplorationSource,
+  GeoBounds,
+  LatLng,
   MapAdapter,
   MapLabel,
   Zone,
 } from './types';
+
+const overviewCenter = (bounds: GeoBounds): LatLng => ({
+  lat: (bounds.sw.lat + bounds.ne.lat) / 2,
+  lng: (bounds.sw.lng + bounds.ne.lng) / 2,
+});
 
 export function ExplorationPage({
   adapter: providedAdapter,
@@ -177,7 +184,7 @@ export function ExplorationPage({
             adapter.fit(data.overview, 48, [9.5, 12.49], true);
           } else
             adapter.center(
-              zone?.point ?? { x: 0, y: 0 },
+              zone?.point ?? overviewCenter(data.overview),
               Math.max(camera.zoom, 12.9),
               true,
             );

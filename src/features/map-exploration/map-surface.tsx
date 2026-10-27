@@ -131,8 +131,8 @@ export function MapSurface({
       aria-label="검토용 지도"
       tabIndex={0}
       data-zoom={camera.zoom}
-      data-center-x={camera.center.x}
-      data-center-y={camera.center.y}
+      data-center-lat={camera.center.lat}
+      data-center-lng={camera.center.lng}
       data-frame={JSON.stringify(frame)}
       {...input.handlers}
     >

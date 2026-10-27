@@ -1,5 +1,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { FixtureMapAdapter } from './fixture-adapter';
+import type { LatLng } from './types';
+
+const origin: LatLng = { lat: 37.5, lng: 127 };
+const target: LatLng = { lat: 37.5069, lng: 127.0123 };
+const other: LatLng = { lat: 37.5, lng: 127.0246 };
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -21,7 +26,7 @@ function setup(reduced = false) {
     { width: 1000, height: 800 },
     { x: 0, y: 0, width: 1000, height: 800 },
   );
-  map.center({ x: 0, y: 0 }, 12);
+  map.center(origin, 12);
   const tick = (time: number) => {
     clock = time;
     const pending = [...frames.values()];
@@ -33,20 +38,23 @@ function setup(reduced = false) {
 describe('click camera motion', () => {
   it('progressively interpolates zoom and center, ending at the requested target', () => {
     const { map, tick } = setup();
-    map.center({ x: 100, y: 50 }, 15, true);
+    map.center(target, 15, true);
     expect(map.getSnapshot().zoom).toBe(12);
     tick(100);
     expect(map.getSnapshot().zoom).toBeGreaterThan(12);
     expect(map.getSnapshot().zoom).toBeLessThan(15);
-    expect(map.getSnapshot().center.x).toBeGreaterThan(0);
-    expect(map.getSnapshot().center.x).toBeLessThan(100);
+    expect(map.getSnapshot().center.lng).toBeGreaterThan(origin.lng);
+    expect(map.getSnapshot().center.lng).toBeLessThan(target.lng);
+    expect(map.getSnapshot().center.lat).toBeGreaterThan(origin.lat);
+    expect(map.getSnapshot().center.lat).toBeLessThan(target.lat);
     tick(300);
     expect(map.getSnapshot().zoom).toBe(15);
-    expect(map.getSnapshot().center).toEqual({ x: 100, y: 50 });
+    expect(map.getSnapshot().center.lat).toBeCloseTo(target.lat, 9);
+    expect(map.getSnapshot().center.lng).toBeCloseTo(target.lng, 9);
   });
   it('retargets the final zoom inside a changed unobscured rectangle', () => {
     const { map, tick } = setup();
-    map.center({ x: 100, y: 50 }, 15, true);
+    map.center(target, 15, true);
     tick(100);
     map.setViewport(
       { width: 1000, height: 800 },
@@ -54,7 +62,9 @@ describe('click camera motion', () => {
     );
     tick(400);
     expect(map.getSnapshot().zoom).toBe(15);
-    expect(map.project({ x: 100, y: 50 })).toEqual({ x: 700, y: 400 });
+    const projected = map.project(target);
+    expect(projected.x).toBeCloseTo(700, 6);
+    expect(projected.y).toBeCloseTo(400, 6);
   });
   it('accumulates rapid zoom clicks and cancels old frames when direct manipulation starts', () => {
     const { map, tick, frames } = setup();
@@ -62,7 +72,7 @@ describe('click camera motion', () => {
     map.zoom(1, undefined, true);
     tick(300);
     expect(map.getSnapshot().zoom).toBe(14);
-    map.center({ x: 100, y: 50 }, 15, true);
+    map.center(target, 15, true);
     tick(100);
     map.pan({ x: 20, y: 0 });
     const stopped = map.getSnapshot();
@@ -72,14 +82,14 @@ describe('click camera motion', () => {
   });
   it('honors reduced motion and clears queued work when the pin releases the anchor or the adapter is destroyed', () => {
     const reduced = setup(true);
-    reduced.map.center({ x: 100, y: 50 }, 15, true);
+    reduced.map.center(target, 15, true);
     expect(reduced.map.getSnapshot().zoom).toBe(15);
     expect(reduced.frames.size).toBe(0);
     const { map, tick, frames } = setup();
-    map.center({ x: 100, y: 50 }, 15, true);
+    map.center(target, 15, true);
     map.releaseAnchor();
     expect(frames.size).toBe(0);
-    map.center({ x: 200, y: 50 }, 16, true);
+    map.center(other, 16, true);
     map.destroy();
     const final = map.getSnapshot();
     tick(300);
@@ -90,7 +100,7 @@ describe('click camera motion', () => {
 
 it('direct zoom interrupts from the displayed zoom rather than the pending click destination', () => {
   const { map, tick } = setup();
-  map.center({ x: 100, y: 50 }, 15, true);
+  map.center(target, 15, true);
   tick(30);
   const before = map.getSnapshot().zoom;
   map.zoom(-0.25);
