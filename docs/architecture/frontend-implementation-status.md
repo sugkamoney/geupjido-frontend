@@ -1,6 +1,6 @@
 # 프론트엔드 기반 구축 현황과 다음 단계
 
-> 상태: 초기화·디자인 시스템·AppShell·지도·검색 develop 통합 완료, 월드컵 검토 UI 구현·검증 완료 · 기준 날짜: 2026-10-15
+> 상태: 초기화·디자인 시스템·AppShell·지도·검색·월드컵 develop 통합 완료, 실제 NAVER 지도 연결 구현·자동 검증 완료 · 기준 날짜: 2026-10-27
 
 ## 현재 구현
 
@@ -20,9 +20,13 @@
 
 검색 PR #5는 develop `49f9e5b`에 병합됐고 이 기준과 인수인계 `694d98e`에서 현재 `feature/worldcup`에서 검토 UI를 구현·검증했다. 기존 검색 workspace는 정리됐으며 현재 지정된 workspace만 변경한다. 월드컵 설명·권역/단지 대진·선택/넘김·누적 My Picks·데스크톱 타임라인을 구현한다. 제품 기준은 [월드컵 SDD](../product/specs/worldcup/README.md), source·모달·검증은 [월드컵 구조](worldcup.md)다. 실제 투표/대진/비율 공개/급지 갱신 정책은 미확정이며 API·NAVER 연결은 없다. `VITEST_MAX_WORKERS=2 pnpm check`는 78개 단위 테스트와 품질 gate·운영 빌드를 통과했고, 이어 순차 실행한 브라우저는 108개 통과/33개 플랫폼 제외다. 데스크톱 Chromium·모바일 Chromium/WebKit 검증과 실제 기기/API 한계는 구조 문서에 기록했다. 코드 작업은 100% AI다. 이번 요청은 커밋까지이며 push·PR·merge는 포함하지 않는다.
 
+## NAVER 지도 연결
+
+`feature/integrate-naver-map-sdk`(develop `5830f1e` 기준)에서 실제 NAVER GL 지도 위에 기존 라벨·핀·선택 면 overlay를 연결했다. 좌표는 실제 서울 기준의 검토용 WGS84이며 제품 API·검증된 geometry·실제 시세는 여전히 미연결이다. 빌드 시점 provider(`VITE_MAP_PROVIDER`)로 NAVER와 fixture를 고르고 실사용 경로에는 grid 대체가 없다. `pnpm check`는 단위 171개(19파일)와 build가 통과했고 전체 브라우저 116개 통과·34개 플랫폼 제외다(NAVER 오류 구성 포함). 실제 SDK는 데스크톱 실제 GPU Chrome에서 수동 smoke했으며 드래그 뒤 창 크기 변경·Slow 3G·이동 효과 줄이기·모바일 핀치는 수동 미검증(자동 테스트만)이다. 모바일 실기기와 NAVER 기본 POI·행정동 라벨 숨김은 후속이다. 코드는 100% AI 작성이며 push·PR은 요청 전이다. 구조·smoke 표·알려진 한계는 [지도 탐색 구조](map-exploration.md#naver-지도-연결-2026-10-27), 결정은 [ADR-007](../history/ADR-007-naver-gl-map-and-react-overlay.md)을 따른다.
+
 ## 후속 연결과 정책
 
-공개 지도/상세 API 및 백엔드 생성 OpenAPI, 실제 geometry CRS와 지점 대조, NAVER 키/GL 스타일 metadata를 확보한 뒤 운영 adapter·source와 실제 SDK smoke를 이어 연결한다. 행정동 라벨·아파트 POI 숨김과 실제 fractional zoom은 미검증이다. 검색 알고리즘·결과·지도 선택 연결은 [검색 구조](search.md)에서 구현했다. 실제 검색 API와 월드컵 투표/대진/집계 연결은 후속 작업이다. 월드컵 UI는 위 현재 작업에서 진행한다.
+공개 지도/상세 API 및 백엔드 생성 OpenAPI, 실제 geometry CRS와 지점 대조, NAVER 키/GL 스타일 metadata를 확보한 뒤 운영 adapter·source와 실제 SDK smoke를 이어 연결한다. 행정동 라벨·아파트 POI 숨김은 다음 단계이며 실제 fractional zoom은 NAVER GL 연결에서 확인했다(위 NAVER 지도 연결 절). 검색 알고리즘·결과·지도 선택 연결은 [검색 구조](search.md)에서 구현했다. 실제 검색 API와 월드컵 투표/대진/집계 연결은 후속 작업이다. 월드컵 UI는 위 현재 작업에서 진행한다.
 
 모바일 웹은 지원한다. 기존 breakpoint·시트 높이·좁은 desktop 배치는 검토 가정이다. 실제 iOS/Android gesture·키보드/주소창·접근성 및 최소 viewport/OS는 추가 검토한다. 미정 급지/단계/투표 정책을 임의 계산하지 않는다.
 

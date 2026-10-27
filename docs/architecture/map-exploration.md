@@ -1,6 +1,6 @@
 # 지도 탐색 구조·구현 계획·검증
 
-> 상태: 검토 UI 구현·검증 완료 · 실제 SDK/API 연동 대기 · 버전: 0.4 · 갱신: 2026-10-14
+> 상태: 실제 NAVER 지도(GL) 연결·자동 검증 완료 · 제품 API·모바일 실기기 대기 · 버전: 0.5 · 갱신: 2026-10-27
 
 ## 목표와 구현 경계
 
@@ -107,6 +107,73 @@ requesting-code-review 스킬에 따라 독립 읽기 전용 리뷰를 수행했
 
 결정 배경은 [ADR-005](../history/ADR-005-map-fixture-boundary.md)를 따른다. 계획의 inline 실행과 사용자 승인된 커밋 범위를 유지했다. 별도의 계획 승인 대기로 중단하지 않았으며 정상 동작 테스트 완료 후 로컬 한국어 커밋으로 마무리한다. 후속 사용자 요청으로 feature를 push하고 [PR #4](https://github.com/sugkamoney/geupjido-frontend/pull/4)를 develop 대상으로 생성했다. 원격 CI는 [checks](https://github.com/sugkamoney/geupjido-frontend/pull/4/checks)에서 최신 head 상태를 확인한다. merge는 수행하지 않았고 이 workspace의 개발 서버를 종료했다. 후속은 [상위 workspace 인수인계](map-exploration-handoff.md)를 따른다.
 
+## NAVER 지도 연결 (2026-10-27)
+
+설계는 [NAVER 지도 SDK 연결 설계](../superpowers/specs/2026-10-27-naver-map-sdk-design.md), 결정 배경은 [ADR-007](../history/ADR-007-naver-gl-map-and-react-overlay.md), 조사 기록은 [인수인계](naver-map-sdk-handoff.md)다. 위 "데이터와 어댑터" 절의 fixture 좌표·미연결 서술은 이 절이 갱신한다. 코드 작성·수정은 100% AI다.
+
+### provider 선택과 화면 분기
+
+`map-provider.ts`의 `createDefaultMapAdapter`가 빌드 시점 env `VITE_MAP_PROVIDER`로 adapter만 고른다(`fixture`이면 `FixtureMapAdapter`, 미설정 포함 그 외는 `NaverMapAdapter`). 입력 모드(SDK 제스처 위임 또는 `use-map-input` 카메라 입력)·고지·배경은 `map-surface.tsx`가 `adapter.kind`로 결정한다. 실제 사용 경로에서는 grid로 대체하지 않는다. 좌표는 WGS84 `LatLng`이고 검토용 데이터 하나를 두 adapter가 공유한다.
+
+### loader
+
+`naver/loader.ts`는 단일 Promise 상태기계다(`loading | ready | auth-error | network-error | config-error`). `maps.js`가 load된 뒤 `maps-gl.js`를 순차 삽입하고 각 단계에서 `naver.maps` 존재를 확인한다. `navermap_authFailure`는 script 삽입 전에 등록한다. 시도마다 증가하는 attempt id와 disposed 상태로 이전 시도의 load·error·timeout·인증 콜백을 무시하고 타이머·핸들러를 정리한다. 종료 상태(`auth-error` 등)는 sticky라 늦은 콜백이 덮어쓰지 않는다. loader timeout은 15초다. 재시도는 실패한 script·지도를 정리한 뒤 다시 시작한다.
+
+### NaverMapAdapter 필수 계약
+
+`naver/naver-adapter.ts`:
+- 준비 전에는 절대 명령(`center`·`fit`)의 최신 하나만 보관하고 ready 때 애니메이션 없이 한 번 적용한다. 상대 명령(`zoom(delta)`·`pan(delta)`)은 no-op, `releaseAnchor`는 보관을 지운다. 보관이 없으면 전체 보기 fit이다. `project`/`unproject`/`getSnapshot`은 준비 전에도 예외가 없다.
+- SDK 사용자 조작(`noteUserGesture`)은 anchor와 진행 중 이동을 해제한다. 프로그램 이동의 `center_changed`/`zoom_changed`는 사용자 조작으로 보지 않는다. `noteUserGesture`는 ready 전 no-op이라 로딩 중 드래그가 보관 목적을 지우지 않는다.
+- 지도 생성·init 대기 timeout은 10초다. `destroy()`는 listener·timer·overlay host를 정리하고 StrictMode 이중 mount에서 지도가 하나만 남는다.
+- raster 대체에서 `fromCoordToOffset`은 pane 기준이라 "좌표 offset − 현재 center offset + 화면 중앙"으로 project/unproject를 계산한다. GL에서도 같은 식이 맞다.
+
+### overlay와 입력 관찰 모드
+
+overlay(면·라벨·핀·hover)는 `createPortal`로 adapter가 만든 `div[data-overlay-host]`에 그린다. host는 GL이면 SDK 내부 `.mapboxgl-canvas-container`, raster이면 container > div > div 안에 둔다. 형제 배치는 라벨 위 드래그·휠·터치가 SDK에 전달되지 않아 채택하지 않았다([인수인계](naver-map-sdk-handoff.md)의 Step 4b). 이 DOM 위치는 SDK 공개 API가 아니므로 SDK 갱신 시 깨질 수 있는 알려진 취약점이며 갱신 때 smoke를 다시 한다. 지도 region은 pointer down/move/up/cancel, 두 번째 pointer, blur, capture 상실을 관찰만 하고(capture 안 함) 6px 이상 이동 등에서 `noteUserGesture()`를 부르며 드래그·핀치 뒤 선택을 막는다.
+
+### E2E 구성
+
+`playwright.config.ts`는 fixture 구성(`VITE_MAP_PROVIDER=fixture`, `dist-e2e/fixture`, 포트 4173)과 NAVER 오류 구성(가짜 Client ID, `oapi.map.naver.com` route 차단 또는 가짜 인증 실패 script, `dist-e2e/naver-error`, 포트 4174)을 나누고 각각 `vite preview --outDir`로 제공한다. 서로의 빌드나 `dist/`를 덮어쓰지 않는다. 실제 NAVER 서버에는 붙지 않는다.
+
+### 검증 결과
+
+| 검사 | 기대 | 실제 결과 |
+| --- | --- | --- |
+| `npx -y pnpm@11.13.0 check` | 토큰·타입·lint·format·단위·build 통과 | 통과. Vitest 19파일 171개 통과, production build 성공 |
+| `npx -y pnpm@11.13.0 test:e2e --workers=3` | fixture·NAVER 오류 구성 포함 전체 통과 | 116개 통과, 34개 플랫폼 적용 제외, 실패 0 |
+| 실제 SDK smoke(데스크톱 실제 GPU Chrome, 2560×1267, HEAD 6089f6b) | 아래 표 | 아래 표 |
+
+Node는 로컬에서 v25.8.0이라 `engines`(`^24.15.0 || >=26.0.0`) 밖이었다(경고 확인). pnpm이 PATH에 없어 `npx -y pnpm@11.13.0`으로 실행했다.
+
+실제 SDK smoke 결과(키 값은 기록하지 않는다):
+
+| # | 확인 | 결과 |
+| --- | --- | --- |
+| 1 | ready·GL | ready, `.mapboxgl-canvas-container` 존재, 경고·console 오류 없음 |
+| 2 | 초기 전체 보기 | 서초·강남·성동 라벨이 실제 구 위, zoom 12.05(실수) |
+| 3a | 강남구 클릭 | zoom 13.00, 반포·압구정·청담 라벨 |
+| 3b | 압구정 클릭 | 상세·면 opacity 0.3, 라벨이 남는 영역 정중앙, 면은 한강 남쪽 육지 |
+| 3c | 목록 단지 선택 | zoom 15, 선택 핀이 중앙, 핀 19개, 면 opacity 0.1 |
+| 3d | 지도 핀 클릭 | 카메라 zoom 15 유지, 핀 선택 |
+| 4 | 드래그·휠 | 핀·라벨·면이 따라옴, 휠 zoom 14.598(실수) |
+| 6 | 핀 위 드래그 | 지도 이동, 선택 유지 |
+| 8 | 검색 반포 | 반포 선택, 라벨 중앙 |
+| 11 | 키보드 | 화살표 이동, `-` 로 1단계 축소 |
+| 5, 7, 9, 10 | 드래그 뒤 창 크기·Slow 3G 검색·이동 효과 줄이기·모바일 핀치 | 수동 미검증(자동 테스트로만 확인). 도구가 창 크기 변경·네트워크 제한·접근성 에뮬레이션·기기 에뮬레이션을 지원하지 않았다. 단위·RTL이 보관 목적·해제·reduced motion을 검사하고, 모바일 터치·핀치는 Task 4 headless probe에서 라벨 위 입력이 지도로 전달됨을 확인했을 뿐 실기기는 대기 |
+
+headless SwiftShader는 SDK가 raster·정수 zoom으로 대체하므로 실수 zoom 확인에는 실제 GPU가 필요하다. 실제 환경에서 키가 없는 CI는 NAVER 서버에 접속하지 않는다.
+
+### 알려진 한계와 디자인 리뷰 항목
+
+- overlay host가 SDK 내부 DOM에 의존한다(위 취약점).
+- 선택 핀 이름 라벨은 `pointer-events: none`이라 핀 몸통으로만 선택한다.
+- 작은 모바일 화면에서 압구정은 강남구→청담→압구정 탭으로만 닿고, 선택이 없을 때 `권역` 단계는 개요 중심으로 이동한다.
+- hover 카드가 고지·NAVER 로고 아래에 가려질 수 있다.
+- 라벨과 고지의 DOM 읽기 순서가 바뀌었다.
+- 라벨·핀 위에서 시작한 터치 두 번 탭 확대는 미검증이다.
+- NAVER 기본 POI·행정동 라벨 숨김은 다음 단계다([제품 결정](../product/specs/map-exploration/decisions.md)).
+- 모바일 실기기와 제품 API·실제 geometry는 미연결·미검증이다. 실제 화면의 권역 크기·밀도(구 선택 zoom 13에서 압구정 면 약 150px)는 디자인 기준의 결과이며 디자인 리뷰 대상이다.
+
 ## 클릭 카메라 전환
 
 사용자의 후속 요청으로 클릭 경로의 center/fit/zoom은 선택적 `animate` 옵션을 전달한다. FixtureMapAdapter는 300ms ease-out cubic으로 현재 center/zoom에서 목표를 보간한다. 이 시간은 현재 구현값이며 실제 SDK 연동 후 체감을 다시 검토한다. 초기 fit/측정과 wheel/pan/pinch/키보드 입력은 즉시 처리한다. NAVER 실제 SDK 효과 연결은 별도 대기다.
@@ -144,6 +211,7 @@ RAF와 같은 window.performance clock을 사용한다. 새 명령은 이전 RAF
 
 | 버전 | 날짜 | 변경 |
 | --- | --- | --- |
+| 0.5 | 2026-10-27 | 실제 NAVER GL 지도 연결: provider·loader·adapter 계약·overlay portal·E2E 분리, 실제 SDK smoke와 검증 결과(171/116/34) 기록 |
 | 0.4 | 2026-10-14 | 지도 PR #4 develop 통합 후 검색 소스와 최신 상세 우선순위 조합 |
 | 0.3 | 2026-10-14 | 지도 PR #4 리뷰 5건 보완 (48/66/24 검증) 및 viewport 독립 검색 연결 (분기별 기록 통합) |
 | 0.2 | 2026-10-14 | 클릭 카메라 300ms 전환·중단/retarget·이동 효과 줄이기와 회귀 검증 추가 |
