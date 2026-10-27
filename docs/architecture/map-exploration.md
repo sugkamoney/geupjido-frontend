@@ -98,7 +98,7 @@ requesting-code-review 스킬에 따라 독립 읽기 전용 리뷰를 수행했
 
 | 판단 대상 | 이번 처리와 이유 | 잘못 판단했을 때의 비용/다음 검토 |
 | --- | --- | --- |
-| 실제 SDK 투영·fractional zoom·POI 설정·SDK 정리 | 운영 adapter 미연결로 미검증 | SDK 통합 때 실제 projection/GL metadata와 smoke 확인 필요 |
+| 실제 SDK 투영·fractional zoom·POI 설정·SDK 정리 | (당시) 미연결로 미검증. 현재 NAVER 연결에서 투영·fractional zoom은 실제 GPU smoke로 확인, POI 숨김은 다음 단계 | POI 숨김은 Style Editor 스타일 발행 시 확인 |
 | 실제 CRS·한강 제외 geometry·시세·grade/stage·정렬 | 평면 fixture로 검증하고 실제 정확성은 대기 | 실제 공급자 계약·원본 지점 대조·기획 정책 검토 필요 |
 | 검색·월드컵 대진/투표/집계 | 사용자 지정 후속 범위 | 해당 기능 SDD·운영 연결 추가 필요 |
 | 실기기·대규모 성능·최소 viewport | 작은 화면/engine 검증까지 수행 | 실기기·성능 측정과 지원 정책 확정 추가 필요 |
@@ -176,7 +176,7 @@ headless SwiftShader는 SDK가 raster·정수 zoom으로 대체하므로 실수 
 
 ## 클릭 카메라 전환
 
-사용자의 후속 요청으로 클릭 경로의 center/fit/zoom은 선택적 `animate` 옵션을 전달한다. FixtureMapAdapter는 300ms ease-out cubic으로 현재 center/zoom에서 목표를 보간한다. 이 시간은 현재 구현값이며 실제 SDK 연동 후 체감을 다시 검토한다. 초기 fit/측정과 wheel/pan/pinch/키보드 입력은 즉시 처리한다. NAVER 실제 SDK 효과 연결은 별도 대기다.
+사용자의 후속 요청으로 클릭 경로의 center/fit/zoom은 선택적 `animate` 옵션을 전달한다. FixtureMapAdapter는 300ms ease-out cubic으로 현재 center/zoom에서 목표를 보간한다. 이 시간은 현재 구현값이며 실제 SDK 연동 후 체감을 다시 검토한다. 초기 fit/측정과 wheel/pan/pinch/키보드 입력은 즉시 처리한다. NAVER에서는 SDK의 부드러운 이동으로 처리하며(2026-10-27) 체감은 디자인 리뷰에서 확인한다.
 
 RAF와 같은 window.performance clock을 사용한다. 새 명령은 이전 RAF를 취소하고 generation을 변경해 이미 큐에 담긴 stale callback도 무시한다. 연속 zoom 버튼은 이전 목표 zoom에 누적하고 직접 gesture·지도 pin 선택·닫기·destroy는 취소한다. 패널/시트가 바뀌면 원래 목표 zoom을 보존해 새 frame으로 retarget한다. reduced-motion 설정은 명령 시작 시 확인해 즉시 적용한다.
 

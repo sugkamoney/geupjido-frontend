@@ -8,7 +8,7 @@
 
 `feature/map-exploration`은 develop `d3971c5`에서 시작했다(인수인계 기록 `36adf0c`). `/`와 `/map-exploration`은 명시적인 검토용 지도·데이터로 구/권역 라벨·핀·선택 면·제스처·상세/목록 선택을 제공한다. `/app-shell`, `/design-system` 기존 검토·회귀 경로도 유지한다. 코드 작성·수정은 100% AI로 수행했다. `pnpm check` RTL 48개와 production build, 전체 브라우저 66개가 통과했다(24개 플랫폼 적용 제외). 독립 리뷰의 pointer 종료/focus 복귀 2건은 회귀 실패→성공으로 보완했다. PR #4 전체 코드리뷰의 중요 결함 5건도 재현·수정했다(마커 제거 후 gesture, 짧은 화면 목록, 접힌 선택 행, 최신 source 표시, 긴 이름 충돌). 키보드 접힘 focus와 WebKit 후속 touch click 회귀도 포함한다. 후속 사용자 요청으로 클릭 확대·이동을 300ms에 걸쳐 전환하며, 이동 효과 줄이기·연속 클릭·직접 gesture 중단도 검증했다.
 
-2026-10-14 백엔드 develop 읽기 전용 재확인은 `dfb7cc4`이며 batch 데이터 수집 기반 외 제품 지도·검색·상세 API는 아직 없다. 잠정 UI source와 지도 adapter를 분리했고 실제 NAVER 지도·검증된 좌표계·API·시세·단계·투표 집계는 연결하지 않았다. 검토 데이터가 실제 가격이나 집계라는 안내는 없다. [지도 구조·검증 결과](map-exploration.md)와 [현재 제품 SDD](../product/specs/map-exploration/README.md)를 따른다.
+2026-10-14 백엔드 develop 읽기 전용 재확인은 `dfb7cc4`이며 batch 데이터 수집 기반 외 제품 지도·검색·상세 API는 아직 없다. 잠정 UI source와 지도 adapter를 분리했고 당시에는 실제 NAVER 지도를 연결하지 않았으나 현재 브랜치에서 실제 NAVER GL 지도와 검토용 WGS84 좌표를 연결했다(아래 "NAVER 지도 연결"). 제품 API·검증된 geometry·시세·단계·투표 집계는 여전히 연결하지 않았다. 검토 데이터가 실제 가격이나 집계라는 안내는 없다. [지도 구조·검증 결과](map-exploration.md)와 [현재 제품 SDD](../product/specs/map-exploration/README.md)를 따른다.
 
 ## 검색 구현
 

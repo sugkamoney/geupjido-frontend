@@ -28,7 +28,7 @@
 ## 이유와 trade-off
 
 - 실수 zoom 12.5/14.5 규칙과 투명도 보간을 유지하면서 기존 선택·검색·월드컵 흐름과 테스트를 재사용한다.
-- overlay를 SDK 내부 DOM에 넣는 방식은 공개 API가 아니므로 SDK 갱신 때 깨질 수 있다. 실제 입력 smoke로 형제 배치가 제스처를 전달하지 못함을 확인했고 portal 구조에서는 마우스·터치 드래그·휠·핀치가 지도로 전달됐다. SDK 갱신 때 이 smoke를 다시 한다.
+- overlay를 SDK 내부 DOM에 넣는 방식은 공개 API가 아니므로 SDK 갱신 때 깨질 수 있다. 실제 입력 smoke로 형제 배치가 제스처를 전달하지 못함을 확인했고 portal 구조에서는 마우스 드래그·휠이 지도로 전달됐다(실제 GPU smoke 포함). 터치 드래그·핀치는 Task 4의 headless Chromium(SwiftShader, raster 대체)·CDP 합성 touch probe 결과이며 실제 GPU나 실기기에서는 검증하지 않았다. SDK 갱신 때 이 smoke를 다시 한다.
 - SwiftShader 같은 GPU 없는 환경에서는 SDK가 raster·정수 zoom으로 대체해 실수 zoom 검증이 안 된다. raster에서 `fromCoordToOffset`의 기준점이 달라 현재 center offset을 빼는 보정을 adapter에 두었다.
 - 빌드 시점 provider 선택은 한 번들에 두 지도를 섞지 않아 안전하지만 E2E를 fixture 구성과 NAVER 오류 구성(가짜 ID, 요청 차단)으로 나눠 각자 `dist-e2e/*`에 빌드해야 한다. 실제 NAVER 서버에는 자동 테스트가 붙지 않는다.
 - 선택 핀 이름 라벨은 클릭을 받지 않고, hover 카드가 고지·NAVER 로고에 가려질 수 있으며, DOM 읽기 순서가 바뀌었다. 디자인·접근성 리뷰 항목이다.
