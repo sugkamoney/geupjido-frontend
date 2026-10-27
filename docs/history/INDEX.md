@@ -29,3 +29,5 @@
 - [ADR-006: 앱 화면 틀 슬롯과 검토용 반응형 배치](ADR-006-app-shell-slots-and-review-layout.md)
 
 - [ADR-005: 지도 탐색 검토 데이터와 운영 연동 경계](ADR-005-map-fixture-boundary.md)
+
+- [ADR-007: NAVER GL 지도 위에 React overlay를 얹고 제스처는 SDK에 맡긴다](ADR-007-naver-gl-map-and-react-overlay.md)

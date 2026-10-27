@@ -25,7 +25,7 @@ function adapter(zoom = 12.9) {
     { width: 1000, height: 800 },
     { x: 0, y: 0, width: 1000, height: 800 },
   );
-  map.center({ x: 0, y: 0 }, zoom);
+  map.center(fixtures.zones[0]!.point, zoom);
   map.releaseAnchor();
   return map;
 }

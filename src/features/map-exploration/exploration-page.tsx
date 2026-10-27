@@ -13,8 +13,8 @@ import { useSearch } from '../search/use-search';
 import { fixtureSearchSource, type SearchSource } from '../search/source';
 import type { SearchTarget } from '../search/model';
 import { AppShell } from '../../components/app-shell/app-shell';
-import { FixtureMapAdapter } from './fixture-adapter';
 import { fixtures, fixtureSource } from './fixtures';
+import { createDefaultMapAdapter } from './map-provider';
 import { MapSurface } from './map-surface';
 import { useZoneDetail } from './use-zone-detail';
 import { buildZoneDetail } from './zone-detail';
@@ -22,10 +22,17 @@ import type {
   Apartment,
   ExplorationData,
   ExplorationSource,
+  GeoBounds,
+  LatLng,
   MapAdapter,
   MapLabel,
   Zone,
 } from './types';
+
+const overviewCenter = (bounds: GeoBounds): LatLng => ({
+  lat: (bounds.sw.lat + bounds.ne.lat) / 2,
+  lng: (bounds.sw.lng + bounds.ne.lng) / 2,
+});
 
 export function ExplorationPage({
   adapter: providedAdapter,
@@ -41,7 +48,7 @@ export function ExplorationPage({
   worldcupSource?: WorldcupSource;
 }) {
   const [adapter] = useState(
-    () => providedAdapter ?? new FixtureMapAdapter(data.overview),
+    () => providedAdapter ?? createDefaultMapAdapter(data),
   );
   const camera = useSyncExternalStore(adapter.subscribe, adapter.getSnapshot);
   const [worldcup, setWorldcup] = useState<{
@@ -177,7 +184,7 @@ export function ExplorationPage({
             adapter.fit(data.overview, 48, [9.5, 12.49], true);
           } else
             adapter.center(
-              zone?.point ?? { x: 0, y: 0 },
+              zone?.point ?? overviewCenter(data.overview),
               Math.max(camera.zoom, 12.9),
               true,
             );

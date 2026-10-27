@@ -10,7 +10,7 @@ const apt = (
   id,
   zoneId: 'a',
   name: id,
-  point: { x: 0, y: 0 },
+  point: { lat: 37.5, lng: 127 },
   households,
   year,
   priceManwon,
