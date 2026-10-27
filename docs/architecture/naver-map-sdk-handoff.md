@@ -81,3 +81,4 @@ Claude는 superpowers brainstorming을 사용해 기존 코드와 문서를 먼�
 - `getProjection().fromCoordToOffset(LatLng)`가 지도 컨테이너 기준 pixel을 반환(중심 좌표 → 컨테이너 중앙).
 - `submodules=gl`과 `callback=` 비동기 로드를 함께 쓰면 `maps-gl.js`에서 `naver` 미정의 예외가 났다. loader는 callback 대신 script `load` 이후 초기화하거나 GL 준비 신호를 별도로 확인해야 한다.
 - 자동화 드래그는 합성 이동이라 드래그 중 이벤트 빈도는 판단하지 않았다. overlay 동기화 빈도는 구현 시 실제 입력으로 확인한다.
+- GL 준비 신호 probe(2026-10-27, headless Chromium + swiftshader, 동적 `<script>` 삽입, 등록 origin): (a) `maps.js?ncpKeyId=…&submodules=gl` + `naver.maps.onJSContentLoaded`와 (b) `maps.js` load 뒤 `maps-gl.js` 순차 삽입 모두 `new naver.maps.Map(el, { gl: true })`가 예외 없이 `init`됐고 `getProjection().fromCoordToOffset`이 유한한 값을 반환, `navermap_authFailure` 미호출. loader는 실패(script `error`)를 감지할 수 있는 (b)를 채택했다. GL 준비 신호는 `maps-gl.js` script `load`다. (a)는 서브모듈 실패 신호가 없어 timeout에만 의존한다.
