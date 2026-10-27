@@ -108,3 +108,19 @@ it('direct zoom interrupts from the displayed zoom rather than the pending click
   tick(400);
   expect(map.getSnapshot().zoom).toBeCloseTo(before - 0.25);
 });
+
+describe('FixtureMapAdapter zoom without around', () => {
+  it('uses the viewport center when the frame is empty', () => {
+    const map = new FixtureMapAdapter();
+    map.setViewport(
+      { width: 1000, height: 800 },
+      { x: 0, y: 0, width: 0, height: 0 },
+    );
+    map.center(origin, 12);
+    map.zoom(1);
+    const snap = map.getSnapshot();
+    expect(snap.zoom).toBe(13);
+    expect(Math.abs(snap.center.lat - origin.lat)).toBeLessThan(1e-4);
+    expect(Math.abs(snap.center.lng - origin.lng)).toBeLessThan(1e-4);
+  });
+});

@@ -338,10 +338,25 @@ describe('NAVER observe input', () => {
     fireEvent.doubleClick(region(), { clientX: 10, clientY: 10 });
     // 대상은 SDK 입력 요소 안에 있어 SDK가 그 위의 휠·더블클릭도 줌한다.
     fireEvent.wheel(label, { deltaY: -100, clientX: 10, clientY: 10 });
-    fireEvent.doubleClick(label, { clientX: 10, clientY: 10 });
     expect(zoom).not.toHaveBeenCalled();
-    expect(note).toHaveBeenCalledTimes(4);
+    expect(note).toHaveBeenCalledTimes(3);
     expect(adapter.getSnapshot()).toBe(before);
+  });
+
+  it('dblclick on a label or pin neither notes a gesture nor releases the anchor', () => {
+    const { label, note, adapter, zoom } = readySurface();
+    const release = vi.spyOn(adapter, 'releaseAnchor');
+    const reach = vi.fn();
+    adapter.getOverlayHost!()!.parentElement!.addEventListener(
+      'dblclick',
+      reach,
+    );
+    fireEvent.doubleClick(label, { clientX: 10, clientY: 10 });
+    expect(note).not.toHaveBeenCalled();
+    expect(release).not.toHaveBeenCalled();
+    expect(zoom).not.toHaveBeenCalled();
+    // SDK 입력 요소(host의 부모)까지 올라가 SDK가 줌하지 않는다.
+    expect(reach).not.toHaveBeenCalled();
   });
 
   it('keyboard still drives the adapter', () => {

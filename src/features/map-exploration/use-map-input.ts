@@ -87,13 +87,15 @@ export function useMapInput(
     },
     onDoubleClick: (event) => {
       if (gesture.current.touch) return;
-      // observe: 라벨·핀은 SDK 입력 요소 안에 있어 그 위의 더블클릭도 SDK가 줌한다.
+      // observe: 빈 지도 위 더블클릭은 SDK가 줌한다. 라벨·핀(button) 위 더블클릭은
+      // overlay host가 SDK로 전달하지 않으므로 사용자 조작으로 보지 않는다.
+      const onButton =
+        event.target instanceof Element && !!event.target.closest('button');
       if (observe) {
-        adapter.noteUserGesture?.();
+        if (!onButton) adapter.noteUserGesture?.();
         return;
       }
-      if (event.target instanceof Element && event.target.closest('button'))
-        return;
+      if (onButton) return;
       adapter.zoom(1, pixel(event.clientX, event.clientY));
     },
     onKeyDown: (event) => {

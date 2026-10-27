@@ -126,6 +126,14 @@ describe('NaverMapAdapter', () => {
       expect(vi.getTimerCount()).toBe(0);
     });
 
+    it('setSize가 throw해도 loading에 머물지 않고 network-error', () => {
+      const { adapter, l, fake } = setup();
+      fake.throwOnSetSize = true;
+      l.set('ready');
+      expect(adapter.getStatus()).toBe('network-error');
+      expect(vi.getTimerCount()).toBe(0);
+    });
+
     it('loader auth-error를 전파한다(ready 이후 포함)', () => {
       const { adapter, l } = setup();
       l.set('auth-error');
@@ -490,6 +498,18 @@ describe('NaverMapAdapter', () => {
   });
 
   describe('카메라', () => {
+    it('frame이 비어 있으면 around 없는 zoom은 viewport 중심 기준(center 유지)', () => {
+      const { adapter, ready } = setup();
+      ready();
+      adapter.center(A, 13);
+      adapter.setViewport(SIZE, { x: 0, y: 0, width: 0, height: 0 });
+      adapter.zoom(1);
+      const snap = adapter.getSnapshot();
+      expect(snap.zoom).toBe(14);
+      near(snap.center.lat, A.lat, 1e-4);
+      near(snap.center.lng, A.lng, 1e-4);
+    });
+
     it('SDK zoom_changed/center_changed마다 revision 증가, 사이에는 같은 객체', () => {
       const { adapter, ready, map, fake, listener } = setup();
       ready();
@@ -597,6 +617,29 @@ describe('NaverMapAdapter', () => {
   });
 
   describe('overlay host', () => {
+    it('라벨·핀 위 dblclick은 SDK 입력 요소로 전달하지 않는다', () => {
+      const { adapter, ready, container } = setup({ mount: false });
+      const wrapper = document.createElement('div');
+      const input = document.createElement('div');
+      wrapper.appendChild(input);
+      container.appendChild(wrapper);
+      adapter.mount(container);
+      ready();
+      const host = adapter.getOverlayHost()!;
+      const label = document.createElement('button');
+      label.className = 'exploration-label';
+      const inner = document.createElement('span');
+      label.appendChild(inner);
+      const other = document.createElement('div');
+      host.append(label, other);
+      const reach = vi.fn();
+      input.addEventListener('dblclick', reach);
+      inner.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
+      expect(reach).not.toHaveBeenCalled();
+      other.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
+      expect(reach).toHaveBeenCalledOnce();
+    });
+
     it('ready 전에는 없고, ready 뒤 SDK 입력 요소 안에 생기며 destroy로 제거된다', () => {
       const { adapter, ready, container } = setup({ mount: false });
       // 실제 SDK의 container > div > div(입력 listener 요소) 구조를 흉내 낸다.

@@ -64,6 +64,8 @@ export type FakeMapsControl = {
   listenerCount: () => number;
   /** true면 `new Map()`이 throw한다. */
   throwOnCreate: boolean;
+  /** true면 `setSize`가 throw한다. */
+  throwOnSetSize: boolean;
   /** true면 projection이 NaN을 돌려준다. */
   brokenProjection: boolean;
 };
@@ -91,6 +93,7 @@ export function createFakeMaps(): FakeMapsControl {
   const control = {} as FakeMapsControl;
   control.instances = [];
   control.throwOnCreate = false;
+  control.throwOnSetSize = false;
   control.brokenProjection = false;
   control.live = () => control.instances.filter((m) => !m.destroyed);
   control.listenerCount = () => registry.size;
@@ -220,6 +223,7 @@ export function createFakeMaps(): FakeMapsControl {
       this.emit('center_changed');
     }
     setSize(size: { width: number; height: number }) {
+      if (control.throwOnSetSize) throw new Error('fake setSize failure');
       this.calls.push('setSize');
       this.size = { width: size.width, height: size.height };
     }

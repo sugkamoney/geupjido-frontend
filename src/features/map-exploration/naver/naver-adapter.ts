@@ -180,6 +180,14 @@ export class NaverMapAdapter implements MapAdapter {
     host.style.inset = '0';
     host.style.zIndex = '2';
     host.style.pointerEvents = 'none';
+    // 라벨·핀 위 더블클릭은 SDK 더블클릭 줌으로 전달하지 않는다(선택 두 번 뒤 줌으로 구가 밀리는 것을 막는다).
+    host.addEventListener('dblclick', (event) => {
+      if (
+        event.target instanceof Element &&
+        event.target.closest('.exploration-label, .exploration-pin')
+      )
+        event.stopPropagation();
+    });
     parent.appendChild(host);
     this.overlayHost = host;
   }
@@ -241,25 +249,32 @@ export class NaverMapAdapter implements MapAdapter {
     }
     this.maps = maps;
     this.map = map;
-    this.sdkSetSize(this.size);
-    const on = (name: string, fn: () => void) =>
-      this.mapListeners.push(
-        maps.Event.addListener(map, name, () => {
-          if (!this.destroyed && attempt === this.attempt) fn();
-        }),
-      );
-    on('init', () => {
-      this.initSeen = true;
-      this.tryReady();
-    });
-    on('center_changed', () => this.onCameraEvent());
-    on('zoom_changed', () => this.onCameraEvent());
-    on('idle', () => {
-      if (this.phase === 'loading') this.tryReady();
-      else if (this.motion?.moved) this.motion = undefined;
-    });
-    on('dragstart', () => this.noteUserGesture());
-    on('pinchstart', () => this.noteUserGesture());
+    try {
+      this.sdkSetSize(this.size);
+      const on = (name: string, fn: () => void) =>
+        this.mapListeners.push(
+          maps.Event.addListener(map, name, () => {
+            if (!this.destroyed && attempt === this.attempt) fn();
+          }),
+        );
+      on('init', () => {
+        this.initSeen = true;
+        this.tryReady();
+      });
+      on('center_changed', () => this.onCameraEvent());
+      on('zoom_changed', () => this.onCameraEvent());
+      on('idle', () => {
+        if (this.phase === 'loading') this.tryReady();
+        else if (this.motion?.moved) this.motion = undefined;
+      });
+      on('dragstart', () => this.noteUserGesture());
+      on('pinchstart', () => this.noteUserGesture());
+    } catch {
+      // setSize·listener 등록 실패도 loading에 머물지 않고 network-error로 만든다.
+      this.teardownMap();
+      this.phase = 'network-error';
+      return;
+    }
     this.initTimer = setTimeout(() => {
       this.initTimer = undefined;
       if (this.destroyed || attempt !== this.attempt) return;
@@ -538,10 +553,7 @@ export class NaverMapAdapter implements MapAdapter {
   /** 준비 전에는 no-op(필수 계약 2). */
   zoom(delta: number, around?: Point, animate = false) {
     if (!this.live) return;
-    const pixel = around ?? {
-      x: this.frame.x + this.frame.width / 2,
-      y: this.frame.y + this.frame.height / 2,
-    };
+    const pixel = around ?? this.frameCenter();
     const nextZoom = clamp(
       (animate
         ? (this.motion?.zoom ?? this.currentZoom())

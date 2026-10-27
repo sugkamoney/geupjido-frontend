@@ -202,10 +202,7 @@ export class FixtureMapAdapter implements MapAdapter {
     this.fitted = undefined;
   }
   zoom(delta: number, around?: Point, animate = false) {
-    const pixel = around ?? {
-      x: this.frame.x + this.frame.width / 2,
-      y: this.frame.y + this.frame.height / 2,
-    };
+    const pixel = around ?? this.frameCenter();
     const nextZoom = clamp(
       (animate
         ? (this.destination?.zoom ?? this.camera.zoom)
