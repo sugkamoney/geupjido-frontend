@@ -22,6 +22,7 @@
 - [지도 탐색 작업 인수인계](map-exploration-handoff.md)
 - [검색 작업 인수인계](search-handoff.md)
 - [월드컵 작업 인수인계](worldcup-handoff.md)
+- [NAVER 지도 SDK 연결 작업 인수인계](naver-map-sdk-handoff.md)
 - [디자인 시스템 코드 기반과 사용법](design-system.md)
 - [PR 작성 규칙](pull-request-convention.md)
 
