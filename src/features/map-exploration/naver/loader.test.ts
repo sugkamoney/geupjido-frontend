@@ -150,6 +150,14 @@ describe('createNaverLoader', () => {
     expect(b.loader.getStatus()).toBe('auth-error');
   });
 
+  it('auth-error is not overwritten by a later load failure', () => {
+    const { loader, win, scripts } = setup('test-id', undefined, false);
+    loader.start();
+    win.navermap_authFailure!();
+    scripts[0]!.fire('load');
+    expect(loader.getStatus()).toBe('auth-error');
+  });
+
   it('navermap_authFailure는 script 삽입 전에 등록된다', () => {
     const { loader, win } = setup();
     loader.start();

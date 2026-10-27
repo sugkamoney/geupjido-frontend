@@ -91,6 +91,12 @@ export function createNaverLoader(options: {
     const active = () => !disposed && current === attempt;
     const fail = (next: LoaderStatus) => {
       if (!active()) return;
+      // 종료 상태는 한 시도 안에서 고정한다. 인증 실패만 ready 이후에도 허용한다.
+      if (
+        status !== 'loading' &&
+        !(next === 'auth-error' && status === 'ready')
+      )
+        return;
       if (timer !== undefined) clearTimeout(timer);
       timer = undefined;
       setStatus(next);
