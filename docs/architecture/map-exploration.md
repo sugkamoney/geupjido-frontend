@@ -119,6 +119,8 @@ requesting-code-review 스킬에 따라 독립 읽기 전용 리뷰를 수행했
 
 `naver/loader.ts`는 단일 Promise 상태기계다(`loading | ready | auth-error | network-error | config-error`). `maps.js`가 load된 뒤 `maps-gl.js`를 순차 삽입하고 각 단계에서 `naver.maps` 존재를 확인한다. `navermap_authFailure`는 script 삽입 전에 등록한다. 시도마다 증가하는 attempt id와 disposed 상태로 이전 시도의 load·error·timeout·인증 콜백을 무시하고 타이머·핸들러를 정리한다. 종료 상태(`auth-error` 등)는 sticky라 늦은 콜백이 덮어쓰지 않는다. loader timeout은 15초다. 재시도는 실패한 script·지도를 정리한 뒤 다시 시작한다.
 
+키보드 조작(화살표 이동, `+`/`-` 줌)은 SDK `keyboardShortcuts`를 끄고 `use-map-input`이 처리한다. 포커스가 region 자신이나 SDK canvas(`tabindex=0`)에 있을 때 처리하며, 라벨·핀 같은 overlay 조작 요소에서는 처리하지 않는다.
+
 ### NaverMapAdapter 필수 계약
 
 `naver/naver-adapter.ts`:

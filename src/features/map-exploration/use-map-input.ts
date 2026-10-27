@@ -99,7 +99,16 @@ export function useMapInput(
       adapter.zoom(1, pixel(event.clientX, event.clientY));
     },
     onKeyDown: (event) => {
-      if (event.target !== event.currentTarget) return;
+      // region 자신 또는 SDK canvas처럼 region 안의 비-조작 요소에서만 처리한다.
+      // 라벨·핀(button) 등 상호작용 요소는 자체 키 동작을 유지한다.
+      if (
+        event.target !== event.currentTarget &&
+        (!(event.target instanceof Element) ||
+          event.target.closest(
+            'button, a, input, textarea, select, [contenteditable]',
+          ))
+      )
+        return;
       const deltas: Record<string, Point> = {
         ArrowLeft: { x: 50, y: 0 },
         ArrowRight: { x: -50, y: 0 },

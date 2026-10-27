@@ -367,6 +367,41 @@ describe('NAVER observe input', () => {
     expect(zoom).toHaveBeenCalledOnce();
   });
 
+  it('keyboard works when focus is on a focusable SDK canvas inside the region', () => {
+    const { zoom, pan } = readySurface();
+    const canvas = document.createElement('canvas');
+    canvas.tabIndex = 0;
+    region().appendChild(canvas);
+    canvas.focus();
+    expect(document.activeElement).toBe(canvas);
+    expect(fireEvent.keyDown(canvas, { key: 'ArrowLeft' })).toBe(false);
+    expect(pan).toHaveBeenCalledWith({ x: 50, y: 0 });
+    expect(fireEvent.keyDown(canvas, { key: '-' })).toBe(false);
+    expect(zoom).toHaveBeenCalledWith(-1);
+    canvas.remove();
+  });
+
+  it('arrow keys on a focused label or pin do not pan or zoom', () => {
+    const { zoom, pan, label } = readySurface();
+    label.focus();
+    expect(fireEvent.keyDown(label, { key: 'ArrowLeft' })).toBe(true);
+    expect(fireEvent.keyDown(label, { key: '-' })).toBe(true);
+    expect(pan).not.toHaveBeenCalled();
+    expect(zoom).not.toHaveBeenCalled();
+  });
+
+  it('keyboard works from a focusable canvas in drive mode too', () => {
+    const { adapter } = statusAdapter('fixture');
+    const pan = vi.spyOn(adapter, 'pan');
+    renderSurface(adapter);
+    const canvas = document.createElement('canvas');
+    canvas.tabIndex = 0;
+    region().appendChild(canvas);
+    fireEvent.keyDown(canvas, { key: 'ArrowRight' });
+    expect(pan).toHaveBeenCalledWith({ x: -50, y: 0 });
+    canvas.remove();
+  });
+
   it('SDK camera change clears hover card', () => {
     vi.useFakeTimers();
     const { label, map } = readySurface();
