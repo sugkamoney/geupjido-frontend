@@ -2,11 +2,20 @@ import { useEffect, useRef, type RefObject } from 'react';
 import type { DOMAttributes } from 'react';
 import type { MapAdapter, Point } from './types';
 
+/**
+ * 지도 region 입력.
+ * - `drive`(fixture): pointer·wheel·dblclick·키보드가 adapter 카메라를 움직인다.
+ * - `observe`(NAVER): 카메라는 SDK가 움직인다. 이 계층은 드래그·핀치·취소를 관찰만 해
+ *   `canActivate`(선택 억제)를 지키고, 조작 시작을 `adapter.noteUserGesture`로 알린다.
+ *   키보드(화살표·`+/-`)는 두 모드 모두 adapter로 보낸다.
+ */
 export function useMapInput(
   adapter: MapAdapter,
   root: RefObject<HTMLDivElement | null>,
   onInteraction: () => void,
+  mode: 'drive' | 'observe' = 'drive',
 ) {
+  const observe = mode === 'observe';
   const pointers = useRef(new Map<number, Point>());
   const gesture = useRef<{
     moved: boolean;
@@ -16,20 +25,36 @@ export function useMapInput(
     tapPoint?: Point;
     touch: boolean;
   }>({ moved: false, lastTap: 0, distance: 0, touch: false });
+  const latest = useRef({ adapter, observe });
+  useEffect(() => {
+    latest.current = { adapter, observe };
+  });
+  /** 진행 중 입력을 지도 조작으로 확정한다. observe에서는 확정 순간 SDK 조작을 알린다. */
+  const markMoved = () => {
+    const first = !gesture.current.moved;
+    gesture.current.moved = true;
+    gesture.current.lastTap = 0;
+    if (first && latest.current.observe)
+      latest.current.adapter.noteUserGesture?.();
+  };
   useEffect(() => {
     const cancelOutsidePointer = (event: PointerEvent) => {
       // Removed capture owners deliver termination to document, outside the map tree.
       if (event.target instanceof Node && root.current?.contains(event.target))
         return;
       if (!pointers.current.delete(event.pointerId)) return;
-      gesture.current.moved = true;
-      gesture.current.lastTap = 0;
+      markMoved();
     };
-    const cancelAll = () => {
+    const cancelAll = (notify: boolean) => {
+      const active = pointers.current.size > 0;
       pointers.current.clear();
-      gesture.current.moved = true;
-      gesture.current.lastTap = 0;
+      if (notify && active) markMoved();
+      else {
+        gesture.current.moved = true;
+        gesture.current.lastTap = 0;
+      }
     };
+    const blur = () => cancelAll(true);
     const events = [
       'pointerup',
       'pointercancel',
@@ -37,12 +62,12 @@ export function useMapInput(
     ] as const;
     for (const event of events)
       document.addEventListener(event, cancelOutsidePointer, true);
-    window.addEventListener('blur', cancelAll);
+    window.addEventListener('blur', blur);
     return () => {
       for (const event of events)
         document.removeEventListener(event, cancelOutsidePointer, true);
-      window.removeEventListener('blur', cancelAll);
-      cancelAll();
+      window.removeEventListener('blur', blur);
+      cancelAll(false);
     };
   }, [root]);
   const pixel = (x: number, y: number): Point => {
@@ -51,21 +76,39 @@ export function useMapInput(
   };
   const handlers: DOMAttributes<HTMLDivElement> = {
     onWheel: (event) => {
+      if (observe) {
+        adapter.noteUserGesture?.();
+        return;
+      }
       adapter.zoom(
         event.deltaY < 0 ? 0.25 : -0.25,
         pixel(event.clientX, event.clientY),
       );
     },
     onDoubleClick: (event) => {
-      if (
-        gesture.current.touch ||
-        (event.target instanceof Element && event.target.closest('button'))
-      )
+      if (gesture.current.touch) return;
+      // observe: 빈 지도 위 더블클릭은 SDK가 줌한다. 라벨·핀(button) 위 더블클릭은
+      // overlay host가 SDK로 전달하지 않으므로 사용자 조작으로 보지 않는다.
+      const onButton =
+        event.target instanceof Element && !!event.target.closest('button');
+      if (observe) {
+        if (!onButton) adapter.noteUserGesture?.();
         return;
+      }
+      if (onButton) return;
       adapter.zoom(1, pixel(event.clientX, event.clientY));
     },
     onKeyDown: (event) => {
-      if (event.target !== event.currentTarget) return;
+      // region 자신 또는 SDK canvas처럼 region 안의 비-조작 요소에서만 처리한다.
+      // 라벨·핀(button) 등 상호작용 요소는 자체 키 동작을 유지한다.
+      if (
+        event.target !== event.currentTarget &&
+        (!(event.target instanceof Element) ||
+          event.target.closest(
+            'button, a, input, textarea, select, [contenteditable]',
+          ))
+      )
+        return;
       const deltas: Record<string, Point> = {
         ArrowLeft: { x: 50, y: 0 },
         ArrowRight: { x: -50, y: 0 },
@@ -98,10 +141,13 @@ export function useMapInput(
       if (pointers.current.size === 2) {
         const [a, b] = [...pointers.current.values()];
         gesture.current.distance = Math.hypot(a!.x - b!.x, a!.y - b!.y);
-        gesture.current.moved = true;
-        gesture.current.lastTap = 0;
+        markMoved();
       }
-      if (!(event.target instanceof Element && event.target.closest('button')))
+      // observe에서는 capture하지 않는다: pointer는 SDK 입력 요소에 남아야 한다.
+      if (
+        !observe &&
+        !(event.target instanceof Element && event.target.closest('button'))
+      )
         event.currentTarget.setPointerCapture?.(event.pointerId);
     },
     onPointerMove: (event) => {
@@ -109,6 +155,15 @@ export function useMapInput(
       if (!previous) return;
       const point = pixel(event.clientX, event.clientY);
       pointers.current.set(event.pointerId, point);
+      if (observe) {
+        const start = gesture.current.start ?? previous;
+        if (
+          pointers.current.size >= 2 ||
+          Math.hypot(point.x - start.x, point.y - start.y) >= 6
+        )
+          markMoved();
+        return;
+      }
       if (pointers.current.size === 2) {
         const [a, b] = [...pointers.current.values()];
         const distance = Math.hypot(a!.x - b!.x, a!.y - b!.y);
@@ -145,7 +200,8 @@ export function useMapInput(
           previous &&
           Math.hypot(point.x - previous.x, point.y - previous.y) < 24
         ) {
-          adapter.zoom(1, point);
+          if (observe) adapter.noteUserGesture?.();
+          else adapter.zoom(1, point);
           gesture.current.lastTap = 0;
         } else {
           gesture.current.lastTap = now;
@@ -154,12 +210,12 @@ export function useMapInput(
       }
     },
     onPointerCancel: (event) => {
-      pointers.current.delete(event.pointerId);
-      gesture.current.moved = true;
-      gesture.current.lastTap = 0;
+      const tracked = pointers.current.delete(event.pointerId);
+      if (tracked || !observe) markMoved();
     },
     onLostPointerCapture: (event) => {
-      pointers.current.delete(event.pointerId);
+      // pointerup 뒤의 암묵적 capture 해제는 이미 정리된 pointer라 무시된다.
+      if (pointers.current.delete(event.pointerId) && observe) markMoved();
     },
   };
   return { handlers, canActivate: () => !gesture.current.moved };

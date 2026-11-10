@@ -113,7 +113,7 @@ test('district fit and apartment outside viewport use the authoritative selectio
 }) => {
   await field(page).fill('성동구');
   await page
-    .getByRole('option', { name: '성동구 권역 1곳', exact: true })
+    .getByRole('option', { name: '성동구 권역 5곳', exact: true })
     .click();
   await expect
     .poll(async () => Number(await map(page).getAttribute('data-zoom')))
@@ -270,7 +270,7 @@ for (const action of ['type', 'arrow'] as const) {
     await expect(page.getByRole('listbox')).toBeVisible();
     await field(page).fill('성동구');
     await page
-      .getByRole('option', { name: '성동구 권역 1곳', exact: true })
+      .getByRole('option', { name: '성동구 권역 5곳', exact: true })
       .tap();
     await expect(page.getByRole('dialog', { name: '지역 검색' })).toHaveCount(
       0,

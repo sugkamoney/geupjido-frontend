@@ -1,6 +1,7 @@
 import type {
   Apartment,
   ExplorationData,
+  LatLng,
   MapLabel,
   Point,
   Size,
@@ -56,7 +57,7 @@ const inView = (p: Point, s: Size) =>
 export function layoutOverlays(
   labels: MapLabel[],
   apartments: Apartment[],
-  project: (p: Point) => Point,
+  project: (p: LatLng) => Point,
   size: Size,
   selectedZone?: string,
   selectedApartment?: string,

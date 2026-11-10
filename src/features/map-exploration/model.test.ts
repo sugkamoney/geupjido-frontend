@@ -77,23 +77,27 @@ describe('map visibility and collision policy', () => {
 });
 describe('substitutable fixture camera', () => {
   it('centers in unobscured frame and refits after resize without invalid zero frames', () => {
+    const spot = { lat: 37.5, lng: 127.01 };
     const map = new FixtureMapAdapter();
     map.setViewport(
       { width: 1200, height: 800 },
       { x: 400, y: 80, width: 700, height: 620 },
     );
-    map.center({ x: 20, y: 30 }, 12.9);
-    expect(map.project({ x: 20, y: 30 })).toEqual({ x: 750, y: 390 });
+    map.center(spot, 12.9);
+    expect(map.project(spot).x).toBeCloseTo(750, 6);
+    expect(map.project(spot).y).toBeCloseTo(390, 6);
     map.setViewport(
       { width: 1200, height: 800 },
       { x: 800, y: 80, width: 300, height: 620 },
     );
-    expect(map.project({ x: 20, y: 30 })).toEqual({ x: 950, y: 390 });
+    expect(map.project(spot).x).toBeCloseTo(950, 6);
+    expect(map.project(spot).y).toBeCloseTo(390, 6);
     map.setViewport(
       { width: 320, height: 200 },
       { x: 0, y: 0, width: 0, height: 0 },
     );
-    expect(Number.isFinite(map.getSnapshot().center.x)).toBe(true);
+    expect(Number.isFinite(map.getSnapshot().center.lat)).toBe(true);
+    expect(Number.isFinite(map.getSnapshot().center.lng)).toBe(true);
   });
   it('preserves camera for pin selections, clamps zoom and uses district fit limits', () => {
     const map = new FixtureMapAdapter();
@@ -101,7 +105,7 @@ describe('substitutable fixture camera', () => {
       { width: 1000, height: 800 },
       { x: 0, y: 0, width: 1000, height: 800 },
     );
-    map.center({ x: 100, y: 100 }, 15);
+    map.center({ lat: 37.5, lng: 127.02 }, 15);
     map.releaseAnchor();
     const before = map.getSnapshot();
     map.setViewport(
@@ -138,18 +142,18 @@ it('reserves the complete selected apartment name before placing neighboring nam
     ...fixtures.apartments[0]!,
     id: 'long',
     name: '아주 긴 이름을 가진 압구정 재건축 검토 단지 이름',
-    point: { x: 250, y: 250 },
+    point: { lat: 250, lng: 250 },
   };
   const other = {
     ...fixtures.apartments[1]!,
     id: 'other',
     name: '다른 단지',
-    point: { x: 395, y: 250 },
+    point: { lat: 250, lng: 395 },
   };
   const placed = layoutOverlays(
     [],
     [selected, other],
-    (point) => point,
+    (point) => ({ x: point.lng, y: point.lat }),
     { width: 600, height: 400 },
     undefined,
     'long',

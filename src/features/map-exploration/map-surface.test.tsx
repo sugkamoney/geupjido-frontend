@@ -8,7 +8,7 @@ function setup() {
   const adapter = new FixtureMapAdapter();
   const frame = { x: 0, y: 0, width: 1000, height: 800 };
   adapter.setViewport({ width: 1000, height: 800 }, frame);
-  adapter.center({ x: 0, y: 0 }, 12.9);
+  adapter.center(fixtures.zones[0]!.point, 12.9);
   const onLabel = vi.fn(),
     onApartment = vi.fn();
   const view = render(
@@ -134,3 +134,12 @@ it.each(['pointerup', 'pointercancel', 'lostpointercapture'])(
     expect(onLabel).toHaveBeenCalledOnce();
   },
 );
+
+it('fixture targets keep pointer capture in drive mode', () => {
+  setup();
+  const label = screen.getByRole('button', { name: '권역 압구정' });
+  const capture = vi.fn();
+  label.setPointerCapture = capture;
+  pointer(label, 'pointerdown');
+  expect(capture).toHaveBeenCalledWith(1);
+});

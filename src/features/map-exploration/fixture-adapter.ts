@@ -1,32 +1,47 @@
 import type { MapFrame } from '../../components/app-shell/types';
-import type { Bounds, Camera, MapAdapter, Point, Size } from './types';
+import { fromWorldPixel, worldPixel } from './mercator';
+import type {
+  Camera,
+  GeoBounds,
+  LatLng,
+  MapAdapter,
+  MapStatus,
+  Point,
+  Size,
+} from './types';
 
 const clamp = (value: number, min = 9.5, max = 17) =>
   Math.max(min, Math.min(max, value));
+const SEOUL: LatLng = { lat: 37.5, lng: 127.0 };
 export class FixtureMapAdapter implements MapAdapter {
-  private camera: Camera = { center: { x: 0, y: 0 }, zoom: 12, revision: 0 };
+  readonly kind = 'fixture' as const;
+  private camera: Camera = { center: SEOUL, zoom: 12, revision: 0 };
   private size: Size = { width: 0, height: 0 };
   private frame: MapFrame = { x: 0, y: 0, width: 0, height: 0 };
   private listeners = new Set<() => void>();
   private destroyed = false;
-  private anchor: Point | undefined;
+  private anchor: LatLng | undefined;
   private animationFrame: number | undefined;
   private motionGeneration = 0;
-  private destination: { center: Point; zoom: number } | undefined;
+  private destination: { center: LatLng; zoom: number } | undefined;
   private fitted:
-    { bounds: Bounds; padding: number; limits: [number, number] } | undefined;
-  constructor(overview?: Bounds) {
+    | { bounds: GeoBounds; padding: number; limits: [number, number] }
+    | undefined;
+  constructor(overview?: GeoBounds) {
     if (overview)
       this.fitted = { bounds: overview, padding: 48, limits: [9.5, 12.49] };
   }
   getSnapshot = () => this.camera;
+  getStatus = (): MapStatus => 'ready';
+  mount() {}
+  retry() {}
   subscribe = (listener: () => void) => {
     this.listeners.add(listener);
     return () => {
       this.listeners.delete(listener);
     };
   };
-  private update(center: Point, zoom = this.camera.zoom) {
+  private update(center: LatLng, zoom = this.camera.zoom) {
     if (this.destroyed) return;
     this.camera = {
       center,
@@ -42,7 +57,7 @@ export class FixtureMapAdapter implements MapAdapter {
     this.animationFrame = undefined;
     this.destination = undefined;
   }
-  private move(center: Point, zoom: number, animate: boolean) {
+  private move(center: LatLng, zoom: number, animate: boolean) {
     this.cancelMotion();
     if (this.destroyed) return;
     zoom = clamp(zoom);
@@ -63,13 +78,15 @@ export class FixtureMapAdapter implements MapAdapter {
       if (this.destroyed || generation !== this.motionGeneration) return;
       const progress = Math.max(0, Math.min(1, (now - started) / 300));
       const eased = 1 - (1 - progress) ** 3;
-      this.update(
-        {
-          x: from.center.x + (center.x - from.center.x) * eased,
-          y: from.center.y + (center.y - from.center.y) * eased,
-        },
-        from.zoom + (zoom - from.zoom) * eased,
-      );
+      if (progress >= 1) this.update(center, zoom);
+      else
+        this.update(
+          {
+            lat: from.center.lat + (center.lat - from.center.lat) * eased,
+            lng: from.center.lng + (center.lng - from.center.lng) * eased,
+          },
+          from.zoom + (zoom - from.zoom) * eased,
+        );
       if (progress < 1) this.animationFrame = requestAnimationFrame(step);
       else {
         this.animationFrame = undefined;
@@ -78,17 +95,45 @@ export class FixtureMapAdapter implements MapAdapter {
     };
     this.animationFrame = requestAnimationFrame(step);
   }
-  private scale() {
-    return 2 ** (this.camera.zoom - 12.9);
+  private origin(zoom = this.camera.zoom): Point {
+    const center = worldPixel(this.camera.center, zoom);
+    return {
+      x: center.x - this.size.width / 2,
+      y: center.y - this.size.height / 2,
+    };
   }
-  project = (point: Point): Point => ({
-    x: (point.x - this.camera.center.x) * this.scale() + this.size.width / 2,
-    y: (point.y - this.camera.center.y) * this.scale() + this.size.height / 2,
-  });
-  unproject = (point: Point): Point => ({
-    x: (point.x - this.size.width / 2) / this.scale() + this.camera.center.x,
-    y: (point.y - this.size.height / 2) / this.scale() + this.camera.center.y,
-  });
+  /** Center of the unobscured frame, or of the whole viewport when the frame is empty. */
+  private frameCenter(): Point {
+    return this.frame.width > 0 && this.frame.height > 0
+      ? {
+          x: this.frame.x + this.frame.width / 2,
+          y: this.frame.y + this.frame.height / 2,
+        }
+      : { x: this.size.width / 2, y: this.size.height / 2 };
+  }
+  /** Camera center that puts `point` at `pixel` for the given zoom. */
+  private centerFor(point: LatLng, pixel: Point, zoom: number): LatLng {
+    const world = worldPixel(point, zoom);
+    return fromWorldPixel(
+      {
+        x: world.x - (pixel.x - this.size.width / 2),
+        y: world.y - (pixel.y - this.size.height / 2),
+      },
+      zoom,
+    );
+  }
+  project = (point: LatLng): Point => {
+    const world = worldPixel(point, this.camera.zoom),
+      origin = this.origin();
+    return { x: world.x - origin.x, y: world.y - origin.y };
+  };
+  unproject = (point: Point): LatLng => {
+    const origin = this.origin();
+    return fromWorldPixel(
+      { x: point.x + origin.x, y: point.y + origin.y },
+      this.camera.zoom,
+    );
+  };
   setViewport(size: Size, frame: MapFrame) {
     if (
       this.destroyed ||
@@ -121,44 +166,32 @@ export class FixtureMapAdapter implements MapAdapter {
       );
     else this.update(this.camera.center);
   }
-  center(point: Point, zoom = this.camera.zoom, animate = false) {
-    this.anchor = point;
+  center(target: LatLng, zoom = this.camera.zoom, animate = false) {
+    this.anchor = target;
     this.fitted = undefined;
-    const scale = 2 ** (clamp(zoom) - 12.9);
-    const target =
-      this.frame.width > 0 && this.frame.height > 0
-        ? {
-            x: this.frame.x + this.frame.width / 2,
-            y: this.frame.y + this.frame.height / 2,
-          }
-        : { x: this.size.width / 2, y: this.size.height / 2 };
     this.move(
-      {
-        x: point.x - (target.x - this.size.width / 2) / scale,
-        y: point.y - (target.y - this.size.height / 2) / scale,
-      },
+      this.centerFor(target, this.frameCenter(), clamp(zoom)),
       zoom,
       animate,
     );
   }
   fit(
-    bounds: Bounds,
+    bounds: GeoBounds,
     padding = 48,
     limits: [number, number] = [9.5, 12.49],
     animate = false,
   ) {
+    const sw = worldPixel(bounds.sw, 0),
+      ne = worldPixel(bounds.ne, 0);
     const scale = Math.min(
       Math.max(1, this.frame.width - padding * 2) /
-        Math.max(1, bounds.max.x - bounds.min.x),
+        Math.max(1e-9, Math.abs(ne.x - sw.x)),
       Math.max(1, this.frame.height - padding * 2) /
-        Math.max(1, bounds.max.y - bounds.min.y),
+        Math.max(1e-9, Math.abs(sw.y - ne.y)),
     );
     this.center(
-      {
-        x: (bounds.min.x + bounds.max.x) / 2,
-        y: (bounds.min.y + bounds.max.y) / 2,
-      },
-      clamp(12.9 + Math.log2(scale), ...limits),
+      fromWorldPixel({ x: (sw.x + ne.x) / 2, y: (sw.y + ne.y) / 2 }, 0),
+      clamp(Math.log2(scale), ...limits),
       animate,
     );
     this.fitted = { bounds, padding, limits };
@@ -169,10 +202,7 @@ export class FixtureMapAdapter implements MapAdapter {
     this.fitted = undefined;
   }
   zoom(delta: number, around?: Point, animate = false) {
-    const pixel = around ?? {
-      x: this.frame.x + this.frame.width / 2,
-      y: this.frame.y + this.frame.height / 2,
-    };
+    const pixel = around ?? this.frameCenter();
     const nextZoom = clamp(
       (animate
         ? (this.destination?.zoom ?? this.camera.zoom)
@@ -180,23 +210,15 @@ export class FixtureMapAdapter implements MapAdapter {
     );
     const point = this.unproject(pixel);
     this.releaseAnchor();
-    const zoom = nextZoom,
-      scale = 2 ** (zoom - 12.9);
-    this.move(
-      {
-        x: point.x - (pixel.x - this.size.width / 2) / scale,
-        y: point.y - (pixel.y - this.size.height / 2) / scale,
-      },
-      zoom,
-      animate,
-    );
+    this.move(this.centerFor(point, pixel, nextZoom), nextZoom, animate);
   }
   pan(delta: Point) {
     this.releaseAnchor();
-    this.update({
-      x: this.camera.center.x - delta.x / this.scale(),
-      y: this.camera.center.y - delta.y / this.scale(),
-    });
+    const zoom = this.camera.zoom,
+      center = worldPixel(this.camera.center, zoom);
+    this.update(
+      fromWorldPixel({ x: center.x - delta.x, y: center.y - delta.y }, zoom),
+    );
   }
   destroy() {
     this.destroyed = true;

@@ -24,7 +24,7 @@ function setup() {
     { width: 1280, height: 720 },
     { x: 80, y: 68, width: 1100, height: 600 },
   );
-  adapter.center({ x: 0, y: 0 }, 13);
+  adapter.center(fixtures.zones[0]!.point, 13);
   render(<ExplorationPage adapter={adapter} source={detailSource} />);
   return { adapter, user: userEvent.setup() };
 }
@@ -131,7 +131,7 @@ describe('search interaction in exploration', () => {
     await user.click(screen.getByRole('option', { name: /성동구 권역/ }));
     expect(adapter.getSnapshot().zoom).toBeGreaterThanOrEqual(12.55);
     expect(adapter.getSnapshot().zoom).toBeLessThanOrEqual(13.5);
-    act(() => adapter.center({ x: 100000, y: 100000 }, 17));
+    act(() => adapter.center({ lat: 37.6, lng: 127.2 }, 17));
     expect(
       screen.queryByRole('button', { name: '지도 단지 청담 검토 단지' }),
     ).not.toBeInTheDocument();
@@ -159,7 +159,7 @@ it('search source can select a zone and apartment absent from viewport data', as
     { width: 1000, height: 800 },
     { x: 0, y: 0, width: 1000, height: 800 },
   );
-  adapter.center({ x: 10000, y: 10000 }, 13);
+  adapter.center({ lat: 37.6, lng: 127.2 }, 13);
   render(
     <ExplorationPage
       adapter={adapter}
@@ -216,7 +216,7 @@ it('prefers the latest detail fields over a search candidate and merges them int
     { width: 1000, height: 800 },
     { x: 0, y: 0, width: 1000, height: 800 },
   );
-  adapter.center({ x: 0, y: 0 }, 13);
+  adapter.center(fixtures.zones[0]!.point, 13);
   render(
     <ExplorationPage
       adapter={adapter}

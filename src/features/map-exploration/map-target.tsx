@@ -4,10 +4,16 @@ import { useRef, type ComponentPropsWithoutRef } from 'react';
 export function MapTarget({
   onActivate,
   canActivate,
+  capture = true,
   ...props
 }: ComponentPropsWithoutRef<'button'> & {
   onActivate: () => void;
   canActivate: () => boolean;
+  /**
+   * fixture 입력은 대상에서 pointer를 capture한다. NAVER는 false로 넘겨 대상 위에서
+   * 시작한 드래그·핀치가 SDK 지도 이동으로 이어지게 한다.
+   */
+  capture?: boolean;
 }) {
   const touch = useRef(false);
   const start = useRef<{ id: number; x: number; y: number } | undefined>(
@@ -18,7 +24,7 @@ export function MapTarget({
       {...props}
       onPointerDown={(event) => {
         if (event.button !== 0) return;
-        event.currentTarget.setPointerCapture?.(event.pointerId);
+        if (capture) event.currentTarget.setPointerCapture?.(event.pointerId);
         touch.current =
           event.pointerType === 'touch' || event.pointerType === 'pen';
         if (touch.current)
