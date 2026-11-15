@@ -31,3 +31,4 @@
 - [ADR-005: 지도 탐색 검토 데이터와 운영 연동 경계](ADR-005-map-fixture-boundary.md)
 
 - [ADR-007: NAVER GL 지도 위에 React overlay를 얹고 제스처는 SDK에 맡긴다](ADR-007-naver-gl-map-and-react-overlay.md)
+- [ADR-008: 현 계약으로 지도 화면 연결·BE 보완 전 임시 동작](ADR-008-map-api-first-integration.md)
