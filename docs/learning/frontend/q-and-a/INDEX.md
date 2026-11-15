@@ -22,3 +22,4 @@
 
 - [QA-FE-007: Linux WebKit 검색 재진입과 반응형 전환 완료 조건](QA-FE-007-responsive-test-readiness.md)
 - [QA-FE-008: 생성 API 타입과 실제 응답 검증의 차이](QA-FE-008-generated-api-types-and-runtime-contract.md)
+- [QA-FE-009: NAVER 지도 Client ID 발급과 workspace 설정](QA-FE-009-naver-map-client-id-setup.md)
