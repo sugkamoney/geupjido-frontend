@@ -19,6 +19,8 @@
 - [지도 API 연동을 위한 BE 계약 보완 요청(전달용 초안)](map-api-backend-request.md)
 - [지도 API 읽기 계층과 검증 결과](map-api-read-layer.md)
 - [기존 지도 화면의 실제 API 연결](map-api-ui-integration.md)
+- [실제 지도 경계와 모바일 SDK/API 결합 검증](map-boundary-mobile-validation.md)
+- [BE 추가 요청: 지도 표시 경계의 한강 수면 제외(미발송)](map-boundary-backend-followup.md)
 - [2026-10-13 백엔드·디자인 구현 준비 점검](2026-10-13-implementation-readiness.md)
 
 - [프로젝트 초기화](project-initialization.md)

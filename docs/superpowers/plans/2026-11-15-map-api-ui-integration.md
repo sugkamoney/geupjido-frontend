@@ -56,5 +56,5 @@ BE와 상위 checkout은 수정하지 않는다. push·PR·merge 없음. 새 의
 - `pnpm check`: 25파일·223개 통과, 빌드 성공. 전체 E2E125개 통과/34개 플랫폼 적용 제외.
 - 실제 API desktop/mobile Chromium·WebKit에서 검색·상세·목록 선택·빈 검색 확인.
 - 독립 리뷰 Important 3건은 재현 테스트 실패→수정 후 통과. 미해결 Critical/Important 없음.
-- 최초 API 검증은 키 없는 로컬 명시적 fixture 지도 모드였다. 후속 사용자 키 설정 뒤 인증 200과 desktop 실제 NAVER GL/API 결합을 확인했다. 모바일 SDK·실기기·경계 정확성은 별도다.
-- 사용자에게 기존 기본 화면을 열어두며 BE 보완·실제 SDK 결합·물리 기기는 후속이다.
+- 최초 API 검증은 키 없는 로컬 명시적 fixture 지도 모드였다. 후속 사용자 키 설정 뒤 인증 200과 desktop 실제 NAVER GL/API 결합을 확인했다. 후속 모바일 SDK 브라우저 검증과 경계 원인 확인도 완료했다. 한강 수면 제외는 BE 보완이 필요하며 물리 기기·시작 지연 관찰은 별도다.
+- 사용자에게 기존 기본 화면을 열어둔다. 후속 실제 SDK·경계 검증은 [검증 기록](../../architecture/map-boundary-mobile-validation.md)을 따르며 BE 보완·물리 기기는 후속이다.

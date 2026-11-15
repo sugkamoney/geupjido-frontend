@@ -1,6 +1,6 @@
 # 기존 지도 화면의 실제 API 연결
 
-> 상태: 기존 화면·desktop NAVER GL/API 결합 확인, BE 보완·경계 정확성·모바일 SDK·실기기 별도 · 버전: 0.2 · 갱신: 2026-11-15
+> 상태: 기존 화면·desktop/mobile GL/API 검증 확인, BE 경계·실기기·시작 지연 관찰 별도 · 버전: 0.3 · 갱신: 2026-11-15
 
 ## 현재 경로와 지원 범위
 
@@ -100,7 +100,7 @@ live source만 200ms debounce와 입력 최대 80자를 적용한다. 한글 조
 | 전체 `pnpm test:e2e --workers=3` | 125개 통과·34개 플랫폼 적용 제외·실패 0. desktop Chromium, mobile Chromium/WebKit 및 NAVER 오류 구성 |
 | 실제 개발 API + 기존 화면 | desktop Chromium, Pixel 7 Chromium, iPhone 13 WebKit에서 구 표시→압구정 검색→상세 9개 단지→목록 선택→zoom≥15·선택 핀, 빈 검색 확인. 콘솔 오류·가로 넘침 없음 |
 | 독립 읽기 전용 리뷰 | Important 3건을 재현→수정: 배경 cities 오류에서 지도 유지, viewport 핀 제거 뒤 선택 위치 유지, 급지 null 카드의 1급지 gradient 제거. 각 회귀 실패→성공 확인 |
-| 실제 NAVER GL + API | 사용자 키 설정 및 콘솔 확인 뒤 `/v3/auth` 200, 실제 GPU 기반 headless Chromium에서 GL canvas 1개 확인. 강남구 클릭 zoom12.55, 압구정 실제 상세→단지 선택 zoom≥15·선택 핀, 마우스 드래그의 중심 변경 확인. 모바일 실제 SDK는 별도 |
+| 실제 NAVER GL + API | 사용자 키 설정 및 콘솔 확인 뒤 `/v3/auth` 200, 실제 GPU 기반 headless Chromium에서 GL canvas 1개 확인. 강남구 클릭 zoom12.55, 압구정 실제 상세→단지 선택 zoom≥15·선택 핀, 마우스 드래그의 중심 변경 확인. 후속 모바일 GL 검증은 [경계·모바일 검증 기록](map-boundary-mobile-validation.md)을 따름 |
 | 물리 기기 | 미검증. 모바일 에뮬레이션·브라우저 엔진 결과를 실기기 soft keyboard/VoiceOver/실제 제스처 검증으로 대체하지 않음 |
 
 새 E2E는 mock API를 사용해 실제 route의 검색·상세·목록 선택·80자 입력 제한·빈 검색·
@@ -113,14 +113,24 @@ live source만 200ms debounce와 입력 최대 80자를 적용한다. 한글 조
 
 ### 실제 지도 확인에서 남은 경계 검토
 
-키 적용 후 압구정 상세의 실제 지도 캡처에서 선택 면이 한강까지 포함돼 보였다.
-FE는 BE GeoJSON의 모든 면과 ring을 보존해 렌더한다. 이 관찰만으로 원본 경계 데이터와
-렌더링 중 어느 쪽의 문제인지 단정하지 않으며, 수용 기준의 한강 제외가 충족됐다고 주장하지 않는다.
-원본 geometry·water 영역·실제 지도 대조를 후속 확인한다. 임의 좌표 이동이나 FE 경계 축소로 보정하지 않는다.
+압구정의 실제 API 좌표 200개와 SVG 점 200개를 독립 NAVER GL projection으로 대조해
+최대 차이 0 CSS px를 확인했다. 한강 표본도 API·SVG 모두에 포함됐고 BE 경계 생성에
+수면 차감이 없었다. FE 그림 오류가 아니라 표시 geometry 보완이 필요한 것으로 확인했다.
+수용 기준의 한강 제외는 미충족이며, FE에서 임의로 잘라내지 않는다.
+
+실제 모바일 GL 검증에서도 주요 흐름은 통과했다. Chrome은 trusted touch 드래그·핀치·
+두 번 탭·목록 스크롤, WebKit은 탭·시트·키보드 목록 스크롤을 확인했다.
+추가 실행 중 초기 API 대기/SDK 시간 초과가 한 차례 관찰돼 원인 미확정·재발 관찰로 기록했다.
+재확인은 두 엔진 모두 통과했으며 timeout/재시도 설정을 늘리지 않았다.
+물리 기기와 WebKit 물리 스와이프·핀치를 확인한 것으로 주장하지 않는다.
+
+근거와 한계: [경계·모바일 검증](map-boundary-mobile-validation.md),
+[BE 한강 수면 제외 추가 요청 초안](map-boundary-backend-followup.md).
 
 ## 변경 이력
 
 | 버전 | 날짜 | 변경 |
 | --- | --- | --- |
+| 0.3 | 2026-11-15 | API/SVG 경계 일치·BE 수면 차감 누락과 실제 모바일 GL 검증 기록 연결 |
 | 0.2 | 2026-11-15 | 인증 200과 desktop 실제 NAVER GL/API 결합 확인, 압구정 한강 포함 경계 관찰 기록 |
 | 0.1 | 2026-11-15 | 기존 화면 실제 API 연결·viewport Query·geometry·임시 위치/라벨 정책 기록 |
