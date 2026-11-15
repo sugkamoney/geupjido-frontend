@@ -1,6 +1,6 @@
 # 기존 지도 화면의 실제 API 연결
 
-> 상태: 기존 화면 연결·자동 및 실제 API 브라우저 검증 완료, BE 보완·실제 SDK 결합·실기기 별도 · 버전: 0.1 · 갱신: 2026-11-15
+> 상태: 기존 화면·desktop NAVER GL/API 결합 확인, BE 보완·경계 정확성·모바일 SDK·실기기 별도 · 버전: 0.2 · 갱신: 2026-11-15
 
 ## 현재 경로와 지원 범위
 
@@ -100,7 +100,7 @@ live source만 200ms debounce와 입력 최대 80자를 적용한다. 한글 조
 | 전체 `pnpm test:e2e --workers=3` | 125개 통과·34개 플랫폼 적용 제외·실패 0. desktop Chromium, mobile Chromium/WebKit 및 NAVER 오류 구성 |
 | 실제 개발 API + 기존 화면 | desktop Chromium, Pixel 7 Chromium, iPhone 13 WebKit에서 구 표시→압구정 검색→상세 9개 단지→목록 선택→zoom≥15·선택 핀, 빈 검색 확인. 콘솔 오류·가로 넘침 없음 |
 | 독립 읽기 전용 리뷰 | Important 3건을 재현→수정: 배경 cities 오류에서 지도 유지, viewport 핀 제거 뒤 선택 위치 유지, 급지 null 카드의 1급지 gradient 제거. 각 회귀 실패→성공 확인 |
-| 실제 NAVER GL + API | 이번 세션 미검증: workspace 지도 키 없음. 실제 API 검증에는 명시적 fixture adapter를 사용했고 자동 SDK fallback으로 주장하지 않음 |
+| 실제 NAVER GL + API | 사용자 키 설정 및 콘솔 확인 뒤 `/v3/auth` 200, 실제 GPU 기반 headless Chromium에서 GL canvas 1개 확인. 강남구 클릭 zoom12.55, 압구정 실제 상세→단지 선택 zoom≥15·선택 핀, 마우스 드래그의 중심 변경 확인. 모바일 실제 SDK는 별도 |
 | 물리 기기 | 미검증. 모바일 에뮬레이션·브라우저 엔진 결과를 실기기 soft keyboard/VoiceOver/실제 제스처 검증으로 대체하지 않음 |
 
 새 E2E는 mock API를 사용해 실제 route의 검색·상세·목록 선택·80자 입력 제한·빈 검색·
@@ -111,8 +111,16 @@ live source만 200ms debounce와 입력 최대 80자를 적용한다. 한글 조
 서버 GET·mock·실제 SDK·실기기는 서로 구분하며 데이터 개수는 조회 시점 값이다.
 로컬 데이터나 환경 주소를 테스트 fixture에 복사하지 않는다.
 
+### 실제 지도 확인에서 남은 경계 검토
+
+키 적용 후 압구정 상세의 실제 지도 캡처에서 선택 면이 한강까지 포함돼 보였다.
+FE는 BE GeoJSON의 모든 면과 ring을 보존해 렌더한다. 이 관찰만으로 원본 경계 데이터와
+렌더링 중 어느 쪽의 문제인지 단정하지 않으며, 수용 기준의 한강 제외가 충족됐다고 주장하지 않는다.
+원본 geometry·water 영역·실제 지도 대조를 후속 확인한다. 임의 좌표 이동이나 FE 경계 축소로 보정하지 않는다.
+
 ## 변경 이력
 
 | 버전 | 날짜 | 변경 |
 | --- | --- | --- |
+| 0.2 | 2026-11-15 | 인증 200과 desktop 실제 NAVER GL/API 결합 확인, 압구정 한강 포함 경계 관찰 기록 |
 | 0.1 | 2026-11-15 | 기존 화면 실제 API 연결·viewport Query·geometry·임시 위치/라벨 정책 기록 |
