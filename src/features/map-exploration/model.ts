@@ -67,7 +67,9 @@ export function layoutOverlays(
     .sort(
       (a, b) =>
         Number(b.id === selectedZone) - Number(a.id === selectedZone) ||
-        b.area - a.area,
+        (a.area !== undefined && b.area !== undefined
+          ? b.area - a.area
+          : a.id.localeCompare(b.id)),
     )
     .map((item) => {
       const point = project(item.point),
@@ -79,6 +81,7 @@ export function layoutOverlays(
     })
     .filter((x) => inView(x.point, size));
   const pins = [...new Map(apartments.map((x) => [x.id, x])).values()]
+    .filter((item): item is Apartment & { point: LatLng } => !!item.point)
     .map((item) => ({ item, point: project(item.point), showName: false }))
     .filter((x) => inView(x.point, size));
   for (const pin of pins.sort(
@@ -104,9 +107,9 @@ export function layoutOverlays(
   }
   return { labels: placedLabels, pins };
 }
-export function formatPrice(value?: number) {
-  return value === undefined ? '—' : `${(value / 10000).toFixed(2)}억`;
+export function formatPrice(value?: number | null) {
+  return value == null ? '—' : `${(value / 10000).toFixed(2)}억`;
 }
-export function formatArea(value?: number) {
-  return value === undefined ? '—' : `${Math.round(value)}㎡`;
+export function formatArea(value?: number | null) {
+  return value == null ? '—' : `${Math.round(value)}㎡`;
 }

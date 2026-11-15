@@ -1,12 +1,18 @@
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { defineConfig } from 'vitest/config';
+import { loadEnv } from 'vite';
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   plugins: [react(), tailwindcss()],
   server: {
     proxy: {
-      '/api': { target: 'http://localhost:8080', changeOrigin: true },
+      '/api': {
+        target:
+          loadEnv(mode, process.cwd(), '').MAP_API_PROXY_TARGET ||
+          'http://localhost:8080',
+        changeOrigin: true,
+      },
     },
   },
   test: {
@@ -15,4 +21,4 @@ export default defineConfig({
     include: ['src/**/*.test.{ts,tsx}'],
     restoreMocks: true,
   },
-});
+}));

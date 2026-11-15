@@ -4,7 +4,18 @@ import type {
   ExplorationSource,
   MapLabel,
   Zone,
+  GeoBounds,
+  LatLng,
 } from './types';
+import type { Grade } from '../../components/ui/grade';
+
+type FixtureLabel = MapLabel & {
+  area: number;
+  bounds: GeoBounds;
+  grade: Grade;
+};
+type FixtureZone = Zone & FixtureLabel & { polygon: LatLng[] };
+type FixtureApartment = Apartment & { point: LatLng };
 import {
   extraDistricts,
   extraZones,
@@ -20,12 +31,12 @@ const zone = (
   lat: number,
   lng: number,
   area: number,
-  grade: Zone['grade'],
+  grade: Grade,
   /** 한강 방향으로 polygon이 넘어가지 않도록 중심 기준 북/남쪽 한계(lat)를 조정한다. */
   limit: Limit = {},
   /** 이웃 권역과 겹치지 않도록 polygon·bounds를 줄이는 배율. */
   scale = 1,
-): Zone => {
+): FixtureZone => {
   const north = ((limit.north ?? 0.005) / 0.005) * scale,
     south = ((limit.south ?? 0.005) / 0.005) * scale,
     w = 0.009 * scale;
@@ -52,7 +63,7 @@ const zone = (
     ],
   };
 };
-const district = (row: DistrictRow): MapLabel => {
+const district = (row: DistrictRow): FixtureLabel => {
   const [swLat, swLng, neLat, neLng] = row.bounds;
   return {
     id: row.id,
@@ -76,7 +87,7 @@ const apartmentsOf = (
   index: number,
   limit: Limit = {},
   scale = 1,
-): Apartment[] =>
+): FixtureApartment[] =>
   Array.from({ length: 3 + ((index * 5) % 4) }, (_, k) => {
     const row = Math.floor(k / 3);
     const rowOffset =
@@ -135,7 +146,14 @@ const limitOf = (r: { north?: number; south?: number }): Limit => ({
   south: r.south,
 });
 /** 실제 지도 기준 대략 위치의 검토용 WGS84 좌표. 경계·지적·NAVER·거래·투표 자료 아님. */
-export const fixtures: ExplorationData = {
+export const fixtures: Omit<
+  ExplorationData,
+  'districts' | 'zones' | 'apartments'
+> & {
+  districts: FixtureLabel[];
+  zones: FixtureZone[];
+  apartments: FixtureApartment[];
+} = {
   overview: {
     sw: { lat: 37.18, lng: 126.6 },
     ne: { lat: 37.71, lng: 127.25 },
@@ -184,7 +202,7 @@ export const fixtures: ExplorationData = {
           ne: { lat: 37.52, lng: 127.095 },
         },
       },
-    ] as MapLabel[]
+    ] as FixtureLabel[]
   ).concat(extraDistricts.map(district), groupDistricts.map(district)),
   zones: [...baseZones, ...generatedZones],
   apartments: Array.from({ length: 18 }, (_, i) => ({

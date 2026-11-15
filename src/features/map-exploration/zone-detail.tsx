@@ -23,12 +23,15 @@ export function buildZoneDetail({
   return {
     id: zone.id,
     title: zone.name,
-    location: `서울 › ${zone.district ?? ''}`,
+    location: `${zone.region ?? '서울'} › ${zone.district ?? ''}`,
     summary: (
       <GradeCard
         grade={zone.grade}
         value={zone.value}
-        rankText="검토용 예시 · 실제 급지·순위 미연결"
+        label={zone.live ? '초기 급지' : undefined}
+        rankText={
+          zone.live ? zone.detail : '검토용 예시 · 실제 급지·순위 미연결'
+        }
       />
     ),
     collapsedSelection: selected ? (
@@ -40,7 +43,22 @@ export function buildZoneDetail({
         {selected.name}
       </button>
     ) : undefined,
-    expandedSummary: zone.stage ? (
+    expandedSummary: zone.live ? (
+      <div className="exploration-data-note">
+        <p>초기 급지는 현재 서비스의 편집값입니다.</p>
+        {selected && !selected.point && (
+          <p role="status">
+            이 단지의 위치 정보가 없어 지도를 이동할 수 없어요.
+          </p>
+        )}
+        {value?.locationLookupFailed && (
+          <p role="status">
+            단지 위치를 불러오지 못했어요.{' '}
+            <button onClick={retry}>위치 다시 불러오기</button>
+          </p>
+        )}
+      </div>
+    ) : zone.stage ? (
       <GradeStage stage={zone.stage} />
     ) : (
       <p className="exploration-data-note">
@@ -63,7 +81,11 @@ export function buildZoneDetail({
           권역 안 단지 순위{' '}
           <span>{value ? `${value.apartments.length}곳` : ''}</span>
         </h3>
-        <p>현재 순위는 시세순입니다. 검토용 목록은 예시 순서입니다.</p>
+        <p>
+          {zone.live
+            ? `대표 거래가 · ${zone.rating?.rankingBasis === 'VOTE' ? '투표 점수 기준 순위' : '㎡당 대표 가격 기준 순위'} · 순위 없는 단지도 표시`
+            : '현재 순위는 시세순입니다. 검토용 목록은 예시 순서입니다.'}
+        </p>
       </>
     ),
     content: failed ? (

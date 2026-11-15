@@ -8,7 +8,13 @@ import {
   type Match,
   type Choice,
 } from '../worldcup/source';
-import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import {
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type ReactNode,
+} from 'react';
 import { useSearch } from '../search/use-search';
 import { fixtureSearchSource, type SearchSource } from '../search/source';
 import type { SearchTarget } from '../search/model';
@@ -40,12 +46,18 @@ export function ExplorationPage({
   data = fixtures,
   searchSource = fixtureSearchSource,
   worldcupSource = fixtureWorldcupSource,
+  live = false,
+  onViewportChange,
+  statusContent,
 }: {
   adapter?: MapAdapter;
   source?: ExplorationSource;
   data?: ExplorationData;
   searchSource?: SearchSource;
   worldcupSource?: WorldcupSource;
+  live?: boolean;
+  onViewportChange?: (bounds: GeoBounds, zoom: number) => void;
+  statusContent?: ReactNode;
 }) {
   const [adapter] = useState(
     () => providedAdapter ?? createDefaultMapAdapter(data),
@@ -77,6 +89,7 @@ export function ExplorationPage({
   };
   const [zoneId, setZoneId] = useState<string>();
   const [apartmentId, setApartmentId] = useState<string>();
+  const [selectedApartment, setSelectedApartment] = useState<Apartment>();
   const [searchTarget, setSearchTarget] = useState<SearchTarget>();
   const [sheetExpanded, setSheetExpanded] = useState(false);
   const mounted = useRef(false);
@@ -100,24 +113,35 @@ export function ExplorationPage({
     detail.value?.zone ??
     data.zones.find((x) => x.id === zoneId) ??
     (searchZone?.id === zoneId ? searchZone : undefined);
-  const apartment =
-    detail.value?.apartments.find((x) => x.id === apartmentId) ??
+  const fallbackApartment =
     data.apartments.find((x) => x.id === apartmentId) ??
     (searchTarget?.kind === 'apartment' && searchTarget.item.id === apartmentId
       ? searchTarget.item
-      : undefined);
+      : undefined) ??
+    (selectedApartment?.id === apartmentId ? selectedApartment : undefined);
+  const detailApartment = detail.value?.apartments.find(
+    (x) => x.id === apartmentId,
+  );
+  const apartment = detailApartment
+    ? {
+        ...detailApartment,
+        point: detailApartment.point ?? fallbackApartment?.point,
+      }
+    : fallbackApartment;
   const clear = () => {
     setZoneId(undefined);
     setApartmentId(undefined);
+    setSelectedApartment(undefined);
     setSheetExpanded(false);
     adapter.releaseAnchor();
   };
   const selectLabel = (label: MapLabel) => {
     setApartmentId(undefined);
+    setSelectedApartment(undefined);
     if (label.kind === 'gu') {
       setZoneId(undefined);
       setSheetExpanded(false);
-      adapter.fit(label.bounds, 48, [12.55, 13.5], true);
+      if (label.bounds) adapter.fit(label.bounds, 48, [12.55, 13.5], true);
     } else {
       setZoneId(label.id);
       adapter.center(label.point, Math.max(camera.zoom, 12.5), true);
@@ -126,8 +150,9 @@ export function ExplorationPage({
   const selectApartment = (item: Apartment, origin: 'map' | 'list') => {
     setZoneId(item.zoneId);
     setApartmentId(item.id);
+    setSelectedApartment(item);
     if (origin === 'map') adapter.releaseAnchor();
-    else {
+    else if (item.point) {
       setSheetExpanded(false);
       adapter.center(item.point, Math.max(camera.zoom, 15), true);
     }
@@ -137,6 +162,17 @@ export function ExplorationPage({
     if (target.kind === 'apartment') selectApartment(target.item, 'list');
     else selectLabel(target.item);
   });
+  const allApartments = new Map<string, Apartment>();
+  for (const item of [
+    ...data.apartments,
+    ...(detail.value?.apartments ?? []),
+    ...(apartment ? [apartment] : []),
+  ]) {
+    allApartments.set(item.id, {
+      ...item,
+      point: item.point ?? allApartments.get(item.id)?.point,
+    });
+  }
   const mapData = {
     ...data,
     zones: [
@@ -144,21 +180,13 @@ export function ExplorationPage({
         [...data.zones, ...(zone ? [zone] : [])].map((item) => [item.id, item]),
       ).values(),
     ],
-    apartments: [
-      ...new Map(
-        [
-          ...data.apartments,
-          ...(apartment ? [apartment] : []),
-          ...(detail.value?.apartments ?? []),
-        ].map((item) => [item.id, item]),
-      ).values(),
-    ],
+    apartments: [...allApartments.values()],
   };
   return (
     <>
       <AppShell
-        onWorldcupStart={(origin) => openWorldcup(origin)}
-        timelineVisible={worldcupSource.timeline.visible}
+        onWorldcupStart={live ? undefined : (origin) => openWorldcup(origin)}
+        timelineVisible={!live && worldcupSource.timeline.visible}
         timelineHeader={
           <TimelineFilters
             zone={zone}
@@ -198,19 +226,50 @@ export function ExplorationPage({
           zone
             ? buildZoneDetail({
                 zone,
-                onCompare: (origin) => openWorldcup(origin, zone),
-                value: detail.value,
+                onCompare: live
+                  ? undefined
+                  : (origin) => openWorldcup(origin, zone),
+                value: detail.value
+                  ? {
+                      ...detail.value,
+                      apartments: detail.value.apartments.map((item) => ({
+                        ...item,
+                        point: item.point ?? allApartments.get(item.id)?.point,
+                      })),
+                    }
+                  : undefined,
                 failed: detail.failed,
                 retry: detail.retry,
                 selected: apartment,
                 onSelect: (item) => selectApartment(item, 'list'),
               })
-            : undefined
+            : zoneId
+              ? {
+                  id: zoneId,
+                  title: '권역 정보',
+                  location: '',
+                  content: (
+                    <div role="status">
+                      {detail.failed ? (
+                        <>
+                          <p>권역 정보를 불러오지 못했어요.</p>
+                          <button onClick={detail.retry}>다시 불러오기</button>
+                        </>
+                      ) : (
+                        '권역 정보를 불러오고 있어요.'
+                      )}
+                    </div>
+                  ),
+                }
+              : undefined
         }
         onDetailClose={clear}
         map={({ frame }) => (
           <MapSurface
             adapter={adapter}
+            live={live}
+            onViewportChange={onViewportChange}
+            statusContent={statusContent}
             frame={frame}
             data={mapData}
             zoneId={zoneId}

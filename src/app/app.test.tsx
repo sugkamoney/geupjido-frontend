@@ -3,12 +3,15 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router';
 import { describe, expect, it } from 'vitest';
 import { App } from './app';
+import { AppProviders } from './providers';
 
 describe('app routes', () => {
   it('opens the home route', () => {
     render(
       <MemoryRouter>
-        <App />
+        <AppProviders>
+          <App />
+        </AppProviders>
       </MemoryRouter>,
     );
     expect(screen.getByRole('main')).toBeInTheDocument();
@@ -21,7 +24,9 @@ describe('app routes', () => {
     const user = userEvent.setup();
     render(
       <MemoryRouter initialEntries={['/missing']}>
-        <App />
+        <AppProviders>
+          <App />
+        </AppProviders>
       </MemoryRouter>,
     );
     expect(

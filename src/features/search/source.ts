@@ -3,6 +3,8 @@ import { fixtures } from '../map-exploration/fixtures';
 import { matchCatalog, type SearchGroup } from './model';
 /** Frontend contract, not backend-generated OpenAPI. Never a viewport response. */
 export type SearchSource = {
+  debounceMs?: number;
+  maxLength?: number;
   search: (query: string, signal: AbortSignal) => Promise<SearchGroup[]>;
 };
 export function createFixtureSearchSource(
