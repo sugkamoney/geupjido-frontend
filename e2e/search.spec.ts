@@ -24,7 +24,7 @@ async function centered(page: Page, name: string) {
     .toBeLessThan(1);
 }
 test.beforeEach(async ({ page }) => {
-  await page.goto('/map-exploration');
+  await page.goto('/map-exploration/fixtures');
 });
 test('group limits, highlighting, keyboard wrap and zone focus restoration', async ({
   page,
