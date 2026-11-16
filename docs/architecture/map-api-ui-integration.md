@@ -1,6 +1,6 @@
 # 기존 지도 화면의 실제 API 연결
 
-> 상태: 기존 화면·desktop/mobile GL/API 검증 확인, BE 경계·실기기·시작 지연 관찰 별도 · 버전: 0.3 · 갱신: 2026-11-15
+> 상태: 기존 화면·desktop/mobile GL/API 검증 확인, BE 경계·실기기·시작 지연 관찰 별도 · 버전: 0.4 · 갱신: 2026-11-16
 
 ## 현재 경로와 지원 범위
 
@@ -33,7 +33,12 @@
   다른 조회 실패는 300ms 뒤 최대 한 번 재시도한다. polling은 없고 Query 기본 재진입/창 복귀 재검증을 사용한다.
 - `ExplorationPage`: 기존 zoneId/apartmentId 선택 계약 유지. 이미 확인한 선택 단지 객체와
   좌표를 viewport에서 독립 보관한다. 상세 최신 이름·가격·rank가 우선하지만 위치가 없다는 이유로
-  이미 알고 있는 실제 선택 위치를 덮어쓰지 않는다. 닫기·구/권역 변경 때 이전 선택 참조를 정리한다.
+  이미 알고 있는 실제 선택 위치를 덮어쓰지 않는다. 위치 없이 선택한 뒤 viewport/상세에서
+  좌표를 확보해도 현재 선택 상태에 보관한다. 같은 좌표에는 상태를 다시 갱신하지 않으며,
+  닫기·구/권역 변경 때 이전 선택 참조를 정리한다.
+- `ApartmentList` 자동 스크롤은 선택 ID 변경·선택 행의 뒤늦은 표시·패널 크기 변경 때만
+  실행한다. 카메라 이동이나 조회 갱신으로 배열 참조가 달라져도 수동 스크롤 위치를 유지한다.
+  모바일에서 시트를 펼쳐 목록 크기가 바뀌면 ResizeObserver가 선택 행을 다시 가운데 맞춘다.
 
 ## 현 BE 계약으로 가능한 표시
 
@@ -96,9 +101,10 @@ live source만 200ms debounce와 입력 최대 80자를 적용한다. 한글 조
 | --- | --- |
 | baseline `pnpm test` | 211개 통과 |
 | live source/UI/route TDD | 미구현 실패 확인 후 통과. source 4개, live UI 3개, route 5개로 기존 211개에 12개 추가 |
-| 최종 `pnpm check` | 25파일·223개 테스트, 토큰·타입·lint·format·production build 통과 |
-| 전체 `pnpm test:e2e --workers=3` | 125개 통과·34개 플랫폼 적용 제외·실패 0. desktop Chromium, mobile Chromium/WebKit 및 NAVER 오류 구성 |
+| 최종 `pnpm check` | 26파일·225개 테스트, 토큰·타입·lint·format·production build 통과 |
+| 전체 `pnpm test:e2e --workers=3` | 128개 통과·34개 플랫폼 적용 제외·실패 0. desktop Chromium, mobile Chromium/WebKit 및 NAVER 오류 구성 |
 | 실제 개발 API + 기존 화면 | desktop Chromium, Pixel 7 Chromium, iPhone 13 WebKit에서 구 표시→압구정 검색→상세 9개 단지→목록 선택→zoom≥15·선택 핀, 빈 검색 확인. 콘솔 오류·가로 넘침 없음 |
+| 2026-11-16 P2 회귀 검증 | 위치 없는 행 선택→viewport 좌표 수신→범위 제거 뒤 선택 핀·목록 위치 정보 유지, 닫기 후 선택 해제 확인. 배열 갱신 시 수동 스크롤 유지와 선택 변경·행 도착·ResizeObserver 재정렬을 단위 테스트로 확인 |
 | 독립 읽기 전용 리뷰 | Important 3건을 재현→수정: 배경 cities 오류에서 지도 유지, viewport 핀 제거 뒤 선택 위치 유지, 급지 null 카드의 1급지 gradient 제거. 각 회귀 실패→성공 확인 |
 | 실제 NAVER GL + API | 사용자 키 설정 및 콘솔 확인 뒤 `/v3/auth` 200, 실제 GPU 기반 headless Chromium에서 GL canvas 1개 확인. 강남구 클릭 zoom12.55, 압구정 실제 상세→단지 선택 zoom≥15·선택 핀, 마우스 드래그의 중심 변경 확인. 후속 모바일 GL 검증은 [경계·모바일 검증 기록](map-boundary-mobile-validation.md)을 따름 |
 | 물리 기기 | 미검증. 모바일 에뮬레이션·브라우저 엔진 결과를 실기기 soft keyboard/VoiceOver/실제 제스처 검증으로 대체하지 않음 |
@@ -108,6 +114,10 @@ live source만 200ms debounce와 입력 최대 80자를 적용한다. 한글 조
 경로로 이동했으며 테스트 시나리오를 삭제하거나 재시도/timeout을 늘려 통과시키지 않았다.
 실제 API 수동 smoke에서는 숨은 모바일 목록을 role로 기다리기 전에 시트를 펼쳐야 하는
 검사 순서를 바로잡았다. 제품 목록 접근 실패로 판단하지 않는다.
+2026-11-16 P2 브라우저 회귀 검사는 합성 API 응답과 fixture 지도 바탕으로 실행했다.
+데스크톱은 확대 버튼, 모바일 Chromium/WebKit은 지도 키보드 `+` 입력 후 조회 갱신과
+목록 scrollTop 유지를 확인한다. 이 검사는 모션 감소 설정으로 카메라 애니메이션과 겹치는
+입력을 배제하며, 실제 SDK 제스처 검증은 위 별도 기록을 따른다.
 서버 GET·mock·실제 SDK·실기기는 서로 구분하며 데이터 개수는 조회 시점 값이다.
 로컬 데이터나 환경 주소를 테스트 fixture에 복사하지 않는다.
 
@@ -131,6 +141,7 @@ live source만 200ms debounce와 입력 최대 80자를 적용한다. 한글 조
 
 | 버전 | 날짜 | 변경 |
 | --- | --- | --- |
+| 0.4 | 2026-11-16 | 선택 후 확보한 좌표 보존, 지도 갱신 중 수동 목록 스크롤 유지와 회귀 테스트 추가 |
 | 0.3 | 2026-11-15 | API/SVG 경계 일치·BE 수면 차감 누락과 실제 모바일 GL 검증 기록 연결 |
 | 0.2 | 2026-11-15 | 인증 200과 desktop 실제 NAVER GL/API 결합 확인, 압구정 한강 포함 경계 관찰 기록 |
 | 0.1 | 2026-11-15 | 기존 화면 실제 API 연결·viewport Query·geometry·임시 위치/라벨 정책 기록 |
