@@ -48,18 +48,25 @@ export function useSearch(
     if (!normalizeQuery(query)) return;
     const request = new AbortController();
     let valid = true;
-    void Promise.resolve()
-      .then(() => source.search(query, request.signal))
-      .then((groups) => {
-        if (valid && !request.signal.aborted)
-          setResponse({ query, source, retry, revision, groups });
-      })
-      .catch(() => {
-        if (valid && !request.signal.aborted)
-          setResponse({ query, source, retry, revision, failed: true });
-      });
+    const run = () => {
+      void Promise.resolve()
+        .then(() => source.search(query, request.signal))
+        .then((groups) => {
+          if (valid && !request.signal.aborted)
+            setResponse({ query, source, retry, revision, groups });
+        })
+        .catch(() => {
+          if (valid && !request.signal.aborted)
+            setResponse({ query, source, retry, revision, failed: true });
+        });
+    };
+    const timer = source.debounceMs
+      ? setTimeout(run, source.debounceMs)
+      : undefined;
+    if (!timer) run();
     return () => {
       valid = false;
+      clearTimeout(timer);
       request.abort();
     };
   }, [query, source, retry, revision]);
@@ -89,6 +96,7 @@ export function useSearch(
       if (!value) setActive(undefined);
     },
     inputProps: {
+      maxLength: source.maxLength,
       role: 'combobox',
       'aria-autocomplete': 'list',
       'aria-haspopup': 'listbox',

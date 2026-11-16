@@ -91,8 +91,31 @@
   pointer-events: none;
   overflow: visible;
 }
-.exploration-area polygon {
+.exploration-area path {
   filter: drop-shadow(0 3px 8px rgb(16 18 22 / 50%));
+}
+.exploration-data-state {
+  position: absolute;
+  z-index: 4;
+  max-width: min(340px, calc(100% - 24px));
+  padding: 8px 12px;
+  border-radius: var(--radius-8);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  font: var(--type-caption-12-regular);
+}
+.exploration-neutral-dot {
+  display: block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--text-tertiary);
+}
+.ui-grade:not([data-grade]) {
+  --grade-color: var(--bg-panel);
+  --grade-text: var(--text-secondary);
+  background: var(--bg-panel);
+  color: var(--text-secondary);
 }
 .exploration-label,
 .exploration-pin {

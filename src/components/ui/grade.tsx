@@ -26,13 +26,13 @@ export function GradeChip({
   value,
   className = '',
   ...props
-}: ComponentPropsWithRef<'span'> & { grade: Grade; value: string }) {
+}: ComponentPropsWithRef<'span'> & { grade?: Grade; value: string }) {
   return (
     <span
       {...props}
       className={`ui-grade ui-grade-chip ${className}`}
       data-grade={grade}
-      aria-label={`민심급지 ${value}`}
+      aria-label={props['aria-label'] ?? `민심급지 ${value}`}
     >
       {value}
     </span>
@@ -42,12 +42,14 @@ export function GradeCard({
   grade,
   value,
   rankText,
+  label = '민심급지',
   className = '',
   ...props
 }: ComponentPropsWithRef<'div'> & {
-  grade: Grade;
+  grade?: Grade;
   value: string;
   rankText: string;
+  label?: string;
 }) {
   return (
     <div
@@ -60,7 +62,7 @@ export function GradeCard({
         src="/assets/images/house-screen.png"
         alt=""
       />
-      <span className="ui-grade-title">민심급지</span>
+      <span className="ui-grade-title">{label}</span>
       <span className="ui-grade-value">{value}</span>
       <span className="ui-grade-rank">{rankText}</span>
     </div>

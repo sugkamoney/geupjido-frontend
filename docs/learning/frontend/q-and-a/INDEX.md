@@ -21,3 +21,6 @@
 - [QA-FE-006: Vite preview와 병렬 빌드의 asset 경합](QA-FE-006-preview-build-race.md)
 
 - [QA-FE-007: Linux WebKit 검색 재진입과 반응형 전환 완료 조건](QA-FE-007-responsive-test-readiness.md)
+- [QA-FE-008: 생성 API 타입과 실제 응답 검증의 차이](QA-FE-008-generated-api-types-and-runtime-contract.md)
+- [QA-FE-009: NAVER 지도 Client ID 발급과 workspace 설정](QA-FE-009-naver-map-client-id-setup.md)
+- [QA-FE-010: 경계 데이터 오류와 SDK 렌더링 오류 구별](QA-FE-010-api-geometry-and-sdk-projection.md)

@@ -8,7 +8,7 @@ export type HighlightPart = { text: string; match: boolean };
 export type SearchTarget =
   | { kind: 'zone'; item: Zone }
   | { kind: 'gu'; item: MapLabel }
-  | { kind: 'apartment'; item: Apartment; zone: Zone };
+  | { kind: 'apartment'; item: Apartment; zone?: Zone };
 export type SearchResult = {
   id: string;
   name: string;
@@ -88,7 +88,7 @@ export function matchCatalog(
           ? (target.item.district ?? '')
           : target.kind === 'gu'
             ? `권역 ${data.zones.filter((z) => z.district === item.name).length}곳`
-            : `${target.zone.district ?? ''} ${target.zone.name}`.trim();
+            : `${target.zone?.district ?? ''} ${target.zone?.name ?? ''}`.trim();
       const direct = locate(item.name, query);
       let best = direct,
         nameRange = direct.range,
