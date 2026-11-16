@@ -113,12 +113,19 @@ export function ExplorationPage({
     detail.value?.zone ??
     data.zones.find((x) => x.id === zoneId) ??
     (searchZone?.id === zoneId ? searchZone : undefined);
-  const fallbackApartment =
+  const fallbackItem =
     data.apartments.find((x) => x.id === apartmentId) ??
     (searchTarget?.kind === 'apartment' && searchTarget.item.id === apartmentId
       ? searchTarget.item
       : undefined) ??
     (selectedApartment?.id === apartmentId ? selectedApartment : undefined);
+  const retainedPoint =
+    selectedApartment?.id === apartmentId
+      ? selectedApartment?.point
+      : undefined;
+  const fallbackApartment = fallbackItem
+    ? { ...fallbackItem, point: fallbackItem.point ?? retainedPoint }
+    : undefined;
   const detailApartment = detail.value?.apartments.find(
     (x) => x.id === apartmentId,
   );
@@ -128,6 +135,15 @@ export function ExplorationPage({
         point: detailApartment.point ?? fallbackApartment?.point,
       }
     : fallbackApartment;
+  // Retain coordinates learned after selection, independently of viewport data.
+  if (
+    apartment?.point &&
+    selectedApartment?.id === apartment.id &&
+    (selectedApartment.point?.lat !== apartment.point.lat ||
+      selectedApartment.point?.lng !== apartment.point.lng)
+  ) {
+    setSelectedApartment({ ...selectedApartment, point: apartment.point });
+  }
   const clear = () => {
     setZoneId(undefined);
     setApartmentId(undefined);

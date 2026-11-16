@@ -51,6 +51,56 @@ function setup(located = true) {
   return map;
 }
 describe('live data in the existing exploration screen', () => {
+  it('retains coordinates acquired after selecting an unlocated row when viewport data disappears', async () => {
+    const zone = toZone(parseZones([zoneRecord])[0]!);
+    const data = { ...cityData(parseCities([cityRecord])), zones: [zone] };
+    const map = new FixtureMapAdapter();
+    map.setViewport(
+      { width: 1000, height: 800 },
+      { x: 0, y: 0, width: 1000, height: 800 },
+    );
+    map.center(zone.point, 13);
+    const sources = createLiveSources({
+      ...createMapApi(),
+      zone: async () => parseZoneDetail(detailRecord),
+      complexes: async () => [],
+    });
+    const page = (apartments: ReturnType<typeof toApartment>[]) => (
+      <ExplorationPage
+        live
+        adapter={map}
+        data={{ ...data, apartments }}
+        source={sources.source}
+        searchSource={sources.searchSource}
+      />
+    );
+    const view = render(page([]));
+    fireEvent.click(screen.getByRole('button', { name: '권역 예시권역' }));
+    fireEvent.click(
+      await screen.findByRole('button', { name: '목록 단지 예시단지' }),
+    );
+    expect(screen.getByText(/이 단지의 위치 정보가 없어/)).toBeVisible();
+    act(() => map.center({ lat: 37.5, lng: 127.1 }, 13));
+    view.rerender(page([toApartment(pinRecord)]));
+    expect(
+      screen.getByRole('button', { name: '지도 단지 예시단지' }),
+    ).toHaveAttribute('aria-pressed', 'true');
+    view.rerender(page([]));
+    act(() => map.center({ lat: 37.5, lng: 127.1 }, 12));
+    expect(
+      screen.getByRole('button', { name: '지도 단지 예시단지' }),
+    ).toHaveAttribute('aria-pressed', 'true');
+    expect(
+      screen.queryByText(/이 단지의 위치 정보가 없어/),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: '목록 단지 예시단지' }),
+    ).not.toHaveTextContent('위치 정보 없음');
+    fireEvent.click(screen.getByRole('button', { name: '권역 상세 닫기' }));
+    expect(
+      screen.queryByRole('button', { name: '지도 단지 예시단지' }),
+    ).not.toBeInTheDocument();
+  });
   it('retains an already located selected pin when viewport pins disappear and detail lookup missed it', async () => {
     const zone = toZone(parseZones([zoneRecord])[0]!);
     const data = {
