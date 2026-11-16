@@ -12,6 +12,7 @@ export function ApartmentList({
   onSelect: (item: Apartment) => void;
 }) {
   const selectedRef = useRef<HTMLButtonElement | null>(null);
+  const selectedRowPresent = apartments.some((item) => item.id === selected);
   useLayoutEffect(() => {
     const row = selectedRef.current;
     const list = row?.closest<HTMLElement>('.shell-panel-list');
@@ -34,7 +35,7 @@ export function ApartmentList({
         : undefined;
     observer?.observe(list);
     return () => observer?.disconnect();
-  }, [selected, apartments]);
+  }, [selected, selectedRowPresent]);
   if (!apartments.length)
     return <p className="shell-empty">이 권역에 표시할 단지가 없어요.</p>;
   return (

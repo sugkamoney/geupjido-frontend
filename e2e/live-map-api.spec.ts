@@ -4,6 +4,7 @@ import {
   zoneRecord,
   pinRecord,
   detailRecord,
+  complexRecord,
   searchRecord,
 } from '../src/features/map-exploration/api/test-data';
 
@@ -24,6 +25,68 @@ test.beforeEach(async ({ page }) => {
             : detailRecord;
     await route.fulfill({ json: body });
   });
+});
+
+test('map and viewport updates preserve manual list scrolling after selection', async ({
+  page,
+  isMobile,
+}) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.route('**/api/v1/map/complexes?*', (route) =>
+    route.fulfill({ json: [] }),
+  );
+  await page.route('**/api/v1/map/zones/zone-a', (route) =>
+    route.fulfill({
+      json: {
+        ...detailRecord,
+        complexes: Array.from({ length: 30 }, (_, index) => ({
+          ...complexRecord,
+          id: `scroll-${index}`,
+          name: `스크롤 단지 ${index}`,
+        })),
+      },
+    }),
+  );
+  await page.goto('/');
+  await page.getByRole('combobox', { name: '지역 검색' }).fill('예시권역');
+  await page
+    .getByRole('option', { name: '예시권역 예시구', exact: true })
+    .click();
+  if (isMobile)
+    await page
+      .getByRole('button', { name: '상세 펼치기', exact: true })
+      .click();
+  const selected = page.getByRole('button', {
+    name: '목록 단지 스크롤 단지 0',
+    exact: true,
+  });
+  await selected.click();
+  await expect(selected).toHaveAttribute('aria-pressed', 'true');
+  const list = page.locator('.shell-panel-list');
+  await expect
+    .poll(() => list.evaluate((node) => node.scrollHeight - node.clientHeight))
+    .toBeGreaterThan(500);
+  await list.evaluate((node) => {
+    node.scrollTop = 500;
+  });
+  const updated = page.waitForResponse(
+    (response) => new URL(response.url()).pathname === '/api/v1/map/zones',
+  );
+  if (isMobile)
+    await page.getByRole('region', { name: '지도', exact: true }).press('+');
+  else
+    await page.getByRole('button', { name: '지도 확대', exact: true }).click();
+  await updated;
+  await expect(
+    page.getByRole('region', { name: '지도', exact: true }),
+  ).toHaveAttribute('data-zoom', '13.5');
+  await page.evaluate(
+    () =>
+      new Promise((resolve) =>
+        requestAnimationFrame(() => requestAnimationFrame(resolve)),
+      ),
+  );
+  expect(await list.evaluate((node) => node.scrollTop)).toBe(500);
 });
 
 test('existing map uses server search, real detail and list selection on desktop and mobile', async ({
