@@ -2,7 +2,9 @@ import { fixtures } from '../map-exploration/fixtures';
 import type { Apartment, Zone } from '../map-exploration/types';
 import { describeApartment, type Ratio } from './model';
 export type MatchCard = {
-  zone: Zone;
+  zone: Pick<Zone, 'id' | 'name' | 'district' | 'value' | 'grade'>;
+  navigationZone?: Zone;
+  contractDate?: string;
   apartment: Apartment;
   description: string;
 };
@@ -22,6 +24,7 @@ export type TimelineEntry = {
 };
 /** Frontend presentation boundary. Not a generated or agreed server contract. */
 export type WorldcupSource = {
+  api?: import('./api/client').WorldcupApi;
   label: string;
   timeline: { visible: boolean; entries: TimelineEntry[] };
   loadMatch: (
@@ -75,6 +78,7 @@ export function createFixtureWorldcupSource(
     const apartment = peers[index % peers.length]!;
     return {
       zone,
+      navigationZone: zone,
       apartment:
         scenario === 'long'
           ? {

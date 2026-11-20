@@ -78,13 +78,13 @@ it('ignores stale source results on scope change and unmount even when source ig
     ({ zone }) => useWorldcup(custom, zone, onSuccess, false),
     {
       initialProps: {
-        zone: undefined as (typeof match.cards)[0]['zone'] | undefined,
+        zone: undefined as import('../map-exploration/types').Zone | undefined,
       },
     },
   );
   await waitFor(() => expect(result.current.state.phase).toBe('ready'));
   act(() => result.current.choose(0));
-  rerender({ zone: match!.cards[0].zone });
+  rerender({ zone: match!.cards[0].navigationZone! });
   await act(async () => resolve!({ ratio: { kind: 'hidden' } }));
   expect(onSuccess).not.toHaveBeenCalled();
   await waitFor(() => expect(result.current.state.phase).toBe('ready'));
@@ -145,7 +145,7 @@ it('rejects a source match outside the requested zone instead of submitting it',
   };
   const onSuccess = vi.fn();
   const { result } = renderHook(() =>
-    useWorldcup(invalid, match.cards[0].zone, onSuccess, false),
+    useWorldcup(invalid, match.cards[0].navigationZone!, onSuccess, false),
   );
   await waitFor(() => expect(result.current.state.phase).toBe('failed'));
   act(() => result.current.choose(0));

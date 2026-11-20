@@ -1,88 +1,123 @@
-# 월드컵 구조·구현 계획
+# 월드컵 실제 API 구조와 검증
 
-> 상태: 검토 UI 구현·검증 완료, 실제 API 연결 대기 · 버전: 0.2 · 갱신: 2026-10-27
+> 상태: 실제 API 연동·자동 검증 완료, 실서버 쓰기·실기기 검증 남음 · 버전: 1.3 · 갱신: 2026-11-20
 
-제품 기준은 [월드컵 SDD](../product/specs/worldcup/README.md)다. 현재 workspace에서 직접 구현하며 추가 worktree·push·PR·merge는 하지 않는다. 코드 작성/수정은 100% AI다.
+제품 기준은 [월드컵 SDD](../product/specs/worldcup/README.md), 구현 선택의 근거는 [ADR-009](../history/ADR-009-worldcup-server-game-state.md)다. develop `0b545035` 기반의 지정 Orca worktree에서 FE만 변경했다. 코드 작성·수정은 100% AI다. 최초 인계는 구현·검증까지였고, 후속 사용자 요청으로 커밋·push·develop 대상 PR 생성까지 승인됐다. merge는 포함하지 않는다.
 
-## 경계
+## 계약과 파일 책임
 
-WorldcupSource는 loadMatch(scope, cursor, signal), submit(match, choice, signal), timeline 표시 데이터를 제공하는 교체형 프론트 UI 계약이다. 백엔드 생성 계약이 아니다. 실제 API 미연결 상태를 명시한다. 2026-10-15 backend develop은 읽기 전용 조회에서 dfb7cc4282979232f616113dd25704ee0b38b405로 기존 재확인과 동일하다.
+- `api/contracts.ts`: 기존 지도 API 위치의 생성 `components` 타입을 재사용한다. 배포 OpenAPI의 월드컵 DTO는 required/null 표현이 부족해 `Required`와 실제 nullable 필드를 읽기 전용 BE 문서에 따라 보강한다. 생성 파일은 수정하지 않는다.
+- `api/validation.ts`: 모든 네트워크 JSON을 unknown으로 받아 카드(급지1.0~5.9)·고정10판·연속 확정 기록·다음 판·완료·좌우 합100 또는 비공개 null·진행 수·목록을 검증한다. 계약 오류는 예시값으로 복구하지 않는다.
+- `api/client.ts`: 상대 `/api/v1/worldcup`와 `credentials: 'include'`, `cache: 'no-store'`, AbortSignal을 사용한다. 서버 오류 메시지를 그대로 UI에 노출하지 않고 status/code를 구분한다. 요청 전·응답·JSON 해석 후 취소를 확인한다.
+- `live-source.ts`: 실제 API capability를 제공한다. 예시 loadMatch/submit으로 fallback하면 명시적으로 실패한다. `source.ts`의 기존 cursor source와 `/worldcup?scenario=`는 검토용이다.
+- `use-live-worldcup.ts`: 세션별 게임 snapshot, 일반/권역 scope, 제출 잠금, 불확실한 응답 복구, 피드백/다음 판 타이머, 날짜 경계를 소유한다. `use-worldcup.ts`는 실제 source면 이 hook을 선택하고 예시 흐름도 유지한다.
+- `use-live-data.ts`, `live-data.tsx`: 진행·타임라인 읽기, scope별 취소, 오류·빈 목록·재시도, 타임라인 이동의 로컬 취소·오류 UI를 담당한다. 실제 상세 조회·이동의 권위와 최신 탐색 취소는 ExplorationPage가 소유한다. 페이지 성공 revision·재진입·1분 주기·window focus에서 재조회한다. 전체 선택5건 미만이면 타임라인 영역을 숨긴다.
+- `worldcup-dialog.tsx`: 기존 native dialog·Button·CloseButton·토큰·집/왕관 자산을 재사용한다. 실제 카드에 대표 거래·계약일을 표시하고 예시 역·소개는 표시하지 않는다.
+- `ExplorationPage`: 모달 진입 scope·페이지 My Picks·읽기 refresh revision과 타임라인 이동 요청을 소유한다. 실제 지도 메뉴/권역 상세를 활성화하고 실제 source에는 예시 본인 타임라인을 추가하지 않는다.
 
-지도 선택과 월드컵 scope는 분리한다. 상세 진입 scope는 해당 zone 객체이며 source도 권역 제한을 지킨다. 타임라인은 기존 selectLabel 경계로 연결한다. AppShell에는 시작 callback과 타임라인 header slot만 확장하고 기존 sheet pointerup·검색 focus·지도 frame 계산은 유지한다.
+게임 카드에는 zoneId/좌표가 없다. 이 카드의 권역 정보는 표시용이며 navigationZone을 만들지 않는다. 타임라인에는 실제 zoneId가 있으므로 지도 source.loadZone으로 좌표·geometry를 확인한 다음 기존 선택 경계로 이동한다. 급지 없는 타임라인 행에 임의 급지를 표시하지 않는다.
 
-모달은 native dialog.showModal로 top layer·배경 inert·focus trap을 사용한다. body overflow를 복원하고 닫힌 trigger가 숨겨졌으면 지도 메뉴로 focus를 돌린다. IME composition 중 Escape는 취소하지 않는다. 진행 화면 제목 focus는 최초 진입이나 기존 focus 대상이 비활성화·제거·dialog 밖일 때만 옮기고, 닫기 버튼처럼 유효한 대상의 focus는 비동기 상태 변경 뒤에도 유지한다. 비동기 요청은 AbortController와 세션 생존 flag로 응답을 차단한다. submit 동기 잠금으로 bubbling/반복 입력을 차단하며 성공 뒤에만 누적 callback을 호출한다. 진행/피드백 timer는 분리해 다음 대진 뒤에도 2.4초 피드백을 유지하고 teardown에서 모두 취소한다.
+## 게임 흐름과 경합
 
-첫 설명은 geupjido.worldcup.intro.v1 키를 최초 표시 때 기록한다. 저장 접근/쓰기 오류는 catch하고 모듈 메모리 fallback을 쓴다. 개인 ID·투표 저장과 무관하다. 선택·timeline·수는 ExplorationPage 메모리 소유이며 새로고침 초기화가 잠정 가정이다.
+1. 진입하면 scope의 `GET .../games/current`를 조회한다. `404 GAME_NOT_FOUND` 또는 완료된 최근 게임이면 시작으로 간다. 권역 신규 시작 전 zones의 canStart를 확인하고 부족하면 alternatives를 조회한다. 이어갈 미완료 권역 게임은 신규 후보 조건으로 막지 않는다.
+2. `POST .../games`는201 신규 또는200 이어하기다. 일반 경로와 `/zones/{zoneId}/games` 경로를 분리한다. 고정 matchups에서 서버 nextRoundNumber에 해당하는 판만 표시한다.
+3. 선택/넘김을 동기 잠금 후 `PUT .../current/rounds/{n}/vote` 또는 `/skip`으로 보낸다. 선택 body는 selectedComplexId, 넘김은 본문이 없다. 응답 게임과 해당 확정 기록·roundResult를 확인한 뒤에만 성공 callback을 호출한다. 비율은 서버 available/leftPercent/rightPercent만 사용한다.
+4.409 충돌과404 게임 소실은 새 성공을 만들지 않고 해당 흐름의 현재 상태로 재동기화한다. GAME_UNAVAILABLE은 부족 안내·권역 대안, DAILY_GAME_LIMIT_REACHED는 일일 종료로 구분한다.
+5. 네트워크·응답 검증 실패로 결과가 불확실하면 재시도에서 먼저 current를 읽는다. 같은 snapshot의 같은 선택/넘김이 저장됐으면 재전송 없이 성공을 확인한다. 다른 확정 기록·다른 게임이면 최신 진행으로 돌아가며 본인 새 선택으로 세지 않는다. 미저장일 때만 같은 요청을 보낸다. 시작 응답 유실도 재시도 GET으로 이미 생성된 게임을 찾는다.
+6.10판 완료 후 피드백 시간을 마치면 최신 current를 확인하고 다음 게임을 시작한다. 다른 탭에서 이미 시작한 미완료 게임이 있으면 그것을 이어간다. 일일 한도에 도달하면 자동 생성/재전송을 멈춘다.
+7. 한국 날짜는 Asia/Seoul로 비교한다. 일반 조회·시작·재시도 GET이 자정을 가로지르면 새 날짜 current를 읽는다. 열린 전날 카드도 다음 입력 전에 다시 읽고 투표하지 않는다. 권역 비교는 날짜로 초기화하지 않는다.
 
-## 실행 계획
+서버는 외부 game ID·version·startedAt을 제공하지 않는다. 프론트는 10판 snapshot과 이미 확인한 선택/넘김 기록으로 변경을 확인한다. 서로 다른 두 게임의 snapshot이 완전히 같고 기존 확정 기록도 구분되지 않는 극단적 경합은 클라이언트만으로 식별할 수 없다. 다중 탭에서 조회와 PUT 사이의 원자적 게임 버전 조건이 필요해지면 BE 계약 보완을 검토한다.
 
-1. source/소개 우선순위/첫 설명 저장의 실패 테스트 → 구현. source는 명시적 fixture 표시, 비율 공개/숨김·mixed·sparse 시나리오를 제공한다.
-2. dialog 상태/실패/중복/취소/시간/누적 테스트 → 모달·카드·My Picks 구현. 기존 토큰·Button·grade 스타일·자산 재사용.
-3. AppShell 시작·상세 비교·모바일 진입, timeline 필터/scroll/상세 연결. 화면별 브라우저 실패 테스트 → 구현.
-4. pnpm check 완료 후 브라우저 검사 순차 실행, Figma/모바일 참고 대조. 검증 결과와 한계를 문서/INDEX/현황에 반영하고 커밋.
+모든 요청과 타이머는 scope 변경·unmount에서 취소한다. 취소를 무시하는 응답도 생존 flag·signal로 차단한다. 닫기가 서버의 이미 저장된 선택을 롤백한다는 의미는 아니다. 닫힌 사이 저장된 판은 다음 current로 복구되지만 페이지 My Picks에 임의 추가하지 않는다.
 
-## 리뷰 초점
+## 읽기·숫자·접근성
 
-내부 버튼 bubbling·동기 입력 경합, 실패 후 재시도, close/reopen·scope 변경의 stale 성공, 피드백과 진행 timer 분리, focus를 잃는 disabled 버튼, 짧은 화면에서 닫기/넘김 접근, timeline 필터 scroll 보존, 모바일 shell 회귀.
+My Picks는 페이지 메모리의 성공 확인 선택 수이고 넘김은 제외한다. 새로고침 시0으로 시작하며 전체 개인 이력을 복원하지 않는다. 서버 progress는 오늘 일반 선택+넘김 확정 판을 센다. 권역 비교가 성공해도 progress의 일반 수를 로컬 증가시키지 않고 재조회한다. 개인 리포트 API는 호출하지 않는다. 지도 급지·순위·유효표를 즉시 갱신했다고 표시하지 않는다.
 
-## 구현 파일과 검토 시나리오
+타임라인은 공개 최근20건이고 같은 쿠키의 mine을 `나`로 표시한다. 전체 목록5건 임계값과 권역 목록 빈 결과를 분리한다. API가 없는 급지·좌표를 만들지 않고, 상세 조회 실패에는 재선택을 안내한다. 필터 변경·응답 취소·목록 스크롤은 기존 shell 컨테이너를 유지한다.
 
-- `source.ts`는 프론트 검토 계약·취소 가능한 fixture를 제공한다. `model.ts`는 소개 문구 우선순위·조사·표현 지연만 담당한다.
-- `use-worldcup.ts`는 요청/제출/결과/실패/다음 판과 타이머를 담당한다. 다음 판 요청을 시작할 때 이전 선택을 비워 재시도가 이전 투표를 다시 보내지 않게 한다. scope와 다른 응답·동일 단지 쌍은 오류로 처리한다.
-- `worldcup-dialog.tsx`는 native modal과 명시적 정/역 Tab 순환, 카드·My Picks를 조합한다. WebKit의 기본 Tab 설정에서도 문서나 브라우저 chrome으로 빠지지 않게 각 이동을 제어한다. modal 아래 스크롤 잠금·배경 inert는 native top layer와 body overflow로 처리한다.
-- `timeline.tsx`는 선택 필터·대진 행만 담당하며 부모의 기존 목록 scroll container를 유지한다. 칩을 바꿀 때만 scrollTo(0)한다. 높이 축소로 남는 scroll 범위가 줄면 브라우저가 허용 범위로 보정한다.
-- `ExplorationPage`는 모달 열림/scope·누적 count·본인 타임라인을 소유한다. source는 갱신하지 않으며 다른 사람의 실시간 활동을 생성하지 않는다.
+첫 설명 키 `geupjido.worldcup.intro.v1`는 익명 쿠키와 별개다. dialog.showModal·배경 inert·정/역 Tab 순환·IME Escape 보호·body overflow 복원·원래 trigger 또는 지도 메뉴 focus 복귀를 유지한다. 비동기 상태가 바뀌어도 유효한 닫기 focus를 빼앗지 않는다. 공개 비율1.1초/비공개·복구·reduced motion0.6초와 별도2.4초 피드백 타이머를 유지한다. 데스크톱은 My Picks·600px 창·하단 안내를 포함한 전체 묶음을 중앙에 배치한다. My Picks는 ResizeObserver로 실측한 높이+12px 간격을 부모 padding에 반영하고, 전체가 화면보다 크면 레이아웃의 자연 높이로 상단부터 스크롤한다. 779px 이하만 보정하던 분기는 제거했다. 모바일은 부모 padding0을 유지한다. 768px 미만은 전체화면과 세로 대진이며 짧은 화면은 내부 스크롤·sticky 닫기를 사용한다. 모바일 타임라인은 미제공이다.
 
-`/`·`/map-exploration`은 기존 검토 지도와 월드컵을 연결한다. `/worldcup?scenario=`는 별도 검토 경로로 mixed/hidden/unavailable/failure/pending/sparse/long을 선택한다. mixed는 권역·같은 권역 단지 예시를 교대로 제시하며 6:4 서버 정책을 구현하지 않는다. failure는 첫 제출만 실패, pending은 5초 지연이다. sparse는 source의 visible=false이며 행 수를 기준으로 공개 정책을 계산하지 않는다. 실제 연결에는 endpoint·생성 OpenAPI·인증·서버 idempotency·저장/집계 정책 합의가 필요하다.
+## 배포·쿠키
 
-## 스타일·자산과 반응형
+[고정 OpenAPI](api/INDEX.md)와 BE main `2e4aab80`의 [게임](https://github.com/sugkamoney/geupjido-backend/blob/main/docs/architecture/worldcup-game-api.md), [카드](https://github.com/sugkamoney/geupjido-backend/blob/main/docs/architecture/worldcup-card-api-contract.md), [권역](https://github.com/sugkamoney/geupjido-backend/blob/main/docs/architecture/worldcup-zone-selection-api.md), [타임라인](https://github.com/sugkamoney/geupjido-backend/blob/main/docs/architecture/worldcup-timeline-api.md), [배포 인계](https://github.com/sugkamoney/geupjido-backend/blob/main/docs/architecture/dev-api-frontend-handoff.md)를 대조했다. BE를 수정하지 않았다.
 
-기존 semantic 토큰과 components CSS layer를 유지한다. Button·CloseButton, grade 색/집 합성, 왕관·타임라인 그림을 재사용한다. 선택 후 disabled 버튼은 현재 성공 결과의 Primary/Subtle 모양을 보존하고 제출 잠금은 유지한다. W-01 그림은 `594:20785` image fill을 기존 타임라인 그림과 구분하고 원본 crop(width 245.7%, left −120.02%)을 적용한다. 원본 raster를 편집하지 않는다.
-
-1920×1080에서 창 600×468은 x660/y306이고 My Picks 600×120은 y174다. 780px 미만 desktop 높이는 상단 144px 여백과 스크롤로 판·창·닫기 접근을 보장하는 잠정 배치다. 이때 viewport 중앙보다 전체 콘텐츠 접근을 우선한다. 768px 미만은 전체 화면·상단 내부 판·위아래 카드, 740px 이하 높이는 역 줄을 숨기고 세로 스크롤을 허용한다. 닫기 줄은 sticky이고 safe area 하단 여백을 둔다. 최소 지원 크기를 확정하지 않는다. 긴 단지명은 줄바꿈하고 소개는 한 줄 말줄임하되 전체 문구는 DOM에 유지한다.
+프론트는 동일 출처 상대 `/api`를 사용한다. 로컬 Vite는 기존 MAP_API_PROXY_TARGET으로 대상을 선택하며 운영도 같은 origin 경로를 전달해야 한다. gjd_uid는 HttpOnly·Secure·SameSite=Lax라 JS로 읽거나 localStorage에 저장하지 않는다. 개발 API 절대 주소를 브라우저에서 직접 호출하는 교차 사이트 방식으로 바꾸지 않는다. Safari 실연동은 신뢰할 수 있는 HTTPS 프론트 또는 HTTPS 동일 사이트 배포에서 검증해야 한다.
 
 ## 검증 기록
 
-baseline: frozen 설치, 기존 pnpm check 67개와 브라우저 82개 통과(29개 플랫폼 제외). 내장 Browser는 연결 시 sandbox metadata 오류로 사용하지 못해 프로젝트 Playwright로 검증한다. 4175 포트는 이 workspace의 strictPort preview가 소유하며 다른 서버를 재사용하지 않는다. 검토 dev 서버는 빈 포트 확인 후 5175를 사용했다.
+Node24.15.0·pnpm11.13.0을 사용했다. 실행 명령은 `npx --yes --package=node@24.15.0 --package=pnpm@11.13.0 -- <명령>`이다. 최종 결과는 다음과 같다. 이번 실행 환경은 macOS이며 Linux WebKit 검증을 대체하지 않는다.
 
-단위 실패→성공: 소개 우선순위/동률/누락, 비율 표현 시간, 동기 중복 잠금과 제출 재시도, stale scope/unmount, 진행/피드백 타이머 분리, 차단된 저장, scope 불일치, 다음 판 로딩 실패의 재시도를 검증한다. 브라우저에서 native dialog Tab 이탈을 재현해 명시적 순환으로 보완했다. asset crop·성공 버튼 색은 시각 대조와 실패 회귀 후 보완했다.
-
-초기 개발 검사에서 NODE_ENV 없이 Vitest를 직접 실행해 production React.act 오류가 났으므로 test 모드로 재실행했다. 중간 브라우저 두 실행이 겹쳐 포트 사용 중/trace 임시 파일 충돌이 발생했고 해당 결과는 최종 결과로 채택하지 않는다. 독립 리뷰 병렬 검사에서 기존 검색 1건 timeout이 있었으며 최종 check는 순차 재확인한다.
-
-독립 읽기 전용 리뷰는 당시 코드/SDD/source/경합 처리를 검사했고 확실한 Critical/Important/Minor는 보고하지 않았다. 그 이후 시각 보완과 다음 판 재시도·scope 검증은 별도 회귀로 검증한다. 최종 전체 결과는 아래 표를 따른다.
-
-
-
-## 최종 검증 결과
-
-| 검사 | 기대 | 실제 |
+| 검사 | 기대 | 현재 결과 |
 |---|---|---|
-| frozen 설치 | 잠금 파일 변경 없이 설치 | 통과, 의존성·lockfile 변경 없음 |
-| `VITEST_MAX_WORKERS=2 pnpm check` | 토큰·타입·lint·format·단위·운영 build | 15파일 78개 테스트 포함 전체 통과 |
-| `PLAYWRIGHT_PORT=4175 pnpm test:e2e --workers=2` | 기존 회귀와 desktop/mobile 월드컵 | 108개 통과, 33개 플랫폼 적용 제외, 실패 0 |
-| 입력·비동기 | 빠른 카드/버튼/키보드 중복 차단, 실패 재시도·옛 응답 무시 | 단위·브라우저 통과, 실패 count 증가/자동 진행 없음 |
-| 시간·누적 | 1.1/0.6초, 2.4초 문구, 21번째 선택 계속 | fake timer·브라우저 clock에서 통과, 20칸/21개·재열기 유지 |
-| modal | 이름·focus 진입/정역순환/복귀, native inert·스크롤 잠금·IME Escape | desktop Chromium·mobile Chromium/WebKit 통과, 배경 focus 시도도 차단 |
-| timeline | 양쪽 권역 연결·권역 변경 scroll 유지·칩 변경 reset·source 숨김 | desktop 통과, 모바일은 의도적으로 제공 안 함 |
-| responsive·자산 | 1920 기준 치수, 800×600/320×460·긴 문구·터치·자산 로드 | 가로 overflow 없음, 닫기/넘김 접근·stacked 카드·crop·왕관/버튼 상태 통과 |
+| 시작 baseline `pnpm test` | 기존 단위 회귀 |236개 통과 |
+| API·상태·읽기 테스트 | 계약·409·응답 유실·시작 유실·날짜·scope·타임라인 stale | 27개 추가 단위 테스트 포함 전체263개 통과. 두 일반 자정 경계와 필터 scroll 회귀는 실패→성공 확인, 권역 게임은 자정 뒤에도 유지 확인 |
+| `pnpm check` | 토큰·타입·lint·format·단위·운영 build | 단위263개(30파일)·전체 품질 gate·운영 빌드 통과 |
+| 실제 월드컵 경로 E2E | desktop Chromium/mobile Chromium·WebKit | 전체156개 통과·48개 플랫폼 조건 제외·실패0. 실제 월드컵/쿠키·후속 리뷰는25개 통과·14개 모바일 타임라인/desktop 배치 조건 제외 |
+| 격리 HTTPS cookie E2E | Secure/HttpOnly/SameSite·PUT 쿠키·새로고침 이어하기 | 세 브라우저 통과 |
+| 공유 개발 API GET | progress·zones·timeline 배포 응답 |2026-11-20 progress·zones·timeline 조회, 쿠키 없는 진행0. current는404 GAME_NOT_FOUND·Set-Cookie 없음. 배포 월드컵 경로는 고정 OpenAPI와 동일 |
+| 실제 개발 서버 POST/PUT | 실제 DB 저장 |미실행: 격리 BE/DB 미제공, 공유 DB에 가상 표를 기록하지 않음 |
+| 실기기 iOS/Android·VoiceOver·IME/주소창/회전 | 물리 기기 조합 |장치 없음, 자동화의 WebKit/Pixel 모사는 실기기 검증이 아님 |
 
-첫 무제한 병렬 `pnpm check`는 호스트 load average가 50 이상인 상황에서 기존 지도/검색 포함 8건이 5초 timeout으로 실패했다. 동시 실행 수만 2로 제한한 재검사에서 같은 78개가 모두 통과했고 이어 전체 check도 통과했다. timeout·기대 조건·재시도 수는 늘리지 않았다. 이 환경 변수는 로컬 검증 자원 설정이며 저장소의 테스트 정책을 바꾸지 않는다. check와 브라우저는 shell의 성공 조건으로 연결해 **check 종료 후** 브라우저 build를 실행했다.
+쿠키 검증은 `e2e/helpers/worldcup-server.ts`의 루프백 전용 HTTPS 서버에서 실제 Set-Cookie·HTTP 요청으로 수행한다. 자체 서명 인증서를 만들고 테스트 context에서 인증서 오류만 허용한다. 브라우저 쿠키를 수동 주입하지 않으며 공유 API·DB로 연결하지 않는다. 테스트 종료 시 서버와 임시 인증서를 정리한다. Spring 서비스·실제 배포 CORS·공인 인증서의 종합 검증은 아니다.
 
-33건 제외는 기존 29건과 월드컵 desktop-only 타임라인/21번째 누적 검사 2종의 모바일 project 4건이다. 모바일은 같은 상태 모델을 사용하며 선택/넘김·실패/취소·focus·짧은 화면은 별도로 실행했다. 누적 단위 검증과 21회 브라우저 경계 검증은 desktop에서 수행했다.
+초기 route.fulfill 기반 쿠키 검사는 WebKit에서 Set-Cookie가 전달되지 않아 실패했고, 이를 실제 HTTPS transport 검사로 분리했다. 초기 데스크톱 테스트는 패널 열기를 누락해 실패했으며 실제 메뉴 진입 절차로 고쳤다. 타임아웃을 늘리거나 실패를 무시하지 않았다. 내장 브라우저는 iab 연결 불가로 프로젝트 Playwright와 캡처를 사용했다. 모바일·데스크톱 실제 API 카드 캡처에서 대표 거래·계약일, 기존 자산·버튼·대진 배치를 확인했다.
 
-Figma W-01/W-02/W-03/W-03b/W-04/W-05/W-06/W-08 context·스크린샷과 timeline 하위 고해상도 context를 읽었다. production preview에서 설명 crop·중앙 창·내 선택 판·급지 공개·왕관/상대 흐림·비율 숨김/넘김·같은 권역 단지·상세 진입을 대조했다. fixture 이름·가격·비율과 기존 검토 지도는 실제 데이터나 원본 전체 화면 pixel 일치를 뜻하지 않는다. mobile WebKit의 390×844·320×460을 참고 HTML/08 MD의 전체 화면·위아래 카드·역 줄 숨김·스크롤 방향과 대조했다.
+PR10은 최종 재확인(2026-11-20)에도 OPEN이다. 부모의 ResizeObserver 스크롤 수정은 이 기준 develop에 없고 임의 병합·중복 수정하지 않았다. macOS의 기존 수동 목록 스크롤 회귀는 세 엔진에서 통과했으며 Linux WebKit의 알려진 지연 최초 ResizeObserver 이슈가 해결됐다고 주장하지 않는다. 이 child에서는 Linux를 실행하지 않았다. PR10 병합 후 정상 develop 통합·Linux 전체회귀가 남는다.
 
-실제 기기 iOS/Android IME·소프트 키보드·VoiceOver·물리 터치·주소창/회전 조합은 장치가 없어 미실행이다. 자동화의 composition 이벤트·WebKit 기기 모사는 이를 대체하지 않는다. 실제 NAVER SDK/좌표·제품 API·인증·서버 중복 방지·집계/급지 반영과 운영 배포는 계약/키/제품 정책 연결이 없어 미실행이다. 실제 안정 버전 Chrome/Edge/Safari 전체 지원과 WCAG 색 대비 준수를 주장하지 않으며 기존 디자인 시스템의 대비 검토 사항을 유지한다.
+`requesting-code-review` 스킬의 읽기 전용 독립 리뷰에서 재시도 current GET 중 자정 변경 누락1건을 확인해 실패 회귀와 수정으로 해소했다. 재리뷰에서 추가 Critical/Important는 없었다. 다음 세트 E2E도 literal 판번호 `[10,1,2,3,4,5,6,7,8,9,10]`으로 강화했다. 타임라인은 칩 전환 시 scroll0, 다른 권역의 지연 조회 중/완료 뒤 scroll200 유지 회귀를 통과했다.
+
+전체 E2E 뒤 지도 테스트의 미지정 타임라인 GET을 명시적으로 격리했다. 변경한 지도 API E2E15건은 세 엔진에서 재검사해 모두 통과했으며 전체 결과와 구분한다. 최초 전체 실행의 proxy ECONNREFUSED는 이 미지정 읽기 요청이 원인이었고 제품 성공을 만든 것은 아니다. 타임아웃·재시도·플랫폼 제외 정책은 변경하지 않았다.
+
+최종 `pnpm check`, `pnpm test:e2e --workers=2`와 `git diff --check`를 사용한다. 제외48건은 기존34건, 실제 타임라인2종의 모바일4건, 리뷰 후속 desktop 전용5종의 모바일10건이다. 물리 기기·실제 NAVER SDK와 새 월드컵 쓰기의 결합, 실제 배포 CORS·DB 저장·Linux는 미검증이다.
 
 ## 변경 이력
 
 | 버전 | 날짜 | 변경 |
 |---|---|---|
-| 0.1 | 2026-10-15 | 월드컵 source/모달/누적/타임라인 구현, SDD·검증과 미확정 정책 경계 기록 |
-| 0.2 | 2026-10-27 | PR 리뷰 반영: 상태 변경 시 유효한 focus를 빼앗지 않도록 제목 focus 조건 제한, pending 중 닫기 focus 유지 e2e 추가 |
+|0.1|2026-10-15|검토용 source·모달·My Picks·타임라인 구현 |
+|0.2|2026-10-27|유효한 focus 보존 |
+|1.0|2026-11-20|실제 게임·권역 대안·진행·타임라인·쿠키·경합·날짜 계약과 현재 검증으로 갱신 |
+| 1.1 | 2026-11-20 | PR #11 최신 지도 탐색 경합·가변 모달 높이 회귀 보완 |
+| 1.2 | 2026-11-20 | 실제 개발 Origin CORS 확인·5.x 카드 급지 검증 보완 |
+| 1.3 | 2026-11-20 | E2E 생성 HTML의 개발 서버 새로고침 간섭 차단 |
 
-검증에 사용한 이 workspace의 dev/preview 서버(5175)는 시각 대조 후 종료했다. Playwright preview(4175)도 검사 종료 시 정리됐으며 다른 workspace의 서버는 변경하지 않았다.
+## PR 제출
 
-## PR 진행 상태
+2026-11-20 후속 요청으로 기능 브랜치를 커밋·push하고 develop 대상 [PR #11](https://github.com/sugkamoney/geupjido-frontend/pull/11)을 생성했다. 이후 사용자 리뷰의 두 재현을 같은 PR의 후속 수정으로 반영한다. 최신 origin/develop은 시작 기준과 같고 PR10은 OPEN이어서 부모의 스크롤 수정 커밋은 포함하지 않는다. 게시 전 pnpm check와 diff를 재확인한다.
 
-2026-10-15 후속 사용자 요청으로 feature push와 develop 대상 [PR #6](https://github.com/sugkamoney/geupjido-frontend/pull/6) 생성을 진행했다. 최초 커밋 한정 범위는 해당 후속 요청으로 확장됐다. 검토 서버(5175)는 종료했고 workspace와 브랜치는 유지한다. merge는 수행하지 않았다. PR 본문에는 기존 78개 단위/108개 브라우저 검증과 실제 기기·API 미실행 한계를 기록했다.
+## PR #11 리뷰 회귀 보완
+
+2026-11-20 사용자 리뷰의 두 재현을 실패 테스트로 확인했다. 전체 타임라인에서 A 상세를 기다리다 검색으로 B를 고르면 A가 늦게 덮었고,1280×780·긴 단지명에서 My Picks의 y는−26.5px(높이800에서는−16.5px)였다.
+
+타임라인 조회 scope와 지도 탐색의 수명을 분리했다. LiveTimeline은 버튼 요청의 자식signal을 전달하고 ExplorationPage의 useTimelineNavigation이 source.loadZone용 controller를 소유한다. 새 라벨/검색/목록 선택, 상세 닫기, 지도 명령은 동기적으로 이전 이동을 취소한다. MapSurface의 onNavigationStart를 실제 포인터 시작·휠·유효한 더블클릭·이동/줌 키 입력에서 호출한다. 카메라 revision 변화 자체는 취소 기준이 아니다. 이전 선택의 이동 애니메이션 프레임이나 화면 크기 조정이 더 최신 타임라인 클릭을 취소해서는 안 되기 때문이다. 취소를 무시한 source도 resolve 뒤 controller·자식signal을 검사하므로 최신 선택을 덮지 않는다. 자식 취소·unmount·source 교체도 정리하며, 이전 finally가 새 요청 ref를 지우지 않게 동일 controller인지 확인한다.
+
+My Picks의 절대 배치는 유지하되 실측 높이를 부모의 레이아웃 높이에 포함했다. 고정 높이 임계값을 늘리는 방식은 진행/이름/피드백/글자 크기가 바뀔 때 같은 문제가 생겨 사용하지 않았다. 기존 데스크톱 중앙 정렬 검사는 창 단독이 아닌 전체 묶음 중심을 확인한다. 모바일 전체화면·상단 내부 판·닫기·넘김 배치는 유지한다.
+
+검증: 지연 타임라인 E2E, 취소를 무시하는 source의 같은 권역 재검색·목록 선택·상세 닫기·키보드 pan·휠 zoom·이전 애니메이션 프레임 통합 테스트,779/780/800/1080 높이의 긴 이름·진행 현황·My Picks 위치와 스크롤/닫기 회귀를 추가했다. `pnpm check`는262개(30파일)와 빌드를 통과했다. 독립 리뷰에서 카메라 revision 구독이 이전 애니메이션의 남은 프레임으로 새 요청을 취소하는 경계를 추가로 확인했고, 실패 회귀 뒤 실제 입력 기반 취소로 수정했다. 최종 좁은 재리뷰에서는 추가 Important 이상이 없었다. 전체 E2E 결과는 아래 최종 실행 기록을 따른다.
+
+
+최종 실행 기록(리뷰 후속): Node24.15.0·pnpm11.13.0에서 `pnpm check`262개 통과, `pnpm test:e2e --workers=2`156개 통과·48개 플랫폼 조건 제외·실패0. macOS desktop Chromium·mobile Chromium/WebKit과 NAVER 오류 구성을 실행했다. 새 제외10건은 desktop 전용 지연 타임라인1건과 높이4종의 모바일 project 조건이다. 기존 모바일 whole-screen·짧은 화면·focus·넘김 회귀도 통과했다. 공유 API 쓰기·실기기·Linux는 이번 후속에서도 미실행이다.
+
+
+## 로컬 대진 로드 오류 확인
+
+2026-11-20 실제 실행에서 `http://127.0.0.1:5173`의 Origin은 개발 API에서403 `Invalid CORS request`, `http://localhost:5173`은 허용됨을 확인했다. 같은 포트라도 두 host는 다른 Origin이다. `changeOrigin: true`는 upstream Host를 바꾸며 브라우저 Origin을 허용된 값으로 바꾸는 설정이 아니다. 기존 허용 localhost 주소를 사용하고 서버 CORS를 임의 완화하거나 프록시에서 Origin을 숨기지 않는다. `.env.example`의 NAVER 서비스 URL도 localhost를 기준으로 한다. 최초 실행 안내에서 IP 주소를 연 것은 잘못이었으며 localhost로 다시 열었다.
+
+확인은 개발 API OPTIONS와 프록시 경유 GET으로 수행했다. POST 사전 요청은 IP Origin403·localhost Origin200, current GET은 IP Origin403·localhost Origin404 GAME_NOT_FOUND였다. 후자의404는 익명 쿠키 없는 조회에서 정상이며 신규 시작으로 진행하는 조건이다. 이 진단에서 공유 개발 API의 게임·투표 쓰기는 하지 않았다.
+
+추가로 공개 zones 응답의 급지 최대5.8을 읽어, 카드 검증의 `<=5`가 유효한5.x 대진을 거부함을 발견했다. BE `V3__expand_zone_tier_range.sql`은1.0~5.9를 허용한다. 검증을 이 범위에 맞추고5.8·5.9 수용,5.91·6·비유한 숫자 거부 회귀를 추가했다. 지도 카드의 정수 등급은 여전히 floor(tier)1~5를 사용한다. 새 게임을 쓰지 않고 합성 계약 응답으로 실제 화면의 대진 로드·투표 후5.x 급지 공개를 검증한다.
+
+급지 검증 후속 검사: `pnpm check`263개와 빌드 통과. 새5.x 대진 E2E는 desktop Chromium·mobile Chromium/WebKit3건 통과(합성 API). 직전 전체 E2E156개 통과·48개 조건 제외와 구분한다. 개발 API 진단은 OPTIONS·GET만 수행했다.
+
+
+## 개발 화면 새로고침 간섭
+
+2026-11-20 사용자 확인 중 개발 서버 로그에 E2E 산출물 HTML 변경의 `page reload`가 반복된 것을 확인했다. `server.watch.ignored`에서 dist-e2e·test-results·playwright-report를 제외한다. 소스 변경에 대한 정상 갱신은 유지한다. 실제 설정을 사용한 임시 루트 Vite 서버의 생성 HTML 변경은 수정 전 새로고침3건→수정 후0건, 앱 HTML 변경의 전후 양성 대조는 모두 감지했다. 실행 화면을 켠 채 테스트 빌드를 수행한 개발 환경 간섭이며, 제품 실행 중 주기적인 문서 새로고침으로 단정하지 않는다.
+
+직접 확인할 화면은 소스 수정·E2E 빌드로 바뀌지 않는 별도 production build의 preview로 제공할 수 있다. 현재 사용 origin은 localhost:5173을 유지하며 NAVER 공개 Client ID와 개발 API 프록시를 실행 환경에서 전달한다. 실제 서버 저장·투표는 이 진단에 포함하지 않는다. 검증 범위와 HMR·API 재조회의 차이는 [Q&A-011](../learning/frontend/q-and-a/QA-FE-011-dev-reload-during-e2e.md)을 따른다.
+
+현재 직접 확인용 화면은 저장소 밖의 독립된 임시 production build를 `http://localhost:5173`에서 preview로 제공한다. HTML에 `@vite/client`가 없고 NAVER 공개 Client ID가 빌드에 포함됐음을 값 노출 없이 확인했다. 실제 API proxy의 Origin 포함 current GET은 정상404 GAME_NOT_FOUND였다. 이 preview는 후속 소스 수정·테스트 빌드가 바꾸지 않으며, 변경을 보여주려면 다시 빌드해 교체해야 한다.
+
+감시 수정 후 `pnpm check`263개와 운영 build가 통과했다. 개발 서버 감시 동작의 수정이므로 UI 전체 E2E는 반복하지 않았고, 실제 설정을 읽은 격리 Vite 서버에서 생성 HTML 무시·앱 HTML 정상 갱신을 직접 검증했다.

@@ -35,6 +35,7 @@ export function MapSurface({
   apartmentId,
   onLabel,
   onApartment,
+  onNavigationStart,
   onReload = () => window.location.reload(),
   live = false,
   onViewportChange,
@@ -47,6 +48,7 @@ export function MapSurface({
   apartmentId?: string;
   onLabel: (item: MapLabel) => void;
   onApartment: (item: Apartment) => void;
+  onNavigationStart?: () => void;
   /** 인증 실패·설정 누락의 `다시 시도`. */
   onReload?: () => void;
   live?: boolean;
@@ -124,7 +126,10 @@ export function MapSurface({
   const input = useMapInput(
     adapter,
     root,
-    clearHover,
+    () => {
+      clearHover();
+      onNavigationStart?.();
+    },
     naver ? 'observe' : 'drive',
   );
   const ready = status === 'ready';
