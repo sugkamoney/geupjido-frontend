@@ -592,3 +592,20 @@
 .shell-left-panel[data-timeline-scrolled='true'] .shell-timeline-title {
   border-bottom-color: var(--border-subtle);
 }
+
+.worldcup-daily {
+  margin: 8px 0;
+  color: var(--text-secondary);
+  font: var(--type-body-13-medium);
+}
+.worldcup-daily p {
+  margin: 2px 0;
+}
+.worldcup-daily small,
+.worldcup-session-note {
+  color: var(--text-tertiary);
+  font: var(--type-caption-12-medium);
+}
+.worldcup-session-note {
+  margin: 8px 0;
+}

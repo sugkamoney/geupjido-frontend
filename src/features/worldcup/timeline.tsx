@@ -74,7 +74,9 @@ export function Timeline({
                   <button
                     className="worldcup-timeline-cell"
                     data-picked={row.picked === index}
-                    onClick={() => onZone(card.zone)}
+                    onClick={() => {
+                      if (card.navigationZone) onZone(card.navigationZone);
+                    }}
                     aria-label={`${card.zone.name} ${card.apartment.name} 권역 상세`}
                   >
                     <span>

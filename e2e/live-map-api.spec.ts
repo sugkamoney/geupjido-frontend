@@ -9,6 +9,9 @@ import {
 } from '../src/features/map-exploration/api/test-data';
 
 test.beforeEach(async ({ page }) => {
+  await page.route('**/api/v1/worldcup/timeline*', (route) =>
+    route.fulfill({ json: { items: [] } }),
+  );
   await page.route('**/api/v1/map/**', async (route) => {
     const url = new URL(route.request().url());
     const path = url.pathname;
@@ -133,7 +136,7 @@ test('existing map uses server search, real detail and list selection on desktop
   );
   await expect(
     page.getByRole('button', { name: '이 권역 단지 비교하기' }),
-  ).toBeDisabled();
+  ).toBeEnabled();
   // A server apartment result has only a zoneId reference, not a complete Zone.
   await field.fill('예시단지');
   await page

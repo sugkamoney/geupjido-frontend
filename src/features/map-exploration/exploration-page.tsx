@@ -1,3 +1,6 @@
+import { liveWorldcupSource } from '../worldcup/live-source';
+import { LiveTimeline } from '../worldcup/live-data';
+import { useLiveTimeline } from '../worldcup/use-live-data';
 import { claimIntroduction } from '../worldcup/intro';
 import { WorldcupDialog } from '../worldcup/worldcup-dialog';
 import { Timeline, TimelineFilters } from '../worldcup/timeline';
@@ -45,7 +48,7 @@ export function ExplorationPage({
   source = fixtureSource,
   data = fixtures,
   searchSource = fixtureSearchSource,
-  worldcupSource = fixtureWorldcupSource,
+  worldcupSource: providedWorldcupSource,
   live = false,
   onViewportChange,
   statusContent,
@@ -59,6 +62,10 @@ export function ExplorationPage({
   onViewportChange?: (bounds: GeoBounds, zoom: number) => void;
   statusContent?: ReactNode;
 }) {
+  const worldcupSource =
+    providedWorldcupSource ??
+    (live ? liveWorldcupSource : fixtureWorldcupSource);
+  const [revision, setRevision] = useState(0);
   const [adapter] = useState(
     () => providedAdapter ?? createDefaultMapAdapter(data),
   );
@@ -75,6 +82,10 @@ export function ExplorationPage({
     setWorldcup({ zone: scope, intro: claimIntroduction(), origin });
   const recordChoice = (match: Match, choice: Choice) => {
     if (choice === 'skip') return;
+    if (live) {
+      setPicks((n) => n + 1);
+      return;
+    }
     setPicks((n) => n + 1);
     setOwnTimeline((rows) => [
       {
@@ -115,6 +126,11 @@ export function ExplorationPage({
     data.zones.find((x) => x.id === zoneId) ??
     (searchZone?.id === zoneId ? searchZone : undefined) ??
     (selectedZone?.id === zoneId ? selectedZone : undefined);
+  const liveTimeline = useLiveTimeline(
+    worldcupSource.api,
+    timelineFilter === 'zone' ? zone?.id : undefined,
+    revision,
+  );
   if (zone && zone !== selectedZone) setSelectedZone(zone);
   const fallbackItem =
     data.apartments.find((x) => x.id === apartmentId) ??
@@ -212,8 +228,12 @@ export function ExplorationPage({
   return (
     <>
       <AppShell
-        onWorldcupStart={live ? undefined : (origin) => openWorldcup(origin)}
-        timelineVisible={!live && worldcupSource.timeline.visible}
+        onWorldcupStart={(origin) => openWorldcup(origin)}
+        timelineVisible={
+          worldcupSource.api
+            ? liveTimeline.visible
+            : worldcupSource.timeline.visible
+        }
         timelineHeader={
           <TimelineFilters
             zone={zone}
@@ -222,12 +242,21 @@ export function ExplorationPage({
           />
         }
         timeline={
-          <Timeline
-            entries={[...ownTimeline, ...worldcupSource.timeline.entries]}
-            zone={zone}
-            filter={timelineFilter}
-            onZone={selectLabel}
-          />
+          live && worldcupSource.api ? (
+            <LiveTimeline
+              filter={timelineFilter}
+              model={liveTimeline}
+              source={source}
+              onZone={selectLabel}
+            />
+          ) : (
+            <Timeline
+              entries={[...ownTimeline, ...worldcupSource.timeline.entries]}
+              zone={zone}
+              filter={timelineFilter}
+              onZone={selectLabel}
+            />
+          )
         }
         search={search}
         displayLevel={zoneId || camera.zoom >= 12.5 ? 'zone' : 'gu'}
@@ -253,9 +282,7 @@ export function ExplorationPage({
           zone
             ? buildZoneDetail({
                 zone,
-                onCompare: live
-                  ? undefined
-                  : (origin) => openWorldcup(origin, zone),
+                onCompare: (origin) => openWorldcup(origin, zone),
                 value: detail.value
                   ? {
                       ...detail.value,
@@ -309,11 +336,16 @@ export function ExplorationPage({
       {worldcup && (
         <WorldcupDialog
           source={worldcupSource}
+          revision={revision}
+          onRefresh={() => setRevision((n) => n + 1)}
           zone={worldcup.zone}
           introduction={worldcup.intro}
           count={picks}
           origin={worldcup.origin}
-          onClose={() => setWorldcup(null)}
+          onClose={() => {
+            setWorldcup(null);
+            setRevision((n) => n + 1);
+          }}
           onSuccess={recordChoice}
         />
       )}
