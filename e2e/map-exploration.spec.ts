@@ -89,7 +89,7 @@ async function centerInFrame(page: Page, target: string) {
 }
 
 test.beforeEach(async ({ page }) => {
-  await page.goto('/map-exploration');
+  await page.goto('/map-exploration/fixtures');
 });
 test('zone, list and pin selection preserve their distinct camera and clear contracts', async ({
   page,

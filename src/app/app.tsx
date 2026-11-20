@@ -2,13 +2,15 @@ import { WorldcupReviewPage } from '../features/worldcup/review-page';
 import { Link, Route, Routes } from 'react-router';
 import { DesignSystemPage } from './design-system-page';
 import { ExplorationPage } from '../features/map-exploration/exploration-page';
+import { LiveExplorationPage } from '../features/map-exploration/live-page';
 import { ShellPage } from './shell-page';
 
 export function App() {
   return (
     <Routes>
-      <Route path="/" element={<ExplorationPage />} />
-      <Route path="/map-exploration" element={<ExplorationPage />} />
+      <Route path="/" element={<LiveExplorationPage />} />
+      <Route path="/map-exploration" element={<LiveExplorationPage />} />
+      <Route path="/map-exploration/fixtures" element={<ExplorationPage />} />
       <Route path="/worldcup" element={<WorldcupReviewPage />} />
       <Route path="/app-shell" element={<ShellPage review />} />
       <Route path="/design-system" element={<DesignSystemPage />} />

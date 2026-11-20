@@ -57,7 +57,7 @@ test('first explanation once even after close without starting and from zone det
   page,
   isMobile,
 }) => {
-  await page.goto('/');
+  await page.goto('/map-exploration/fixtures');
   await page.getByRole('combobox', { name: '지역 검색' }).fill('압구정');
   await page.getByRole('option').first().click();
   await page.getByRole('button', { name: '이 권역 단지 비교하기' }).click();

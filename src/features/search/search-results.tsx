@@ -82,7 +82,7 @@ function ResultRow({
         <GradeChip
           grade={result.target.item.grade}
           value={result.target.item.value}
-          aria-label={`검토용 예시 급지 ${result.target.item.value}`}
+          aria-label={`${result.target.item.live ? '초기 급지' : '검토용 예시 급지'} ${result.target.item.value}`}
         />
       )}
       <span className="search-result-name">

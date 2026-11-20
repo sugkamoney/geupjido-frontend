@@ -1,5 +1,6 @@
 import type { MapFrame } from '../../components/app-shell/types';
 import type { Grade, GradeStageName } from '../../components/ui/grade';
+import type { MapGeometry, MapZone } from './api/contracts';
 
 /** Screen pixel only; map positions use LatLng. */
 export type Point = { x: number; y: number };
@@ -13,23 +14,32 @@ export type MapLabel = {
   name: string;
   district?: string;
   point: LatLng;
-  area: number;
-  bounds: GeoBounds;
-  grade: Grade;
+  area?: number;
+  bounds?: GeoBounds;
+  grade?: Grade;
   value: string;
   detail: string;
   stage?: GradeStageName;
+  region?: string;
+  live?: boolean;
 };
-export type Zone = MapLabel & { kind: 'zone'; polygon: LatLng[] };
+export type Zone = MapLabel & {
+  kind: 'zone';
+  polygon?: LatLng[];
+  geometry?: MapGeometry;
+  rating?: MapZone;
+};
 export type Apartment = {
   id: string;
   zoneId: string;
   name: string;
-  point: LatLng;
+  point?: LatLng;
   households: number;
   year?: number;
-  priceManwon?: number;
-  areaM2?: number;
+  priceManwon?: number | null;
+  areaM2?: number | null;
+  rank?: number | null;
+  live?: boolean;
 };
 export type ExplorationData = {
   districts: MapLabel[];
@@ -37,7 +47,11 @@ export type ExplorationData = {
   apartments: Apartment[];
   overview: GeoBounds;
 };
-export type ZoneDetail = { zone: Zone; apartments: Apartment[] };
+export type ZoneDetail = {
+  zone: Zone;
+  apartments: Apartment[];
+  locationLookupFailed?: boolean;
+};
 export type ExplorationSource = {
   loadZone: (id: string, signal: AbortSignal) => Promise<ZoneDetail>;
 };

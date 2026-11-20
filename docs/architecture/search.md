@@ -1,10 +1,13 @@
 # 검색 구조와 실행 계획
 
-> 상태: 검토용 구현·검증 완료, 실제 API/SDK 연결 대기 · 버전: 0.4 · 갱신: 2026-10-14
+> 상태: 실제 API 화면 연결 · 실제 SDK 결합·모바일 실기기 검증 별도 · 버전: 0.5 · 갱신: 2026-11-15
 
 제품 기준은 [검색 SDD](../product/specs/search/README.md)다. 이 문서가 inline 실행 계획과 검증 기록을 겸한다. 사용자 지정 workspace/feature/search를 유지하며 origin/feature/map-exploration 63c0c74에 stack한다. 시작 HEAD는 검색 핸드오프 문서 f82d708이다. 최초 구현은 로컬 커밋까지였고 후속 사용자 요청으로 push·PR·merge까지 승인됐다. 지도 PR #4는 develop 1cf3013에 병합됐으므로 검색 PR 기준은 develop이다.
 
 2026-10-15 현재 검색 PR #5는 develop `49f9e5b`에 병합됐고 검색 workspace는 정리됐다. 위 stack·승인 기록은 당시 작업 경로이며 현재 후속 구현은 feature/worldcup이다.
+
+현재 기본 화면의 실제 API 연결은 [별도 구조 문서](map-api-ui-integration.md)를 따른다.
+아래 과거 fixture·SDK 구축 시점의 API 제공/검증 기록과 현재 상태를 구분한다.
 
 ## 데이터·상태 경계
 
@@ -116,6 +119,7 @@ trace의 viewport 1280→390 변경 후 키 입력 시점에는 React의 data-co
 
 | 버전 | 날짜       | 변경                                                                 |
 | ---- | ---------- | -------------------------------------------------------------------- |
+| 0.5 | 2026-11-15 | 기존 화면 실제 API 연결 구조 문서와 현재 상태 반영 |
 | 0.4  | 2026-10-14 | PR #5 Linux WebKit CI trace 분석과 반응형 전환 완료 검사 보완        |
 | 0.3  | 2026-10-14 | 지도 PR #4 병합 후 develop 통합, 최신 상세와 검색 fallback 조합 검증 |
 | 0.2  | 2026-10-14 | 사용자 요청 추가 독립 리뷰와 검색 재진입·focus·응답 revision 보완    |

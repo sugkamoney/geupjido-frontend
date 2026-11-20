@@ -25,7 +25,7 @@ test('network error shows alert and retry requests maps.js once more', async ({
   page,
 }) => {
   await page.route(NAVER, (r) => r.abort());
-  await page.goto('/');
+  await page.goto('/map-exploration/fixtures');
   const alert = page.getByRole('alert');
   await expect(alert).toContainText(NETWORK);
   await expect(page.getByRole('button', { name: '다시 시도' })).toBeVisible();
@@ -47,7 +47,7 @@ test('auth failure shows the authentication message', async ({ page }) => {
       script('window.navermap_authFailure && window.navermap_authFailure();'),
     ),
   );
-  await page.goto('/');
+  await page.goto('/map-exploration/fixtures');
   await expect(page.getByRole('alert')).toContainText(AUTH);
   await expect(page.getByRole('button', { name: '다시 시도' })).toBeVisible();
   await expectNoMapLabels(page);
@@ -55,7 +55,7 @@ test('auth failure shows the authentication message', async ({ page }) => {
 
 test('search input stays usable while the map failed', async ({ page }) => {
   await page.route(NAVER, (r) => r.abort());
-  await page.goto('/');
+  await page.goto('/map-exploration/fixtures');
   await expect(page.getByRole('alert')).toContainText(NETWORK);
   const field = page.getByRole('combobox', { name: '지역 검색' });
   await field.click();

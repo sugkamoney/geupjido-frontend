@@ -12,6 +12,7 @@ export function ApartmentList({
   onSelect: (item: Apartment) => void;
 }) {
   const selectedRef = useRef<HTMLButtonElement | null>(null);
+  const selectedRowPresent = apartments.some((item) => item.id === selected);
   useLayoutEffect(() => {
     const row = selectedRef.current;
     const list = row?.closest<HTMLElement>('.shell-panel-list');
@@ -34,9 +35,9 @@ export function ApartmentList({
         : undefined;
     observer?.observe(list);
     return () => observer?.disconnect();
-  }, [selected, apartments]);
+  }, [selected, selectedRowPresent]);
   if (!apartments.length)
-    return <p className="shell-empty">이 권역의 검토용 단지가 없어요.</p>;
+    return <p className="shell-empty">이 권역에 표시할 단지가 없어요.</p>;
   return (
     <ol className="exploration-rank-list">
       {apartments.map((item, index) => (
@@ -49,14 +50,21 @@ export function ApartmentList({
             data-selected={item.id === selected}
             onClick={() => onSelect(item)}
           >
-            <span className="exploration-rank-number" data-top={index < 3}>
-              {index + 1}
+            <span
+              className="exploration-rank-number"
+              data-top={
+                item.live ? item.rank != null && item.rank <= 3 : index < 3
+              }
+            >
+              {item.live ? (item.rank ?? '—') : index + 1}
             </span>
             <span className="exploration-rank-name">
               <span>{item.name}</span>
               <small>
                 {item.year ? `${item.year}년 · ` : ''}
-                {item.households.toLocaleString('ko-KR')}세대 · 예시
+                {item.households.toLocaleString('ko-KR')}세대
+                {item.live ? '' : ' · 예시'}
+                {item.live && !item.point ? ' · 위치 정보 없음' : ''}
               </small>
             </span>
             <span className="exploration-rank-value">

@@ -302,11 +302,11 @@ function MatchCardView({
           <p>
             {a.year === undefined ? '준공연도 —' : `${a.year}년`} ·{' '}
             {a.households.toLocaleString('ko-KR')}세대 ·{' '}
-            {a.areaM2 === undefined ? '—' : a.areaM2}m²
+            {a.areaM2 == null ? '—' : a.areaM2}m²
           </p>
           <p>
             최근 거래{' '}
-            {a.priceManwon === undefined
+            {a.priceManwon == null
               ? '—'
               : `${(a.priceManwon / 10000).toFixed(2)}억`}
           </p>

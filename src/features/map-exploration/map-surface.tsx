@@ -19,7 +19,13 @@ import {
   visibleApartments,
   visibleLabels,
 } from './model';
-import type { Apartment, ExplorationData, MapAdapter, MapLabel } from './types';
+import type {
+  Apartment,
+  ExplorationData,
+  MapAdapter,
+  MapLabel,
+  GeoBounds,
+} from './types';
 
 export function MapSurface({
   adapter,
@@ -30,6 +36,9 @@ export function MapSurface({
   onLabel,
   onApartment,
   onReload = () => window.location.reload(),
+  live = false,
+  onViewportChange,
+  statusContent,
 }: {
   adapter: MapAdapter;
   frame: MapFrame;
@@ -40,6 +49,9 @@ export function MapSurface({
   onApartment: (item: Apartment) => void;
   /** 인증 실패·설정 누락의 `다시 시도`. */
   onReload?: () => void;
+  live?: boolean;
+  onViewportChange?: (bounds: GeoBounds, zoom: number) => void;
+  statusContent?: ReactNode;
 }) {
   const root = useRef<HTMLDivElement | null>(null);
   const canvas = useRef<HTMLDivElement | null>(null);
@@ -47,6 +59,7 @@ export function MapSurface({
   const status = useSyncExternalStore(adapter.subscribe, adapter.getStatus);
   const naver = adapter.kind === 'naver';
   const [size, setSize] = useState({ width: 1000, height: 800 });
+  const [measured, setMeasured] = useState(false);
   const [hover, setHover] = useState<string>();
   const hoverCurrent = useRef<string | undefined>(undefined);
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -97,6 +110,7 @@ export function MapSurface({
       if (bounds.width <= 0 || bounds.height <= 0) return;
       const next = { width: bounds.width, height: bounds.height };
       setSize(next);
+      setMeasured(true);
       adapter.setViewport(next, frame);
     };
     measure();
@@ -114,6 +128,32 @@ export function MapSurface({
     naver ? 'observe' : 'drive',
   );
   const ready = status === 'ready';
+  useEffect(() => {
+    if (!ready || !measured || !onViewportChange) return;
+    const timer = setTimeout(() => {
+      const points = [
+        { x: 0, y: 0 },
+        { x: size.width, y: 0 },
+        { x: 0, y: size.height },
+        { x: size.width, y: size.height },
+      ].map(adapter.unproject);
+      if (
+        !points.every((p) => Number.isFinite(p.lat) && Number.isFinite(p.lng))
+      )
+        return;
+      const sw = {
+        lat: Math.max(-90, Math.min(...points.map((p) => p.lat))),
+        lng: Math.max(-180, Math.min(...points.map((p) => p.lng))),
+      };
+      const ne = {
+        lat: Math.min(90, Math.max(...points.map((p) => p.lat))),
+        lng: Math.min(180, Math.max(...points.map((p) => p.lng))),
+      };
+      if (sw.lat < ne.lat && sw.lng < ne.lng)
+        onViewportChange({ sw, ne }, camera.zoom);
+    }, 200);
+    return () => clearTimeout(timer);
+  }, [adapter, camera, measured, onViewportChange, ready, size]);
   // NAVER: overlay를 SDK 입력 요소 안에 portal로 그려 라벨·핀에서 시작한 드래그·휠이 SDK로
   // 전달되게 한다(Step 4b smoke). 좌표 기준은 같은 원점의 container pixel이다.
   const host = ready ? adapter.getOverlayHost?.() : undefined;
@@ -153,7 +193,7 @@ export function MapSurface({
       ref={root}
       className="exploration-map"
       role="region"
-      aria-label="검토용 지도"
+      aria-label={live ? '지도' : '검토용 지도'}
       tabIndex={0}
       data-zoom={camera.zoom}
       data-center-lat={camera.center.lat}
@@ -173,16 +213,34 @@ export function MapSurface({
         <h1>급지도</h1>
         <p>
           <span className="exploration-notice-desktop">
-            {naver
-              ? '검토용 데이터 · 실제 위치·시세 미검증'
-              : '검토용 지도·데이터 · NAVER 지도·실제 시세 미연결'}
+            {live
+              ? naver
+                ? '초기 급지 · 서비스 데이터'
+                : '초기 급지 · 서비스 데이터 · 지도 바탕은 검토용'
+              : naver
+                ? '검토용 데이터 · 실제 위치·시세 미검증'
+                : '검토용 지도·데이터 · NAVER 지도·실제 시세 미연결'}
           </span>
           <span className="exploration-notice-mobile">
-            {naver ? '검토용 데이터' : '검토용 · 지도·시세 미연결'}
+            {live
+              ? naver
+                ? '초기 급지 · 서비스 데이터'
+                : '서비스 데이터 · 검토용 지도 바탕'
+              : naver
+                ? '검토용 데이터'
+                : '검토용 · 지도·시세 미연결'}
           </span>
         </p>
         <span>줌 {camera.zoom.toFixed(2)}</span>
       </div>
+      {statusContent && (
+        <div
+          className="exploration-data-state"
+          style={{ left: frame.x + 12, top: frame.y + 72 }}
+        >
+          {statusContent}
+        </div>
+      )}
       <MapStatusView
         status={status}
         onRetry={() => adapter.retry()}
@@ -191,30 +249,52 @@ export function MapSurface({
       {ready &&
         place(
           <div className="exploration-overlay">
-            {zone && polygonOpacity(camera.zoom) > 0 && (
-              <svg
-                className="exploration-area"
-                width={size.width}
-                height={size.height}
-                aria-hidden="true"
-              >
-                <polygon
-                  data-selected-polygon={zone.id}
-                  points={zone.polygon
-                    .map((p) => {
-                      const point = adapter.project(p);
-                      return `${point.x},${point.y}`;
-                    })
-                    .join(' ')}
-                  style={{
-                    fill: `var(--map-grade-${zone.grade})`,
-                    stroke: `var(--map-grade-${zone.grade})`,
-                    fillOpacity: polygonOpacity(camera.zoom),
-                  }}
-                  strokeWidth={2.5}
-                />
-              </svg>
-            )}
+            {zone &&
+              (zone.geometry || zone.polygon?.length) &&
+              polygonOpacity(camera.zoom) > 0 && (
+                <svg
+                  className="exploration-area"
+                  width={size.width}
+                  height={size.height}
+                  aria-hidden="true"
+                >
+                  <path
+                    data-selected-polygon={zone.id}
+                    fillRule="evenodd"
+                    d={(zone.geometry
+                      ? (zone.geometry.type === 'Polygon'
+                          ? [zone.geometry.coordinates]
+                          : zone.geometry.coordinates
+                        ).flatMap((rings) =>
+                          rings.map((ring) =>
+                            ring.map(([lng, lat]) => ({ lat, lng })),
+                          ),
+                        )
+                      : [zone.polygon!]
+                    )
+                      .map(
+                        (ring) =>
+                          ring
+                            .map((p, index) => {
+                              const point = adapter.project(p);
+                              return `${index ? 'L' : 'M'}${point.x},${point.y}`;
+                            })
+                            .join(' ') + ' Z',
+                      )
+                      .join(' ')}
+                    style={{
+                      fill: zone.grade
+                        ? `var(--map-grade-${zone.grade})`
+                        : 'var(--text-tertiary)',
+                      stroke: zone.grade
+                        ? `var(--map-grade-${zone.grade})`
+                        : 'var(--text-tertiary)',
+                      fillOpacity: polygonOpacity(camera.zoom),
+                    }}
+                    strokeWidth={2.5}
+                  />
+                </svg>
+              )}
             {layers.labels.map(({ item, point, showLabel }) => (
               <MapTarget
                 key={item.id}
@@ -227,7 +307,9 @@ export function MapSurface({
                   {
                     left: point.x,
                     top: point.y,
-                    '--marker-color': `var(--map-grade-${item.grade})`,
+                    '--marker-color': item.grade
+                      ? `var(--map-grade-${item.grade})`
+                      : 'var(--text-tertiary)',
                   } as CSSProperties
                 }
                 canActivate={input.canActivate}
@@ -248,7 +330,11 @@ export function MapSurface({
                         alt=""
                       />
                       <span className="exploration-label-body">
-                        <GradeChip grade={item.grade} value={item.value} />
+                        <GradeChip
+                          grade={item.grade}
+                          value={item.value}
+                          aria-label={`${live ? '초기 급지' : '검토용 급지'} ${item.value}`}
+                        />
                         <span>{item.name}</span>
                       </span>
                     </span>
@@ -256,7 +342,11 @@ export function MapSurface({
                   </>
                 )}
                 <span className="exploration-dot">
-                  <img src={`/assets/map/dot-${item.grade}.svg`} alt="" />
+                  {item.grade ? (
+                    <img src={`/assets/map/dot-${item.grade}.svg`} alt="" />
+                  ) : (
+                    <i className="exploration-neutral-dot" />
+                  )}
                 </span>
               </MapTarget>
             ))}
@@ -299,7 +389,11 @@ export function MapSurface({
                   <span>{card.item.district}</span>
                 </div>
                 <div>
-                  <GradeChip grade={card.item.grade} value={card.item.value} />
+                  <GradeChip
+                    grade={card.item.grade}
+                    value={card.item.value}
+                    aria-label={`${live ? '초기 급지' : '검토용 급지'} ${card.item.value}`}
+                  />
                   <span>{card.item.detail}</span>
                 </div>
               </div>
