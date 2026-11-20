@@ -1,7 +1,6 @@
 import { Fragment, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { WorldcupApi } from './api/client';
 import type { LiveTimelineEntry, Progress } from './api/contracts';
-import type { Zone, ExplorationSource } from '../map-exploration/types';
 import { useRead, useReadClock, type useLiveTimeline } from './use-live-data';
 export function DailyProgress({
   api,
@@ -59,13 +58,11 @@ function relativeTime(time: string) {
 export function LiveTimeline({
   model,
   filter = 'all',
-  source,
   onZone,
 }: {
   model: ReturnType<typeof useLiveTimeline>;
   filter?: 'all' | 'zone';
-  source: ExplorationSource;
-  onZone: (zone: Zone) => void;
+  onZone: (id: string, signal: AbortSignal) => Promise<void>;
 }) {
   const { all, read, zoneId } = model;
   const root = useRef<HTMLDivElement>(null),
@@ -97,8 +94,7 @@ export function LiveTimeline({
     request.current = controller;
     setFailed(false);
     try {
-      const detail = await source.loadZone(id, controller.signal);
-      if (!controller.signal.aborted) onZone(detail.zone);
+      await onZone(id, controller.signal);
     } catch {
       if (!controller.signal.aborted) setFailed(true);
     }

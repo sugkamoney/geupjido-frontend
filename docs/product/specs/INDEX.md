@@ -27,4 +27,4 @@
 - [_templates/acceptance-criteria.template.md](_templates/acceptance-criteria.template.md)
 - [_templates/decisions.template.md](_templates/decisions.template.md)
 
-- [월드컵](worldcup/README.md) · 실제 게임·권역 비교·진행·타임라인 API 연동 · v1.0
+- [월드컵](worldcup/README.md) · 실제 게임·권역 비교·진행·타임라인 API 연동 · v1.1

@@ -1,6 +1,6 @@
 # 월드컵 실제 API 구조와 검증
 
-> 상태: 실제 API 연동·자동 검증 완료, 실서버 쓰기·실기기 검증 남음 · 버전: 1.0 · 갱신: 2026-11-20
+> 상태: 실제 API 연동·자동 검증 완료, 실서버 쓰기·실기기 검증 남음 · 버전: 1.1 · 갱신: 2026-11-20
 
 제품 기준은 [월드컵 SDD](../product/specs/worldcup/README.md), 구현 선택의 근거는 [ADR-009](../history/ADR-009-worldcup-server-game-state.md)다. develop `0b545035` 기반의 지정 Orca worktree에서 FE만 변경했다. 코드 작성·수정은 100% AI다. 최초 인계는 구현·검증까지였고, 후속 사용자 요청으로 커밋·push·develop 대상 PR 생성까지 승인됐다. merge는 포함하지 않는다.
 
@@ -11,9 +11,9 @@
 - `api/client.ts`: 상대 `/api/v1/worldcup`와 `credentials: 'include'`, `cache: 'no-store'`, AbortSignal을 사용한다. 서버 오류 메시지를 그대로 UI에 노출하지 않고 status/code를 구분한다. 요청 전·응답·JSON 해석 후 취소를 확인한다.
 - `live-source.ts`: 실제 API capability를 제공한다. 예시 loadMatch/submit으로 fallback하면 명시적으로 실패한다. `source.ts`의 기존 cursor source와 `/worldcup?scenario=`는 검토용이다.
 - `use-live-worldcup.ts`: 세션별 게임 snapshot, 일반/권역 scope, 제출 잠금, 불확실한 응답 복구, 피드백/다음 판 타이머, 날짜 경계를 소유한다. `use-worldcup.ts`는 실제 source면 이 hook을 선택하고 예시 흐름도 유지한다.
-- `use-live-data.ts`, `live-data.tsx`: 진행·타임라인 읽기, scope별 취소, 오류·빈 목록·재시도, 실제 권역 상세 조회를 담당한다. 페이지 성공 revision·재진입·1분 주기·window focus에서 재조회한다. 전체 선택5건 미만이면 타임라인 영역을 숨긴다.
+- `use-live-data.ts`, `live-data.tsx`: 진행·타임라인 읽기, scope별 취소, 오류·빈 목록·재시도, 타임라인 이동의 로컬 취소·오류 UI를 담당한다. 실제 상세 조회·이동의 권위와 최신 탐색 취소는 ExplorationPage가 소유한다. 페이지 성공 revision·재진입·1분 주기·window focus에서 재조회한다. 전체 선택5건 미만이면 타임라인 영역을 숨긴다.
 - `worldcup-dialog.tsx`: 기존 native dialog·Button·CloseButton·토큰·집/왕관 자산을 재사용한다. 실제 카드에 대표 거래·계약일을 표시하고 예시 역·소개는 표시하지 않는다.
-- `ExplorationPage`: 모달 진입 scope·페이지 My Picks·읽기 refresh revision을 소유한다. 실제 지도 메뉴/권역 상세를 활성화하고 실제 source에는 예시 본인 타임라인을 추가하지 않는다.
+- `ExplorationPage`: 모달 진입 scope·페이지 My Picks·읽기 refresh revision과 타임라인 이동 요청을 소유한다. 실제 지도 메뉴/권역 상세를 활성화하고 실제 source에는 예시 본인 타임라인을 추가하지 않는다.
 
 게임 카드에는 zoneId/좌표가 없다. 이 카드의 권역 정보는 표시용이며 navigationZone을 만들지 않는다. 타임라인에는 실제 zoneId가 있으므로 지도 source.loadZone으로 좌표·geometry를 확인한 다음 기존 선택 경계로 이동한다. 급지 없는 타임라인 행에 임의 급지를 표시하지 않는다.
 
@@ -37,7 +37,7 @@ My Picks는 페이지 메모리의 성공 확인 선택 수이고 넘김은 제�
 
 타임라인은 공개 최근20건이고 같은 쿠키의 mine을 `나`로 표시한다. 전체 목록5건 임계값과 권역 목록 빈 결과를 분리한다. API가 없는 급지·좌표를 만들지 않고, 상세 조회 실패에는 재선택을 안내한다. 필터 변경·응답 취소·목록 스크롤은 기존 shell 컨테이너를 유지한다.
 
-첫 설명 키 `geupjido.worldcup.intro.v1`는 익명 쿠키와 별개다. dialog.showModal·배경 inert·정/역 Tab 순환·IME Escape 보호·body overflow 복원·원래 trigger 또는 지도 메뉴 focus 복귀를 유지한다. 비동기 상태가 바뀌어도 유효한 닫기 focus를 빼앗지 않는다. 공개 비율1.1초/비공개·복구·reduced motion0.6초와 별도2.4초 피드백 타이머를 유지한다. 데스크톱은600px 창, 모바일768px 미만은 전체화면과 세로 대진이며 짧은 화면은 내부 스크롤·sticky 닫기를 사용한다. 모바일 타임라인은 미제공이다.
+첫 설명 키 `geupjido.worldcup.intro.v1`는 익명 쿠키와 별개다. dialog.showModal·배경 inert·정/역 Tab 순환·IME Escape 보호·body overflow 복원·원래 trigger 또는 지도 메뉴 focus 복귀를 유지한다. 비동기 상태가 바뀌어도 유효한 닫기 focus를 빼앗지 않는다. 공개 비율1.1초/비공개·복구·reduced motion0.6초와 별도2.4초 피드백 타이머를 유지한다. 데스크톱은 My Picks·600px 창·하단 안내를 포함한 전체 묶음을 중앙에 배치한다. My Picks는 ResizeObserver로 실측한 높이+12px 간격을 부모 padding에 반영하고, 전체가 화면보다 크면 레이아웃의 자연 높이로 상단부터 스크롤한다. 779px 이하만 보정하던 분기는 제거했다. 모바일은 부모 padding0을 유지한다. 768px 미만은 전체화면과 세로 대진이며 짧은 화면은 내부 스크롤·sticky 닫기를 사용한다. 모바일 타임라인은 미제공이다.
 
 ## 배포·쿠키
 
@@ -52,9 +52,9 @@ Node24.15.0·pnpm11.13.0을 사용했다. 실행 명령은 `npx --yes --package=
 | 검사 | 기대 | 현재 결과 |
 |---|---|---|
 | 시작 baseline `pnpm test` | 기존 단위 회귀 |236개 통과 |
-| API·상태·읽기 테스트 | 계약·409·응답 유실·시작 유실·날짜·scope·타임라인 stale | 20개 추가 단위 테스트 포함 전체256개 통과. 두 일반 자정 경계와 필터 scroll 회귀는 실패→성공 확인, 권역 게임은 자정 뒤에도 유지 확인 |
-| `pnpm check` | 토큰·타입·lint·format·단위·운영 build | 단위256개(29파일)·전체 품질 gate·운영 빌드 통과 |
-| 실제 월드컵 경로 E2E | desktop Chromium/mobile Chromium·WebKit | 전체151개 통과·38개 플랫폼 조건 제외·실패0. 신규 실제 월드컵/쿠키는20개 통과·4개 모바일 타임라인 제외 |
+| API·상태·읽기 테스트 | 계약·409·응답 유실·시작 유실·날짜·scope·타임라인 stale | 26개 추가 단위 테스트 포함 전체262개 통과. 두 일반 자정 경계와 필터 scroll 회귀는 실패→성공 확인, 권역 게임은 자정 뒤에도 유지 확인 |
+| `pnpm check` | 토큰·타입·lint·format·단위·운영 build | 단위262개(30파일)·전체 품질 gate·운영 빌드 통과 |
+| 실제 월드컵 경로 E2E | desktop Chromium/mobile Chromium·WebKit | 전체156개 통과·48개 플랫폼 조건 제외·실패0. 실제 월드컵/쿠키·후속 리뷰는25개 통과·14개 모바일 타임라인/desktop 배치 조건 제외 |
 | 격리 HTTPS cookie E2E | Secure/HttpOnly/SameSite·PUT 쿠키·새로고침 이어하기 | 세 브라우저 통과 |
 | 공유 개발 API GET | progress·zones·timeline 배포 응답 |2026-11-20 progress·zones·timeline 조회, 쿠키 없는 진행0. current는404 GAME_NOT_FOUND·Set-Cookie 없음. 배포 월드컵 경로는 고정 OpenAPI와 동일 |
 | 실제 개발 서버 POST/PUT | 실제 DB 저장 |미실행: 격리 BE/DB 미제공, 공유 DB에 가상 표를 기록하지 않음 |
@@ -70,7 +70,7 @@ PR10은 최종 재확인(2026-11-20)에도 OPEN이다. 부모의 ResizeObserver 
 
 전체 E2E 뒤 지도 테스트의 미지정 타임라인 GET을 명시적으로 격리했다. 변경한 지도 API E2E15건은 세 엔진에서 재검사해 모두 통과했으며 전체 결과와 구분한다. 최초 전체 실행의 proxy ECONNREFUSED는 이 미지정 읽기 요청이 원인이었고 제품 성공을 만든 것은 아니다. 타임아웃·재시도·플랫폼 제외 정책은 변경하지 않았다.
 
-최종 `pnpm check`, `pnpm test:e2e --workers=2`와 `git diff --check`를 사용한다. 제외38건은 기존34건과 새 데스크톱 전용 타임라인2종의 모바일4건이다. 물리 기기·실제 NAVER SDK와 새 월드컵 쓰기의 결합, 실제 배포 CORS·DB 저장·Linux는 미검증이다.
+최종 `pnpm check`, `pnpm test:e2e --workers=2`와 `git diff --check`를 사용한다. 제외48건은 기존34건, 실제 타임라인2종의 모바일4건, 리뷰 후속 desktop 전용5종의 모바일10건이다. 물리 기기·실제 NAVER SDK와 새 월드컵 쓰기의 결합, 실제 배포 CORS·DB 저장·Linux는 미검증이다.
 
 ## 변경 이력
 
@@ -79,7 +79,21 @@ PR10은 최종 재확인(2026-11-20)에도 OPEN이다. 부모의 ResizeObserver 
 |0.1|2026-10-15|검토용 source·모달·My Picks·타임라인 구현 |
 |0.2|2026-10-27|유효한 focus 보존 |
 |1.0|2026-11-20|실제 게임·권역 대안·진행·타임라인·쿠키·경합·날짜 계약과 현재 검증으로 갱신 |
+| 1.1 | 2026-11-20 | PR #11 최신 지도 탐색 경합·가변 모달 높이 회귀 보완 |
 
 ## PR 제출
 
-2026-11-20 후속 요청에 따라 현재 기능 브랜치를 커밋·push하고 develop 대상 PR로 제출한다. 최신 origin/develop은 시작 기준과 같고 PR10은 OPEN이어서 부모의 스크롤 수정 커밋은 포함하지 않는다. 게시 전 pnpm check와 diff를 재확인한다.
+2026-11-20 후속 요청으로 기능 브랜치를 커밋·push하고 develop 대상 [PR #11](https://github.com/sugkamoney/geupjido-frontend/pull/11)을 생성했다. 이후 사용자 리뷰의 두 재현을 같은 PR의 후속 수정으로 반영한다. 최신 origin/develop은 시작 기준과 같고 PR10은 OPEN이어서 부모의 스크롤 수정 커밋은 포함하지 않는다. 게시 전 pnpm check와 diff를 재확인한다.
+
+## PR #11 리뷰 회귀 보완
+
+2026-11-20 사용자 리뷰의 두 재현을 실패 테스트로 확인했다. 전체 타임라인에서 A 상세를 기다리다 검색으로 B를 고르면 A가 늦게 덮었고,1280×780·긴 단지명에서 My Picks의 y는−26.5px(높이800에서는−16.5px)였다.
+
+타임라인 조회 scope와 지도 탐색의 수명을 분리했다. LiveTimeline은 버튼 요청의 자식signal을 전달하고 ExplorationPage의 useTimelineNavigation이 source.loadZone용 controller를 소유한다. 새 라벨/검색/목록 선택, 상세 닫기, 지도 명령은 동기적으로 이전 이동을 취소한다. MapSurface의 onNavigationStart를 실제 포인터 시작·휠·유효한 더블클릭·이동/줌 키 입력에서 호출한다. 카메라 revision 변화 자체는 취소 기준이 아니다. 이전 선택의 이동 애니메이션 프레임이나 화면 크기 조정이 더 최신 타임라인 클릭을 취소해서는 안 되기 때문이다. 취소를 무시한 source도 resolve 뒤 controller·자식signal을 검사하므로 최신 선택을 덮지 않는다. 자식 취소·unmount·source 교체도 정리하며, 이전 finally가 새 요청 ref를 지우지 않게 동일 controller인지 확인한다.
+
+My Picks의 절대 배치는 유지하되 실측 높이를 부모의 레이아웃 높이에 포함했다. 고정 높이 임계값을 늘리는 방식은 진행/이름/피드백/글자 크기가 바뀔 때 같은 문제가 생겨 사용하지 않았다. 기존 데스크톱 중앙 정렬 검사는 창 단독이 아닌 전체 묶음 중심을 확인한다. 모바일 전체화면·상단 내부 판·닫기·넘김 배치는 유지한다.
+
+검증: 지연 타임라인 E2E, 취소를 무시하는 source의 같은 권역 재검색·목록 선택·상세 닫기·키보드 pan·휠 zoom·이전 애니메이션 프레임 통합 테스트,779/780/800/1080 높이의 긴 이름·진행 현황·My Picks 위치와 스크롤/닫기 회귀를 추가했다. `pnpm check`는262개(30파일)와 빌드를 통과했다. 독립 리뷰에서 카메라 revision 구독이 이전 애니메이션의 남은 프레임으로 새 요청을 취소하는 경계를 추가로 확인했고, 실패 회귀 뒤 실제 입력 기반 취소로 수정했다. 최종 좁은 재리뷰에서는 추가 Important 이상이 없었다. 전체 E2E 결과는 아래 최종 실행 기록을 따른다.
+
+
+최종 실행 기록(리뷰 후속): Node24.15.0·pnpm11.13.0에서 `pnpm check`262개 통과, `pnpm test:e2e --workers=2`156개 통과·48개 플랫폼 조건 제외·실패0. macOS desktop Chromium·mobile Chromium/WebKit과 NAVER 오류 구성을 실행했다. 새 제외10건은 desktop 전용 지연 타임라인1건과 높이4종의 모바일 project 조건이다. 기존 모바일 whole-screen·짧은 화면·focus·넘김 회귀도 통과했다. 공유 API 쓰기·실기기·Linux는 이번 후속에서도 미실행이다.

@@ -469,3 +469,134 @@ test('live timeline preserves scroll across zone changes and resets only when a 
   await expect(list.locator('.worldcup-timeline-row')).toHaveCount(20);
   expect(await list.evaluate((node) => node.scrollTop)).toBe(0);
 });
+
+test('a delayed all-timeline navigation cannot replace a newer search selection', async ({
+  page,
+  isMobile,
+}) => {
+  test.skip(isMobile, '타임라인 패널은 desktop 전용');
+  await mapRoutes(page);
+  await page.route('**/api/v1/worldcup/timeline*', (route) =>
+    route.fulfill({
+      json: { items: Array.from({ length: 5 }, () => timelineRecord.items[0]) },
+    }),
+  );
+  let release: (() => void) | undefined;
+  let finish: () => void = () => {};
+  const finished = new Promise<void>((r) => {
+    finish = r;
+  });
+  await page.route('**/api/v1/map/zones/zone-a', async (route) => {
+    await new Promise<void>((r) => {
+      release = r;
+    });
+    try {
+      await route.fulfill({ json: detailRecord });
+    } finally {
+      finish();
+    }
+  });
+  await page.route('**/api/v1/map/search?*', (route) =>
+    route.fulfill({
+      json: {
+        cities: [],
+        zones: [
+          {
+            ...zoneRecord,
+            id: 'zone-b',
+            name: '최신권역',
+            center: { longitude: 127.3, latitude: 37.7 },
+          },
+        ],
+        complexes: [],
+      },
+    }),
+  );
+  await page.route('**/api/v1/map/zones/zone-b', (route) =>
+    route.fulfill({
+      json: {
+        ...detailRecord,
+        zone: {
+          ...zoneRecord,
+          id: 'zone-b',
+          name: '최신권역',
+          center: { longitude: 127.3, latitude: 37.7 },
+        },
+        complexes: [],
+      },
+    }),
+  );
+  await page.goto('/');
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.getByRole('button', { name: '월드컵', exact: true }).click();
+  await page
+    .getByRole('button', { name: '예시권역 왼쪽단지 권역 상세', exact: true })
+    .first()
+    .click();
+  await expect.poll(() => !!release).toBe(true);
+  await page.getByRole('combobox', { name: '지역 검색' }).fill('최신권역');
+  await page
+    .getByRole('option', { name: '최신권역 예시구', exact: true })
+    .click();
+  await expect(
+    page.getByRole('heading', { name: '최신권역', exact: true }),
+  ).toBeVisible();
+  const map = page.getByRole('region', { name: '지도', exact: true });
+  const center = await map.getAttribute('data-center-lat');
+  release!();
+  await finished;
+  await page.evaluate(
+    () =>
+      new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))),
+  );
+  await expect(
+    page.getByRole('heading', { name: '최신권역', exact: true }),
+  ).toBeVisible();
+  expect(await map.getAttribute('data-center-lat')).toBe(center);
+});
+
+for (const height of [779, 780, 800, 1080])
+  test(`desktop My Picks stays within the scrollable layout at height ${height}`, async ({
+    page,
+    isMobile,
+  }) => {
+    test.skip(isMobile, 'desktop 높이 경계');
+    await page.setViewportSize({ width: 1280, height });
+    await mapRoutes(page);
+    await page.route('**/api/v1/worldcup/**', (route) => {
+      const path = new URL(route.request().url()).pathname;
+      const game = gameRecord();
+      game.matchups = game.matchups.map((r) => ({
+        ...r,
+        left: {
+          ...r.left,
+          name: '긴 단지 이름으로 여러 줄을 사용하는 월드컵 회귀 검증 아파트',
+        },
+        right: {
+          ...r.right,
+          name: '다른 긴 단지 이름으로 여러 줄을 사용하는 월드컵 회귀 검증 아파트',
+        },
+      }));
+      return route.fulfill({
+        json: path.endsWith('/progress')
+          ? progressRecord
+          : path.endsWith('/timeline')
+            ? { items: [] }
+            : game,
+      });
+    });
+    await page.goto('/');
+    await open(page, false);
+    await expect(page.locator('.worldcup-card')).toHaveCount(2);
+    const picks = await page.locator('.worldcup-picks').boundingBox(),
+      title = await page.locator('.worldcup-picks h3').boundingBox();
+    expect(picks!.y).toBeGreaterThanOrEqual(0);
+    expect(title!.y).toBeGreaterThanOrEqual(0);
+    await page
+      .getByRole('button', { name: '잘 모르겠어요' })
+      .scrollIntoViewIfNeeded();
+    await expect(
+      page.getByRole('button', { name: '잘 모르겠어요' }),
+    ).toBeVisible();
+    await page.getByRole('button', { name: '월드컵 닫기' }).click();
+  });

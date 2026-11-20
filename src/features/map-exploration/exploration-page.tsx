@@ -1,3 +1,4 @@
+import { useTimelineNavigation } from './use-timeline-navigation';
 import { liveWorldcupSource } from '../worldcup/live-source';
 import { LiveTimeline } from '../worldcup/live-data';
 import { useLiveTimeline } from '../worldcup/use-live-data';
@@ -70,6 +71,9 @@ export function ExplorationPage({
     () => providedAdapter ?? createDefaultMapAdapter(data),
   );
   const camera = useSyncExternalStore(adapter.subscribe, adapter.getSnapshot);
+  const { cancel: cancelTimelineNavigation, navigate: navigateTimeline } =
+    useTimelineNavigation(source);
+
   const [worldcup, setWorldcup] = useState<{
     zone?: Zone;
     intro: boolean;
@@ -164,6 +168,7 @@ export function ExplorationPage({
     setSelectedApartment({ ...selectedApartment, point: apartment.point });
   }
   const clear = () => {
+    cancelTimelineNavigation();
     setZoneId(undefined);
     setSelectedZone(undefined);
     setSearchTarget(undefined);
@@ -173,6 +178,7 @@ export function ExplorationPage({
     adapter.releaseAnchor();
   };
   const selectLabel = (label: MapLabel) => {
+    cancelTimelineNavigation();
     setApartmentId(undefined);
     setSelectedApartment(undefined);
     if (label.kind === 'gu') {
@@ -188,6 +194,7 @@ export function ExplorationPage({
     }
   };
   const selectApartment = (item: Apartment, origin: 'map' | 'list') => {
+    cancelTimelineNavigation();
     if (item.zoneId !== zoneId) {
       setSelectedZone(data.zones.find((entry) => entry.id === item.zoneId));
     }
@@ -200,6 +207,8 @@ export function ExplorationPage({
       adapter.center(item.point, Math.max(camera.zoom, 15), true);
     }
   };
+  const navigateTimelineZone = (id: string, signal: AbortSignal) =>
+    navigateTimeline(id, signal, selectLabel);
   const search = useSearch(searchSource, (target) => {
     setSearchTarget(target);
     if (target.kind === 'apartment') selectApartment(target.item, 'list');
@@ -246,8 +255,7 @@ export function ExplorationPage({
             <LiveTimeline
               filter={timelineFilter}
               model={liveTimeline}
-              source={source}
-              onZone={selectLabel}
+              onZone={navigateTimelineZone}
             />
           ) : (
             <Timeline
@@ -263,6 +271,7 @@ export function ExplorationPage({
         sheetExpanded={sheetExpanded}
         onSheetExpandedChange={setSheetExpanded}
         onLevelChange={(level) => {
+          cancelTimelineNavigation();
           if (level === 'gu') {
             clear();
             adapter.fit(data.overview, 48, [9.5, 12.49], true);
@@ -274,6 +283,7 @@ export function ExplorationPage({
             );
         }}
         onMapCommand={(command) => {
+          cancelTimelineNavigation();
           if (command === 'fit') {
             adapter.fit(data.overview, 48, [9.5, 12.49], true);
           } else adapter.zoom(command === 'zoom-in' ? 1 : -1, undefined, true);
@@ -321,6 +331,7 @@ export function ExplorationPage({
         map={({ frame }) => (
           <MapSurface
             adapter={adapter}
+            onNavigationStart={cancelTimelineNavigation}
             live={live}
             onViewportChange={onViewportChange}
             statusContent={statusContent}

@@ -1,5 +1,5 @@
 import { DailyProgress } from './live-data';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Button, CloseButton } from '../../components/ui';
 import type { Zone } from '../map-exploration/types';
 import type { Choice, Match, MatchCard, WorldcupSource } from './source';
@@ -175,10 +175,28 @@ function Play({
     entered.current = true;
     if (!valid) node.focus({ preventScroll: true });
   }, [heading, state.phase]);
+  const center = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    const node = center.current;
+    const picks = node?.querySelector<HTMLElement>('.worldcup-picks');
+    if (!node || !picks) return;
+    const measure = () => {
+      if (picks.offsetHeight > 0)
+        node.style.setProperty(
+          '--worldcup-picks-height',
+          `${picks.offsetHeight}px`,
+        );
+    };
+    measure();
+    if (typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver(measure);
+    observer.observe(picks);
+    return () => observer.disconnect();
+  }, []);
   const revealed = state.phase === 'feedback';
   const blocked = state.phase !== 'ready';
   return (
-    <div className="worldcup-center">
+    <div ref={center} className="worldcup-center">
       <section className="worldcup-window worldcup-play">
         <div className="worldcup-header">
           <CloseButton label="월드컵 닫기" onClick={onClose} />

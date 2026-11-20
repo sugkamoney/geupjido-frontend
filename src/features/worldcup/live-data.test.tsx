@@ -11,7 +11,6 @@ import { DailyProgress, LiveTimeline } from './live-data';
 import { useLiveTimeline } from './use-live-data';
 import { createWorldcupApi } from './api/client';
 import { progressRecord, timelineRecord } from './api/test-data';
-import { fixtureSource } from '../map-exploration/fixtures';
 const api = createWorldcupApi();
 afterEach(() => vi.unstubAllGlobals());
 it('hides sparse activity by the full list and retains an empty zone list when full activity is sufficient', async () => {
@@ -94,9 +93,7 @@ it('keeps a timeline failure retryable without injecting sample rows', async () 
   );
   function View() {
     const model = useLiveTimeline(api, undefined, 0);
-    return (
-      <LiveTimeline model={model} source={fixtureSource} onZone={() => {}} />
-    );
+    return <LiveTimeline model={model} onZone={async () => {}} />;
   }
   render(<View />);
   await screen.findByRole('alert');

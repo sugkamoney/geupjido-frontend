@@ -183,14 +183,14 @@ test('short narrow screen, long copy and touch keep close/skip reachable without
   await page.getByRole('button', { name: '월드컵 닫기' }).click();
   await expect(dialog).toHaveCount(0);
 });
-test('desktop centered window independent of picks and timeline scroll/filter/sparse policy', async ({
+test('desktop centers the full picks and window group and preserves timeline scroll/filter/sparse policy', async ({
   page,
   isMobile,
 }) => {
   test.skip(isMobile, '타임라인은 desktop 전용');
   await page.setViewportSize({ width: 1920, height: 1080 });
   await open(page, false);
-  const box = await page.locator('.worldcup-window').boundingBox();
+  const box = await page.locator('.worldcup-center').boundingBox();
   expect(box!.width).toBe(600);
   expect(Math.abs(box!.x + box!.width / 2 - 960)).toBeLessThan(1);
   expect(Math.abs(box!.y + box!.height / 2 - 540)).toBeLessThan(1);
