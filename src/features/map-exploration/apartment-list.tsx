@@ -29,9 +29,20 @@ export function ApartmentList({
       });
     };
     centerRow();
+    let width = list.clientWidth;
+    let height = list.clientHeight;
     const observer =
       typeof ResizeObserver !== 'undefined'
-        ? new ResizeObserver(centerRow)
+        ? new ResizeObserver(() => {
+            // observe() also queues an initial notification, which may arrive
+            // after a manual scroll. Recenter only when the list size changes.
+            const nextWidth = list.clientWidth;
+            const nextHeight = list.clientHeight;
+            if (nextWidth === width && nextHeight === height) return;
+            width = nextWidth;
+            height = nextHeight;
+            centerRow();
+          })
         : undefined;
     observer?.observe(list);
     return () => observer?.disconnect();
