@@ -265,7 +265,7 @@ describe('live data in the existing exploration screen', () => {
     expect(screen.queryByText('예시')).not.toBeInTheDocument();
     expect(
       screen.getByRole('button', { name: '이 권역 단지 비교하기' }),
-    ).toBeDisabled();
+    ).toBeEnabled();
     expect(
       document.querySelector('[data-selected-polygon]')?.tagName.toLowerCase(),
     ).toBe('path');

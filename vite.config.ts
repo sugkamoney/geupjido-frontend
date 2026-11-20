@@ -6,6 +6,14 @@ import { loadEnv } from 'vite';
 export default defineConfig(({ mode }) => ({
   plugins: [react(), tailwindcss()],
   server: {
+    watch: {
+      // Playwright builds HTML inside the workspace; it must not reload a running dev app.
+      ignored: [
+        '**/dist-e2e/**',
+        '**/test-results/**',
+        '**/playwright-report/**',
+      ],
+    },
     proxy: {
       '/api': {
         target:

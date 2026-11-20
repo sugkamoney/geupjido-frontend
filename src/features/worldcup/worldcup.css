@@ -23,6 +23,8 @@
   padding: 16px;
 }
 .worldcup-center {
+  padding-top: calc(var(--worldcup-picks-height, 120px) + 12px);
+  padding-bottom: 24px;
   position: relative;
   width: 600px;
   max-width: 100%;
@@ -441,26 +443,15 @@
     border-color: var(--border-selected);
   }
 }
-@media (min-width: 768px) and (max-height: 779px) {
-  .worldcup-layout {
-    display: block;
-    padding-top: 144px;
-    padding-bottom: 24px;
-  }
-  .worldcup-center,
-  .worldcup-introduction {
-    margin-inline: auto;
-  }
-  .worldcup-layout:has(.worldcup-introduction) {
-    padding-top: 24px;
-  }
-}
 @media (max-width: 767px) {
   .worldcup-dialog {
     background: var(--bg-surface);
   }
   .worldcup-layout {
     display: block;
+    padding: 0;
+  }
+  .worldcup-center {
     padding: 0;
   }
   .worldcup-window,
@@ -591,4 +582,21 @@
 }
 .shell-left-panel[data-timeline-scrolled='true'] .shell-timeline-title {
   border-bottom-color: var(--border-subtle);
+}
+
+.worldcup-daily {
+  margin: 8px 0;
+  color: var(--text-secondary);
+  font: var(--type-body-13-medium);
+}
+.worldcup-daily p {
+  margin: 2px 0;
+}
+.worldcup-daily small,
+.worldcup-session-note {
+  color: var(--text-tertiary);
+  font: var(--type-caption-12-medium);
+}
+.worldcup-session-note {
+  margin: 8px 0;
 }

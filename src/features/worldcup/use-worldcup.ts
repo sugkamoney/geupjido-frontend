@@ -1,20 +1,23 @@
 import { useEffect, useRef, useState } from 'react';
+import { useLiveWorldcup, type WorldcupState } from './use-live-worldcup';
 import type { Zone } from '../map-exploration/types';
-import { objectParticle, progressDelay, type Ratio } from './model';
+import { objectParticle, progressDelay } from './model';
 import type { Choice, Match, WorldcupSource } from './source';
-type State = {
-  phase: 'loading' | 'ready' | 'pending' | 'feedback' | 'failed' | 'empty';
-  match?: Match;
-  choice?: Choice;
-  ratio?: Ratio;
-};
 export function useWorldcup(
   source: WorldcupSource,
   zone: Zone | undefined,
   onSuccess: (match: Match, choice: Choice) => void,
   reduced: boolean,
+  onRefresh?: () => void,
 ) {
-  const [state, setState] = useState<State>({ phase: 'loading' });
+  const live = useLiveWorldcup(
+    source.api,
+    zone?.id,
+    onSuccess,
+    reduced,
+    onRefresh,
+  );
+  const [state, setState] = useState<WorldcupState>({ phase: 'loading' });
   const [feedback, setFeedback] = useState('');
   const latest = useRef({ onSuccess, reduced });
   useEffect(() => {
@@ -25,6 +28,7 @@ export function useWorldcup(
     retry: () => {},
   });
   useEffect(() => {
+    if (source.api) return;
     let alive = true;
     let locked = true;
     let current: Match | undefined;
@@ -134,7 +138,11 @@ export function useWorldcup(
       actions.current = { choose: () => {}, retry: () => {} };
     };
   }, [source, zone]);
+  if (source.api) return live;
   return {
+    alternative: (id: string) => {
+      void id;
+    },
     state,
     feedback,
     choose: (choice: Choice) => actions.current.choose(choice),

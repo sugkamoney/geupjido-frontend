@@ -51,4 +51,4 @@ frozen 설치·기존 baseline 이후 의미 있는 상태 전환·중복 입력
 
 ## 현재 작업 연결
 
-[월드컵 구조·검증 기록](worldcup.md)과 [제품 SDD](../product/specs/worldcup/README.md)가 이번 세션의 현재 기준이다. 초기화·디자인 시스템·화면 틀·지도·검색은 develop에 통합됐고 이 문서의 착수 문구는 당시 전달 기록이다. 실제 NAVER·제품 API/집계 정책은 여전히 미연결·미확정이다.
+[월드컵 구조·검증 기록](worldcup.md)과 [제품 SDD](../product/specs/worldcup/README.md)가 이번 세션의 현재 기준이다. 초기화·디자인 시스템·화면 틀·지도·검색은 develop에 통합됐고 이 문서의 착수 문구는 당시 전달 기록이다. 실제 연동의 현재 상태는 2026-11-20 갱신한 worldcup.md와 제품 SDD를 따른다. 위 API 없음·정책 미정 문구는 2026-10-15 당시 인계 기록이다.

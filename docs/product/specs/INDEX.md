@@ -27,4 +27,4 @@
 - [_templates/acceptance-criteria.template.md](_templates/acceptance-criteria.template.md)
 - [_templates/decisions.template.md](_templates/decisions.template.md)
 
-- [월드컵](worldcup/README.md) · 검토 UI 구현·검증 완료, 실제 투표 API/정책 대기 · v0.1
+- [월드컵](worldcup/README.md) · 실제 게임·권역 비교·진행·타임라인 API 연동 · v1.1

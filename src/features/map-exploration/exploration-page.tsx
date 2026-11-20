@@ -1,3 +1,7 @@
+import { useTimelineNavigation } from './use-timeline-navigation';
+import { liveWorldcupSource } from '../worldcup/live-source';
+import { LiveTimeline } from '../worldcup/live-data';
+import { useLiveTimeline } from '../worldcup/use-live-data';
 import { claimIntroduction } from '../worldcup/intro';
 import { WorldcupDialog } from '../worldcup/worldcup-dialog';
 import { Timeline, TimelineFilters } from '../worldcup/timeline';
@@ -45,7 +49,7 @@ export function ExplorationPage({
   source = fixtureSource,
   data = fixtures,
   searchSource = fixtureSearchSource,
-  worldcupSource = fixtureWorldcupSource,
+  worldcupSource: providedWorldcupSource,
   live = false,
   onViewportChange,
   statusContent,
@@ -59,10 +63,17 @@ export function ExplorationPage({
   onViewportChange?: (bounds: GeoBounds, zoom: number) => void;
   statusContent?: ReactNode;
 }) {
+  const worldcupSource =
+    providedWorldcupSource ??
+    (live ? liveWorldcupSource : fixtureWorldcupSource);
+  const [revision, setRevision] = useState(0);
   const [adapter] = useState(
     () => providedAdapter ?? createDefaultMapAdapter(data),
   );
   const camera = useSyncExternalStore(adapter.subscribe, adapter.getSnapshot);
+  const { cancel: cancelTimelineNavigation, navigate: navigateTimeline } =
+    useTimelineNavigation(source);
+
   const [worldcup, setWorldcup] = useState<{
     zone?: Zone;
     intro: boolean;
@@ -75,6 +86,10 @@ export function ExplorationPage({
     setWorldcup({ zone: scope, intro: claimIntroduction(), origin });
   const recordChoice = (match: Match, choice: Choice) => {
     if (choice === 'skip') return;
+    if (live) {
+      setPicks((n) => n + 1);
+      return;
+    }
     setPicks((n) => n + 1);
     setOwnTimeline((rows) => [
       {
@@ -115,6 +130,11 @@ export function ExplorationPage({
     data.zones.find((x) => x.id === zoneId) ??
     (searchZone?.id === zoneId ? searchZone : undefined) ??
     (selectedZone?.id === zoneId ? selectedZone : undefined);
+  const liveTimeline = useLiveTimeline(
+    worldcupSource.api,
+    timelineFilter === 'zone' ? zone?.id : undefined,
+    revision,
+  );
   if (zone && zone !== selectedZone) setSelectedZone(zone);
   const fallbackItem =
     data.apartments.find((x) => x.id === apartmentId) ??
@@ -148,6 +168,7 @@ export function ExplorationPage({
     setSelectedApartment({ ...selectedApartment, point: apartment.point });
   }
   const clear = () => {
+    cancelTimelineNavigation();
     setZoneId(undefined);
     setSelectedZone(undefined);
     setSearchTarget(undefined);
@@ -157,6 +178,7 @@ export function ExplorationPage({
     adapter.releaseAnchor();
   };
   const selectLabel = (label: MapLabel) => {
+    cancelTimelineNavigation();
     setApartmentId(undefined);
     setSelectedApartment(undefined);
     if (label.kind === 'gu') {
@@ -172,6 +194,7 @@ export function ExplorationPage({
     }
   };
   const selectApartment = (item: Apartment, origin: 'map' | 'list') => {
+    cancelTimelineNavigation();
     if (item.zoneId !== zoneId) {
       setSelectedZone(data.zones.find((entry) => entry.id === item.zoneId));
     }
@@ -184,6 +207,8 @@ export function ExplorationPage({
       adapter.center(item.point, Math.max(camera.zoom, 15), true);
     }
   };
+  const navigateTimelineZone = (id: string, signal: AbortSignal) =>
+    navigateTimeline(id, signal, selectLabel);
   const search = useSearch(searchSource, (target) => {
     setSearchTarget(target);
     if (target.kind === 'apartment') selectApartment(target.item, 'list');
@@ -212,8 +237,12 @@ export function ExplorationPage({
   return (
     <>
       <AppShell
-        onWorldcupStart={live ? undefined : (origin) => openWorldcup(origin)}
-        timelineVisible={!live && worldcupSource.timeline.visible}
+        onWorldcupStart={(origin) => openWorldcup(origin)}
+        timelineVisible={
+          worldcupSource.api
+            ? liveTimeline.visible
+            : worldcupSource.timeline.visible
+        }
         timelineHeader={
           <TimelineFilters
             zone={zone}
@@ -222,18 +251,27 @@ export function ExplorationPage({
           />
         }
         timeline={
-          <Timeline
-            entries={[...ownTimeline, ...worldcupSource.timeline.entries]}
-            zone={zone}
-            filter={timelineFilter}
-            onZone={selectLabel}
-          />
+          live && worldcupSource.api ? (
+            <LiveTimeline
+              filter={timelineFilter}
+              model={liveTimeline}
+              onZone={navigateTimelineZone}
+            />
+          ) : (
+            <Timeline
+              entries={[...ownTimeline, ...worldcupSource.timeline.entries]}
+              zone={zone}
+              filter={timelineFilter}
+              onZone={selectLabel}
+            />
+          )
         }
         search={search}
         displayLevel={zoneId || camera.zoom >= 12.5 ? 'zone' : 'gu'}
         sheetExpanded={sheetExpanded}
         onSheetExpandedChange={setSheetExpanded}
         onLevelChange={(level) => {
+          cancelTimelineNavigation();
           if (level === 'gu') {
             clear();
             adapter.fit(data.overview, 48, [9.5, 12.49], true);
@@ -245,6 +283,7 @@ export function ExplorationPage({
             );
         }}
         onMapCommand={(command) => {
+          cancelTimelineNavigation();
           if (command === 'fit') {
             adapter.fit(data.overview, 48, [9.5, 12.49], true);
           } else adapter.zoom(command === 'zoom-in' ? 1 : -1, undefined, true);
@@ -253,9 +292,7 @@ export function ExplorationPage({
           zone
             ? buildZoneDetail({
                 zone,
-                onCompare: live
-                  ? undefined
-                  : (origin) => openWorldcup(origin, zone),
+                onCompare: (origin) => openWorldcup(origin, zone),
                 value: detail.value
                   ? {
                       ...detail.value,
@@ -294,6 +331,7 @@ export function ExplorationPage({
         map={({ frame }) => (
           <MapSurface
             adapter={adapter}
+            onNavigationStart={cancelTimelineNavigation}
             live={live}
             onViewportChange={onViewportChange}
             statusContent={statusContent}
@@ -309,11 +347,16 @@ export function ExplorationPage({
       {worldcup && (
         <WorldcupDialog
           source={worldcupSource}
+          revision={revision}
+          onRefresh={() => setRevision((n) => n + 1)}
           zone={worldcup.zone}
           introduction={worldcup.intro}
           count={picks}
           origin={worldcup.origin}
-          onClose={() => setWorldcup(null)}
+          onClose={() => {
+            setWorldcup(null);
+            setRevision((n) => n + 1);
+          }}
           onSuccess={recordChoice}
         />
       )}

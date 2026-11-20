@@ -76,6 +76,7 @@ export function useMapInput(
   };
   const handlers: DOMAttributes<HTMLDivElement> = {
     onWheel: (event) => {
+      onInteraction();
       if (observe) {
         adapter.noteUserGesture?.();
         return;
@@ -92,10 +93,14 @@ export function useMapInput(
       const onButton =
         event.target instanceof Element && !!event.target.closest('button');
       if (observe) {
-        if (!onButton) adapter.noteUserGesture?.();
+        if (!onButton) {
+          onInteraction();
+          adapter.noteUserGesture?.();
+        }
         return;
       }
       if (onButton) return;
+      onInteraction();
       adapter.zoom(1, pixel(event.clientX, event.clientY));
     },
     onKeyDown: (event) => {
@@ -117,14 +122,17 @@ export function useMapInput(
       };
       if (deltas[event.key]) {
         event.preventDefault();
+        onInteraction();
         adapter.pan(deltas[event.key]!);
       }
       if (event.key === '+' || event.key === '=') {
         event.preventDefault();
+        onInteraction();
         adapter.zoom(1);
       }
       if (event.key === '-') {
         event.preventDefault();
+        onInteraction();
         adapter.zoom(-1);
       }
     },

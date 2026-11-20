@@ -6,13 +6,56 @@
 
 기본 `/`·`/map-exploration`은 실제 지도·서버 검색·권역 상세·단지 목록을 사용한다.
 예시는 `/map-exploration/fixtures`에서 분리한다. 배포 면적·상세 좌표를 반영하고
-선택 권역 보존과 이름 직접 일치 강조를 보완했다. 상태 카드·랭킹·리포트·월드컵 API는 후속이다.
+선택 권역 보존과 이름 직접 일치 강조를 보완했다. 상태 카드·랭킹·리포트는 후속이다.
+월드컵 API 연동의 현재 상태는 아래 총괄 인수 절을 따른다.
 한강 수면 제외와 물리 기기 검증은 남아 있다. [최종 검증](map-integration-finalization.md)을 따른다.
 
 지도 연동 PR #9 병합 후 WebKit CI의 수동 목록 스크롤 실패를 재현했다.
 동일 크기의 늦은 ResizeObserver 최초 알림이 사용자 스크롤을 덮는 원인을 보완했다.
-작업 브랜치에서 단위 237개와 Linux 전체 E2E 131개가 통과했으며 GitHub CI는 아직 실행하지 않았다.
+작업 브랜치에서 단위 237개와 Linux 전체 E2E 131개가 통과했다.
+2026-11-20 11:40 KST GitHub 확인에서 [PR #10](https://github.com/sugkamoney/geupjido-frontend/pull/10)은
+CI SUCCESS·OPEN이며, `develop` 병합은 아직 완료되지 않았다.
 검증 범위와 원격 CI 상태는 [후속 조사](webkit-list-scroll-ci.md)를 따른다.
+
+## 월드컵 child 총괄 인수 (2026-11-20 11:40 KST)
+
+[PR #11](https://github.com/sugkamoney/geupjido-frontend/pull/11)은 11:38:45 KST에
+`d32a9f74948063996c090af97ee243de9631e381`로 병합됐다.
+최종 child HEAD는 `36f498b7ded588004d6c972bbebca0a8982b410b`이며
+[Frontend CI](https://github.com/sugkamoney/geupjido-frontend/actions/runs/44661313700)는 SUCCESS다.
+총괄에서 보고 전문과 GitHub 상태를 대조해 **구현·자동 검증 완료**로 인수했다.
+이 절의 제품 현황은 병합된 월드컵 기준이다. PR #10 충돌 해결 과정에서
+`origin/develop@d32a9f7`을 스크롤 수정 브랜치에 통합했다. PR #10 자체의 develop 병합은 별도다.
+
+- 일반·권역 고정 10판, 시작/이어하기·선택/넘김·비율·다음 게임·하루 한도·권역 대안,
+  오늘 일반 진행 현황과 서버 공개 타임라인을 실제 지도 AppShell에 연결했다.
+- My Picks는 현재 페이지에서 확인한 선택만 담고, 오늘 진행 수는 일반 선택+넘김이며
+  권역 비교는 제외한다. 전체 과거 개인 선택 이력·개인 리포트는 제공하지 않는다.
+- 동기 제출 잠금·취소·scope 전환·409 재동기화·응답 유실 뒤 GET 저장 확인·한국 날짜 경계를 처리했다.
+  타임라인 이동 경합, My Picks 상단 잘림, 유효한 5.x 급지 거부와 E2E 산출물의 개발 서버 재로딩도 보완했다.
+
+검증 수치는 child 보고 기준이며 이 총괄 인수에서 재실행한 결과가 아니다.
+
+| 검증 | 인수한 결과·범위 |
+| --- | --- |
+| 최종 `pnpm check` | 30파일·263개 단위 테스트, 토큰·타입·lint·format·빌드 통과 |
+| 지도·모달 리뷰 수정 뒤 전체 E2E | macOS desktop Chromium·mobile Chromium/WebKit·NAVER 오류 구성 156개 통과·48개 조건 제외·실패 0 |
+| 이후 5.x 급지 보완 | 관련 3개 브라우저 E2E 통과. 전체 통과 수에 합산하지 않음 |
+| 이후 dev watcher 보완 | 격리 Vite에서 산출물 HTML의 재로딩 3건→0건, 앱 HTML의 정상 변경 감지 유지. 해당 동작과 check 검증, 전체 E2E는 다시 실행하지 않음 |
+| 쿠키·저장 후 재조회·새로고침 이어하기 | 격리 HTTPS·모의 BE에서 HTTP 검증. 실서버 DB 저장 검증과 구분 |
+| 개발 API | GET/OPTIONS로 계약·조회·CORS 확인. 실서버 시작→선택/넘김→저장→재접속 전체 흐름은 미검증 |
+
+남는 검증은 실서버 전체 투표 흐름·실제 배포 CORS/쿠키·물리 iOS/Android·VoiceOver/IME와
+월드컵 child의 Linux 검사다. 자동 검사 통과를 실서버 투표 저장 성공으로 표현하지 않는다.
+BE 수정·공유 DB 가상 투표는 수행하지 않았다.
+PR #10 충돌 해결 과정에서 스크롤 수정과 월드컵을 통합해 check 264개와 macOS 전체 E2E
+159개 통과·48개 조건 제외를 확인했다. 첫 실행의 쿠키 테스트 정리 timeout 관찰과
+재검사·원격 CI의 구분은 [스크롤 후속 조사](webkit-list-scroll-ci.md)를 따른다.
+
+사용자 확인용 `http://localhost:5173/`와 월드컵 child 작업공간은 별도 요청 없이 종료·제거하지 않는다.
+이 서버는 독립 production build의 고정 프리뷰이며 이후 소스 변경이 자동 반영되지 않는다.
+현재 개발 API는 `http://127.0.0.1:5173` Origin을 차단하므로 `localhost`로 접근한다.
+한강 BE geometry·물리 기기 검증·상태 카드·민심 전환·랭킹·공개 주간 리포트는 후속이다.
 
 아래는 당시 구현과 검증 기록이며 현재 API 미연결 요약으로 사용하지 않는다.
 

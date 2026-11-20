@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
+import { DailyProgress } from './live-data';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Button, CloseButton } from '../../components/ui';
 import type { Zone } from '../map-exploration/types';
 import type { Choice, Match, MatchCard, WorldcupSource } from './source';
@@ -6,6 +7,8 @@ import { useWorldcup } from './use-worldcup';
 
 export function WorldcupDialog({
   source,
+  revision = 0,
+  onRefresh,
   zone,
   introduction,
   count,
@@ -14,6 +17,8 @@ export function WorldcupDialog({
   onSuccess,
 }: {
   source: WorldcupSource;
+  revision?: number;
+  onRefresh?: () => void;
   zone?: Zone;
   introduction: boolean;
   count: number;
@@ -106,6 +111,8 @@ export function WorldcupDialog({
         ) : (
           <Play
             source={source}
+            revision={revision}
+            onRefresh={onRefresh}
             zone={zone}
             count={count}
             onClose={onClose}
@@ -119,6 +126,8 @@ export function WorldcupDialog({
 }
 function Play({
   source,
+  revision,
+  onRefresh,
   zone,
   count,
   onClose,
@@ -126,6 +135,8 @@ function Play({
   heading,
 }: {
   source: WorldcupSource;
+  revision: number;
+  onRefresh?: () => void;
   zone?: Zone;
   count: number;
   onClose: () => void;
@@ -141,11 +152,12 @@ function Play({
     media.addEventListener('change', change);
     return () => media.removeEventListener('change', change);
   }, []);
-  const { state, feedback, choose, retry } = useWorldcup(
+  const { state, feedback, choose, retry, alternative } = useWorldcup(
     source,
     zone,
     onSuccess,
     reduced,
+    onRefresh,
   );
   // Move focus to the stable heading on entry or when the focused action was disabled or removed.
   const entered = useRef(false);
@@ -163,15 +175,41 @@ function Play({
     entered.current = true;
     if (!valid) node.focus({ preventScroll: true });
   }, [heading, state.phase]);
+  const center = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    const node = center.current;
+    const picks = node?.querySelector<HTMLElement>('.worldcup-picks');
+    if (!node || !picks) return;
+    const measure = () => {
+      if (picks.offsetHeight > 0)
+        node.style.setProperty(
+          '--worldcup-picks-height',
+          `${picks.offsetHeight}px`,
+        );
+    };
+    measure();
+    if (typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver(measure);
+    observer.observe(picks);
+    return () => observer.disconnect();
+  }, []);
   const revealed = state.phase === 'feedback';
   const blocked = state.phase !== 'ready';
   return (
-    <div className="worldcup-center">
+    <div ref={center} className="worldcup-center">
       <section className="worldcup-window worldcup-play">
         <div className="worldcup-header">
           <CloseButton label="월드컵 닫기" onClick={onClose} />
         </div>
         <MyPicks count={count} feedback={feedback} />
+        {source.api && (
+          <>
+            <DailyProgress api={source.api} revision={revision} />
+            <p className="worldcup-session-note">
+              내 선택 지도는 이 페이지에서 확인한 선택만 담아요.
+            </p>
+          </>
+        )}
         <h2 ref={heading} tabIndex={-1} id="worldcup-title">
           어디 살고 싶으세요?
         </h2>
@@ -224,9 +262,31 @@ function Play({
           </p>
         ) : state.phase === 'empty' ? (
           <p className="worldcup-state" role="status">
-            비교할 단지가 아직 부족해요.
+            {state.message ?? '비교할 단지가 아직 부족해요.'}
           </p>
         ) : null}
+        {state.alternatives?.map((item) => (
+          <Button
+            key={item.zoneId}
+            variant="Subtle"
+            onClick={() => alternative(item.zoneId)}
+          >
+            {item.cityName} {item.zoneName} 비교하기
+          </Button>
+        ))}
+        {state.phase === 'empty' && state.alternatives?.length === 0 && (
+          <p role="status">지금 시작할 수 있는 인접 권역이 없어요.</p>
+        )}
+        {state.phase === 'limit' && (
+          <p className="worldcup-state" role="status">
+            {state.message}
+          </p>
+        )}
+        {(state.phase === 'limit' || state.phase === 'empty') && (
+          <Button variant="Subtle" onClick={retry}>
+            대진 다시 불러오기
+          </Button>
+        )}
         {state.phase === 'pending' && (
           <p className="worldcup-operation" role="status">
             선택을 보내고 있어요.
@@ -235,9 +295,10 @@ function Play({
         {state.phase === 'failed' && (
           <div className="worldcup-error" role="alert">
             <p>
-              {state.match
-                ? '선택을 보내지 못했어요. 다시 시도해 주세요.'
-                : '대진을 불러오지 못했어요.'}
+              {state.message ??
+                (state.match
+                  ? '선택을 보내지 못했어요. 다시 시도해 주세요.'
+                  : '대진을 불러오지 못했어요.')}
             </p>
             <Button variant="Subtle" onClick={retry}>
               다시 시도
@@ -292,7 +353,11 @@ function MatchCardView({
         <div>
           <strong>{zone.name}</strong>
           {revealed && (
-            <span aria-label={`민심급지 ${zone.value}`}>{zone.value}</span>
+            <span
+              aria-label={`${a.live ? '권역 급지' : '민심급지'} ${zone.value}`}
+            >
+              {zone.value}
+            </span>
           )}
         </div>
       </div>
@@ -305,16 +370,19 @@ function MatchCardView({
             {a.areaM2 == null ? '—' : a.areaM2}m²
           </p>
           <p>
-            최근 거래{' '}
+            {a.live ? '대표 거래' : '최근 거래'}{' '}
             {a.priceManwon == null
               ? '—'
               : `${(a.priceManwon / 10000).toFixed(2)}억`}
           </p>
-          <p className="worldcup-station">가까운 역 —</p>
+          {card.contractDate && <p>계약일 {card.contractDate}</p>}
+          {!a.live && <p className="worldcup-station">가까운 역 —</p>}
         </div>
-        <p className="worldcup-description" title={card.description}>
-          {card.description}
-        </p>
+        {card.description && (
+          <p className="worldcup-description" title={card.description}>
+            {card.description}
+          </p>
+        )}
         <Button
           variant={picked ? 'Primary' : 'Subtle'}
           crown={picked}
