@@ -88,6 +88,7 @@ export function ExplorationPage({
     ]);
   };
   const [zoneId, setZoneId] = useState<string>();
+  const [selectedZone, setSelectedZone] = useState<Zone>();
   const [apartmentId, setApartmentId] = useState<string>();
   const [selectedApartment, setSelectedApartment] = useState<Apartment>();
   const [searchTarget, setSearchTarget] = useState<SearchTarget>();
@@ -112,7 +113,9 @@ export function ExplorationPage({
   const zone =
     detail.value?.zone ??
     data.zones.find((x) => x.id === zoneId) ??
-    (searchZone?.id === zoneId ? searchZone : undefined);
+    (searchZone?.id === zoneId ? searchZone : undefined) ??
+    (selectedZone?.id === zoneId ? selectedZone : undefined);
+  if (zone && zone !== selectedZone) setSelectedZone(zone);
   const fallbackItem =
     data.apartments.find((x) => x.id === apartmentId) ??
     (searchTarget?.kind === 'apartment' && searchTarget.item.id === apartmentId
@@ -146,6 +149,8 @@ export function ExplorationPage({
   }
   const clear = () => {
     setZoneId(undefined);
+    setSelectedZone(undefined);
+    setSearchTarget(undefined);
     setApartmentId(undefined);
     setSelectedApartment(undefined);
     setSheetExpanded(false);
@@ -156,14 +161,20 @@ export function ExplorationPage({
     setSelectedApartment(undefined);
     if (label.kind === 'gu') {
       setZoneId(undefined);
+      setSelectedZone(undefined);
+      setSearchTarget(undefined);
       setSheetExpanded(false);
       if (label.bounds) adapter.fit(label.bounds, 48, [12.55, 13.5], true);
     } else {
+      setSelectedZone({ ...label, kind: 'zone' });
       setZoneId(label.id);
       adapter.center(label.point, Math.max(camera.zoom, 12.5), true);
     }
   };
   const selectApartment = (item: Apartment, origin: 'map' | 'list') => {
+    if (item.zoneId !== zoneId) {
+      setSelectedZone(data.zones.find((entry) => entry.id === item.zoneId));
+    }
     setZoneId(item.zoneId);
     setApartmentId(item.id);
     setSelectedApartment(item);

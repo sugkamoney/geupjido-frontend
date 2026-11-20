@@ -20,6 +20,7 @@ export const zoneRecord = {
   regionCode: '11',
   regionName: '서울특별시',
   name: '예시권역',
+  areaSquareMeters: 2685802.872975988,
   center: { longitude: 127, latitude: 37.5 },
   initialTier: 2.1,
   voteTier: null,
@@ -45,6 +46,7 @@ export const pinRecord = {
 export const complexRecord = {
   id: 'complex-a',
   name: '예시단지',
+  location: null,
   zoneRank: null,
   score: null,
   price: null,

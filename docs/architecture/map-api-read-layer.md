@@ -1,6 +1,6 @@
 # 지도 API 읽기 계층
 
-> 상태: 공통 계층 구현·검증 완료, 기존 화면 연결 완료 · 버전: 0.3 · 갱신: 2026-11-15
+> 상태: 공통 계층 구현·검증 완료, 기존 화면 연결 완료 · 버전: 0.4 · 갱신: 2026-11-20
 
 ## 현재 구현 범위
 
@@ -9,14 +9,14 @@
 미결 제품 정책을 확정하지 않고, [BE 보완 요청서](map-api-backend-request.md)는 미발송 초안으로 남긴다.
 
 최초 읽기 계층 구현 뒤 사용자 요청으로 기존 화면에도 연결했다. 현재 `/`와
-`/map-exploration`은 실제 API를 사용한다. 신규 의존성·package.json·lockfile 변경은 없다.
+`/map-exploration`은 실제 API를 사용한다. 2026-11-20 배포 명세를 고정하고 `openapi-typescript` 7.13.0을 개발 의존성으로 추가했다.
 화면·선택·viewport·임시 동작은 [기존 화면 연결 구조](map-api-ui-integration.md)를 따른다.
 
 ## 파일 경계와 사용 계약
 
 | 파일 | 역할 |
 | --- | --- |
-| `src/features/map-exploration/api/contracts.ts` | 현재 BE 응답을 검증한 뒤 사용하는 읽기 타입. 생성 OpenAPI 타입으로 간주하지 않음 |
+| `src/features/map-exploration/api/contracts.ts` | 고정 OpenAPI의 생성 타입 별칭과 geometry 검증 모델 |
 | `src/features/map-exploration/api/validation.ts` | unknown → 읽기 모델, null·숫자·필수 필드·날짜·좌표·ring 검증과 경계 bbox 계산 |
 | `src/features/map-exploration/api/client.ts` | 같은 출처 5종 GET, 입력 검증·HTTP 오류·취소 전파 |
 | 같은 폴더의 `*.test.ts`, `test-data.ts` | 검증/HTTP 경계 테스트와 완전한 합성 응답. 실제 서버 데이터를 테스트 fixture로 저장하지 않음 |
@@ -52,7 +52,7 @@ api.search(query, signal);
 - fetch의 네트워크 실패는 원래 오류로 전파한다. 요청 전·응답 수신 후·body 해석 후 abort를
   확인해 취소를 무시한 transport의 늦은 결과도 반환하지 않는다. 요청 세대 간 상태 덮어쓰기 방지는
   후속 hook/consumer 책임이며 이 stateless 클라이언트만으로 A→B→A UI 경합을 해결했다고 보지 않는다.
-- BE 개선 필드를 추측해 요구하거나 응답에 없는 면적·단지 좌표를 만들어 넣지 않는다.
+- 필수 `areaSquareMeters`는 유한한 비음수 ㎡, 상세 `location`은 유효한 WGS84 점 또는 null로 검증한다. 필드 누락은 계약 오류다. 없는 면적·단지 좌표를 만들어 넣지 않는다.
   현재 타입과 validator는 현 계약만 표현한다. BE 보완 뒤 생성 명세·검증 경계를 함께 갱신한다.
 
 ## 검증 기록
@@ -180,3 +180,15 @@ BE location/면적 보완 응답 후 추가 위치 조회·라벨 우선순위�
 | 0.3 | 2026-11-15 | 기존 화면 실제 API 연결과 후속 구조 문서 반영 |
 | 0.2 | 2026-11-15 | 사용자가 재현할 자동 테스트·선택적 로컬 BE 콘솔 검증·화면 미연결 범위 안내 |
 | 0.1 | 2026-11-15 | 5종 GET·현 계약 응답 검증·geometry bounds와 mock/실제 API 검증 결과 기록 |
+
+## 배포 OpenAPI 고정과 생성 타입
+
+원본은 공개 개발 API의 2026-11-20 명세 사본
+[`api/openapi-2026-11-20.json`](api/openapi-2026-11-20.json)이다. `pnpm api:generate`로
+`api/generated.ts`를 생성하고 Prettier를 적용한다. 실행 중 네트워크에서 명세를 받아 빌드하지 않는다.
+`contracts.ts`의 지도 읽기 모델은 생성 components를 참조한다. 런타임 unknown 검증은 유지한다.
+배포 명세의 MultiPolygon 좌표 배열을 2차원 tuple로 좁히고 기존 Polygon 호환을 명시적으로 유지한다.
+다음 계약 변경 시 사본·생성 파일·런타임 파서·완전한 합성 응답을 함께 검토한다.
+다른 API가 생성 파일에 포함되어도 이번 연동 범위는 지도 GET 5종이다.
+
+최종 검증은 [마무리 검증](map-integration-finalization.md)을 따른다.

@@ -51,12 +51,6 @@ export function buildZoneDetail({
             이 단지의 위치 정보가 없어 지도를 이동할 수 없어요.
           </p>
         )}
-        {value?.locationLookupFailed && (
-          <p role="status">
-            단지 위치를 불러오지 못했어요.{' '}
-            <button onClick={retry}>위치 다시 불러오기</button>
-          </p>
-        )}
       </div>
     ) : zone.stage ? (
       <GradeStage stage={zone.stage} />

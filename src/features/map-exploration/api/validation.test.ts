@@ -102,6 +102,9 @@ describe('map response contracts', () => {
   });
 
   it.each([
+    ['missing area', { ...zoneRecord, areaSquareMeters: undefined }],
+    ['negative area', { ...zoneRecord, areaSquareMeters: -1 }],
+    ['non-finite area', { ...zoneRecord, areaSquareMeters: Infinity }],
     ['missing field', { ...zoneRecord, id: undefined }],
     ['invalid enum', { ...zoneRecord, rankingBasis: 'UNKNOWN' }],
     [
@@ -166,6 +169,18 @@ describe('map response contracts', () => {
     },
   );
 
+  it.each([
+    undefined,
+    { longitude: 181, latitude: 37 },
+    { longitude: 127, latitude: NaN },
+  ])('rejects missing or invalid detail locations', (location) => {
+    expect(() =>
+      parseZoneDetail({
+        ...detailRecord,
+        complexes: [{ ...complexRecord, location }],
+      }),
+    ).toThrow(/detail.complexes\[0\].location/);
+  });
   it('rejects malformed records with field paths and without leaking their contents', () => {
     expect(() =>
       parseCities([

@@ -14,6 +14,7 @@ export type MapLabel = {
   name: string;
   district?: string;
   point: LatLng;
+  /** Live zones: square meters. Fixture-only values are relative collision weights; never mix the sources. */
   area?: number;
   bounds?: GeoBounds;
   grade?: Grade;
@@ -50,7 +51,6 @@ export type ExplorationData = {
 export type ZoneDetail = {
   zone: Zone;
   apartments: Apartment[];
-  locationLookupFailed?: boolean;
 };
 export type ExplorationSource = {
   loadZone: (id: string, signal: AbortSignal) => Promise<ZoneDetail>;

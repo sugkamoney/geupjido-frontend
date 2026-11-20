@@ -1,6 +1,5 @@
 import type { createMapApi } from './client';
 import type { MapCity, MapZone, MapComplexPin, MapBounds } from './contracts';
-import { geometryBounds } from './validation';
 import type {
   ExplorationData,
   Zone,
@@ -62,6 +61,7 @@ export function toZone(zone: MapZone): Zone {
   return {
     id: zone.id,
     kind: 'zone',
+    area: zone.areaSquareMeters,
     name: zone.name,
     district: zone.cityName,
     region: zone.regionName,
@@ -86,6 +86,12 @@ export function toApartment(pin: MapComplexPin): Apartment {
   };
 }
 function splitHighlights(context: string, name: string, query: string) {
+  const direct = highlightParts(name, query);
+  if (direct.some((part) => part.match))
+    return {
+      nameParts: direct,
+      contextParts: highlightParts(context, ''),
+    };
   const parts = highlightParts(`${context} ${name}`, query);
   function slice(start: number, end: number): HighlightPart[] {
     let offset = 0;
@@ -111,34 +117,11 @@ export function createLiveSources(api: ReturnType<typeof createMapApi>): {
     source: {
       async loadZone(id, signal) {
         const detail = await api.zone(id, signal);
-        const bbox = geometryBounds(detail.polygon);
-        let pins: MapComplexPin[] = [],
-          locationLookupFailed = false;
-        try {
-          pins = await api.complexes(
-            {
-              west: Math.max(-180, bbox.west - 0.000001),
-              south: Math.max(-90, bbox.south - 0.000001),
-              east: Math.min(180, bbox.east + 0.000001),
-              north: Math.min(90, bbox.north + 0.000001),
-            },
-            signal,
-          );
-        } catch (error) {
-          signal.throwIfAborted();
-          if (error instanceof Error && error.name === 'AbortError')
-            throw error;
-          locationLookupFailed = true;
-        }
         signal.throwIfAborted();
-        const locations = new Map(
-          pins.filter((p) => p.zoneId === id).map((p) => [p.id, p.location]),
-        );
         return {
           zone: { ...toZone(detail.zone), geometry: detail.polygon },
-          locationLookupFailed,
           apartments: detail.complexes.map((c) => {
-            const p = locations.get(c.id);
+            const p = c.location;
             return {
               id: c.id,
               zoneId: id,
