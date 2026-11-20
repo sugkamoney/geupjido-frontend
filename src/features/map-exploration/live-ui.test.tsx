@@ -35,7 +35,16 @@ function setup(located = true) {
   map.center(zone.point, 13);
   const api = {
     ...createMapApi(),
-    zone: async () => parseZoneDetail(detailRecord),
+    zone: async () =>
+      parseZoneDetail({
+        ...detailRecord,
+        complexes: [
+          {
+            ...detailRecord.complexes[0],
+            location: located ? pinRecord.location : null,
+          },
+        ],
+      }),
     complexes: async () => (located ? [pinRecord] : []),
   };
   const sources = createLiveSources(api);
@@ -51,6 +60,106 @@ function setup(located = true) {
   return map;
 }
 describe('live data in the existing exploration screen', () => {
+  it.each(['pending', 'failed'] as const)(
+    'retains the selected zone while detail is %s and viewport zones disappear',
+    async (state) => {
+      const zone = toZone(parseZones([zoneRecord])[0]!);
+      const data = { ...cityData(parseCities([cityRecord])), zones: [zone] };
+      const map = new FixtureMapAdapter();
+      map.setViewport(
+        { width: 1000, height: 800 },
+        { x: 0, y: 0, width: 1000, height: 800 },
+      );
+      map.center(zone.point, 13);
+      const source = {
+        loadZone: () =>
+          state === 'failed'
+            ? Promise.reject(new Error('offline'))
+            : new Promise<never>(() => {}),
+      };
+      const view = render(
+        <ExplorationPage live adapter={map} data={data} source={source} />,
+      );
+      fireEvent.click(screen.getByRole('button', { name: '권역 예시권역' }));
+      if (state === 'failed')
+        await screen.findByText('권역 정보를 불러오지 못했어요.');
+      view.rerender(
+        <ExplorationPage
+          live
+          adapter={map}
+          data={{ ...data, zones: [] }}
+          source={source}
+        />,
+      );
+      expect(
+        screen.getByRole('button', { name: '권역 예시권역' }),
+      ).toHaveAttribute('aria-pressed', 'true');
+      expect(screen.getByText('서울특별시 › 예시구')).toBeVisible();
+      expect(screen.getByText('초기 급지')).toBeVisible();
+      fireEvent.click(screen.getByRole('button', { name: '권역 상세 닫기' }));
+      expect(
+        screen.queryByRole('button', { name: '권역 예시권역' }),
+      ).not.toBeInTheDocument();
+    },
+  );
+  it('uses latest detail after viewport loss and clears snapshots on district or different zone selection', async () => {
+    const zone = toZone(parseZones([zoneRecord])[0]!);
+    const other = {
+      ...zone,
+      id: 'zone-b',
+      name: '다른권역',
+      point: { lat: 37.501, lng: 127.001 },
+    };
+    const data = {
+      ...cityData(parseCities([cityRecord])),
+      zones: [zone, other],
+    };
+    const map = new FixtureMapAdapter();
+    map.setViewport(
+      { width: 1000, height: 800 },
+      { x: 0, y: 0, width: 1000, height: 800 },
+    );
+    map.center(zone.point, 13);
+    let finish!: (value: { zone: typeof zone; apartments: [] }) => void;
+    const source = {
+      loadZone: () =>
+        new Promise<{ zone: typeof zone; apartments: [] }>((resolve) => {
+          finish = resolve;
+        }),
+    };
+    const page = (zones: typeof data.zones) => (
+      <ExplorationPage
+        live
+        adapter={map}
+        data={{ ...data, zones }}
+        source={source}
+      />
+    );
+    const view = render(page(data.zones));
+    fireEvent.click(screen.getByRole('button', { name: '권역 예시권역' }));
+    await waitFor(() => expect(finish).toBeTypeOf('function'));
+    view.rerender(page([other]));
+    await act(async () =>
+      finish({
+        zone: { ...zone, name: '최신권역', value: '1.5' },
+        apartments: [],
+      }),
+    );
+    expect(
+      screen.getByRole('button', { name: '권역 최신권역' }),
+    ).toHaveAttribute('aria-pressed', 'true');
+    expect(document.querySelector('.ui-grade-card')).toHaveTextContent('1.5');
+    fireEvent.click(screen.getByRole('button', { name: '권역 다른권역' }));
+    expect(
+      screen.queryByRole('button', { name: '권역 최신권역' }),
+    ).not.toBeInTheDocument();
+    act(() => map.center(zone.point, 12));
+    fireEvent.click(screen.getByRole('button', { name: '구 예시구' }));
+    view.rerender(page([]));
+    expect(
+      screen.queryByRole('button', { name: '권역 다른권역' }),
+    ).not.toBeInTheDocument();
+  });
   it('retains coordinates acquired after selecting an unlocated row when viewport data disappears', async () => {
     const zone = toZone(parseZones([zoneRecord])[0]!);
     const data = { ...cityData(parseCities([cityRecord])), zones: [zone] };

@@ -39,6 +39,11 @@ const number: Parser<number> = (value, path) => {
     throw new MapContractError(path);
   return value;
 };
+const area: Parser<number> = (value, path) => {
+  const n = number(value, path);
+  if (n < 0) throw new MapContractError(path);
+  return n;
+};
 const count: Parser<number> = (value, path) => {
   const n = number(value, path);
   if (!Number.isSafeInteger(n) || n < 0) throw new MapContractError(path);
@@ -125,6 +130,7 @@ const zone: Parser<MapZone> = (value, path) => {
     regionName: string(v.regionName, `${path}.regionName`),
     name: string(v.name, `${path}.name`),
     center: point(v.center, `${path}.center`),
+    areaSquareMeters: area(v.areaSquareMeters, `${path}.areaSquareMeters`),
     initialTier: nullable(v.initialTier, `${path}.initialTier`, number),
     voteTier: nullable(v.voteTier, `${path}.voteTier`, number),
     rankingBasis: v.rankingBasis,
@@ -151,6 +157,7 @@ const pin: Parser<MapComplexPin> = (value, path) => {
 const complex: Parser<MapComplex> = (value, path) => {
   const v = object(value, path);
   return {
+    location: nullable(v.location, `${path}.location`, point),
     id: string(v.id, `${path}.id`),
     name: string(v.name, `${path}.name`),
     zoneRank: nullable(v.zoneRank, `${path}.zoneRank`, rank),

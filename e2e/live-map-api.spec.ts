@@ -93,6 +93,14 @@ test('existing map uses server search, real detail and list selection on desktop
   page,
   isMobile,
 }) => {
+  await page.route('**/api/v1/map/zones/zone-a', (route) =>
+    route.fulfill({
+      json: {
+        ...detailRecord,
+        complexes: [{ ...complexRecord, location: pinRecord.location }],
+      },
+    }),
+  );
   await page.goto('/');
   await expect(
     page.getByRole('button', { name: '구 예시구', exact: true }),
@@ -212,4 +220,59 @@ test('initial API failure offers retry and does not silently show fixture cities
   await expect(
     page.getByRole('button', { name: '구 예시구', exact: true }),
   ).toBeVisible();
+});
+
+test('detail coordinates move the map without viewport pins; null rows keep selection and camera', async ({
+  page,
+  isMobile,
+}) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.route('**/api/v1/map/complexes?*', (route) =>
+    route.fulfill({ json: [] }),
+  );
+  await page.route('**/api/v1/map/zones/zone-a', (route) =>
+    route.fulfill({
+      json: {
+        ...detailRecord,
+        complexes: [
+          { ...complexRecord, location: pinRecord.location },
+          {
+            ...complexRecord,
+            id: 'unlocated',
+            name: '위치 미확인 단지',
+            location: null,
+          },
+        ],
+      },
+    }),
+  );
+  await page.goto('/');
+  await page.getByRole('combobox', { name: '지역 검색' }).fill('예시권역');
+  await page
+    .getByRole('option', { name: '예시권역 예시구', exact: true })
+    .click();
+  if (isMobile)
+    await page
+      .getByRole('button', { name: '상세 펼치기', exact: true })
+      .click();
+  const missing = page.getByRole('button', {
+    name: '목록 단지 위치 미확인 단지',
+    exact: true,
+  });
+  const map = page.getByRole('region', { name: '지도', exact: true });
+  const before = await map.getAttribute('data-zoom');
+  await missing.click();
+  await expect(missing).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByText(/이 단지의 위치 정보가 없어/)).toBeVisible();
+  await expect(map).toHaveAttribute('data-zoom', before!);
+  await expect(
+    page.getByRole('button', { name: '지도 단지 위치 미확인 단지' }),
+  ).toHaveCount(0);
+  await page
+    .getByRole('button', { name: '목록 단지 예시단지', exact: true })
+    .click();
+  await expect(map).toHaveAttribute('data-zoom', '15');
+  await expect(
+    page.getByRole('button', { name: '지도 단지 예시단지', exact: true }),
+  ).toHaveAttribute('aria-pressed', 'true');
 });
