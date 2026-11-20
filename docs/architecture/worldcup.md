@@ -1,6 +1,6 @@
 # 월드컵 실제 API 구조와 검증
 
-> 상태: 실제 API 연동·자동 검증 완료, 실서버 쓰기·실기기 검증 남음 · 버전: 1.2 · 갱신: 2026-11-20
+> 상태: 실제 API 연동·자동 검증 완료, 실서버 쓰기·실기기 검증 남음 · 버전: 1.3 · 갱신: 2026-11-20
 
 제품 기준은 [월드컵 SDD](../product/specs/worldcup/README.md), 구현 선택의 근거는 [ADR-009](../history/ADR-009-worldcup-server-game-state.md)다. develop `0b545035` 기반의 지정 Orca worktree에서 FE만 변경했다. 코드 작성·수정은 100% AI다. 최초 인계는 구현·검증까지였고, 후속 사용자 요청으로 커밋·push·develop 대상 PR 생성까지 승인됐다. merge는 포함하지 않는다.
 
@@ -81,6 +81,7 @@ PR10은 최종 재확인(2026-11-20)에도 OPEN이다. 부모의 ResizeObserver 
 |1.0|2026-11-20|실제 게임·권역 대안·진행·타임라인·쿠키·경합·날짜 계약과 현재 검증으로 갱신 |
 | 1.1 | 2026-11-20 | PR #11 최신 지도 탐색 경합·가변 모달 높이 회귀 보완 |
 | 1.2 | 2026-11-20 | 실제 개발 Origin CORS 확인·5.x 카드 급지 검증 보완 |
+| 1.3 | 2026-11-20 | E2E 생성 HTML의 개발 서버 새로고침 간섭 차단 |
 
 ## PR 제출
 
@@ -109,3 +110,14 @@ My Picks의 절대 배치는 유지하되 실측 높이를 부모의 레이아�
 추가로 공개 zones 응답의 급지 최대5.8을 읽어, 카드 검증의 `<=5`가 유효한5.x 대진을 거부함을 발견했다. BE `V3__expand_zone_tier_range.sql`은1.0~5.9를 허용한다. 검증을 이 범위에 맞추고5.8·5.9 수용,5.91·6·비유한 숫자 거부 회귀를 추가했다. 지도 카드의 정수 등급은 여전히 floor(tier)1~5를 사용한다. 새 게임을 쓰지 않고 합성 계약 응답으로 실제 화면의 대진 로드·투표 후5.x 급지 공개를 검증한다.
 
 급지 검증 후속 검사: `pnpm check`263개와 빌드 통과. 새5.x 대진 E2E는 desktop Chromium·mobile Chromium/WebKit3건 통과(합성 API). 직전 전체 E2E156개 통과·48개 조건 제외와 구분한다. 개발 API 진단은 OPTIONS·GET만 수행했다.
+
+
+## 개발 화면 새로고침 간섭
+
+2026-11-20 사용자 확인 중 개발 서버 로그에 E2E 산출물 HTML 변경의 `page reload`가 반복된 것을 확인했다. `server.watch.ignored`에서 dist-e2e·test-results·playwright-report를 제외한다. 소스 변경에 대한 정상 갱신은 유지한다. 실제 설정을 사용한 임시 루트 Vite 서버의 생성 HTML 변경은 수정 전 새로고침3건→수정 후0건, 앱 HTML 변경의 전후 양성 대조는 모두 감지했다. 실행 화면을 켠 채 테스트 빌드를 수행한 개발 환경 간섭이며, 제품 실행 중 주기적인 문서 새로고침으로 단정하지 않는다.
+
+직접 확인할 화면은 소스 수정·E2E 빌드로 바뀌지 않는 별도 production build의 preview로 제공할 수 있다. 현재 사용 origin은 localhost:5173을 유지하며 NAVER 공개 Client ID와 개발 API 프록시를 실행 환경에서 전달한다. 실제 서버 저장·투표는 이 진단에 포함하지 않는다. 검증 범위와 HMR·API 재조회의 차이는 [Q&A-011](../learning/frontend/q-and-a/QA-FE-011-dev-reload-during-e2e.md)을 따른다.
+
+현재 직접 확인용 화면은 저장소 밖의 독립된 임시 production build를 `http://localhost:5173`에서 preview로 제공한다. HTML에 `@vite/client`가 없고 NAVER 공개 Client ID가 빌드에 포함됐음을 값 노출 없이 확인했다. 실제 API proxy의 Origin 포함 current GET은 정상404 GAME_NOT_FOUND였다. 이 preview는 후속 소스 수정·테스트 빌드가 바꾸지 않으며, 변경을 보여주려면 다시 빌드해 교체해야 한다.
+
+감시 수정 후 `pnpm check`263개와 운영 build가 통과했다. 개발 서버 감시 동작의 수정이므로 UI 전체 E2E는 반복하지 않았고, 실제 설정을 읽은 격리 Vite 서버에서 생성 HTML 무시·앱 HTML 정상 갱신을 직접 검증했다.

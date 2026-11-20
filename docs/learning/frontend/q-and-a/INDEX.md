@@ -24,3 +24,5 @@
 - [QA-FE-008: 생성 API 타입과 실제 응답 검증의 차이](QA-FE-008-generated-api-types-and-runtime-contract.md)
 - [QA-FE-009: NAVER 지도 Client ID 발급과 workspace 설정](QA-FE-009-naver-map-client-id-setup.md)
 - [QA-FE-010: 경계 데이터 오류와 SDK 렌더링 오류 구별](QA-FE-010-api-geometry-and-sdk-projection.md)
+
+- [QA-FE-011: 실행 화면이 E2E 중 새로고침되는 이유](QA-FE-011-dev-reload-during-e2e.md)
