@@ -600,3 +600,41 @@ for (const height of [779, 780, 800, 1080])
     ).toBeVisible();
     await page.getByRole('button', { name: '월드컵 닫기' }).click();
   });
+
+test('fractional fifth-grade matchups load and reveal the server tier after voting', async ({
+  page,
+  isMobile,
+}) => {
+  await mapRoutes(page);
+  await page.route('**/api/v1/worldcup/**', (route) => {
+    const path = new URL(route.request().url()).pathname;
+    if (path.endsWith('/progress'))
+      return route.fulfill({ json: progressRecord });
+    if (path.endsWith('/timeline'))
+      return route.fulfill({ json: { items: [] } });
+    const voted = route.request().method() === 'PUT',
+      game = gameRecord(voted ? 5 : 4);
+    for (const round of game.matchups) {
+      round.left.zoneTier = 5.8;
+      round.right.zoneTier = round.type === 'CROSS_ZONE' ? 5.9 : 5.8;
+    }
+    if (voted)
+      game.roundResult = {
+        roundNumber: 5,
+        available: true,
+        leftPercent: 53,
+        rightPercent: 47,
+      };
+    return route.fulfill({ json: game });
+  });
+  await page.goto('/');
+  await open(page, isMobile);
+  await expect(
+    page.getByRole('button', { name: '왼쪽단지 선택', exact: true }),
+  ).toBeEnabled();
+  await page
+    .getByRole('button', { name: '왼쪽단지 선택', exact: true })
+    .click();
+  await expect(page.getByLabel('권역 급지 5.8', { exact: true })).toBeVisible();
+  await expect(page.getByLabel('권역 급지 5.9', { exact: true })).toBeVisible();
+});

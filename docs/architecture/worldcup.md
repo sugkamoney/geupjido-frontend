@@ -1,13 +1,13 @@
 # 월드컵 실제 API 구조와 검증
 
-> 상태: 실제 API 연동·자동 검증 완료, 실서버 쓰기·실기기 검증 남음 · 버전: 1.1 · 갱신: 2026-11-20
+> 상태: 실제 API 연동·자동 검증 완료, 실서버 쓰기·실기기 검증 남음 · 버전: 1.2 · 갱신: 2026-11-20
 
 제품 기준은 [월드컵 SDD](../product/specs/worldcup/README.md), 구현 선택의 근거는 [ADR-009](../history/ADR-009-worldcup-server-game-state.md)다. develop `0b545035` 기반의 지정 Orca worktree에서 FE만 변경했다. 코드 작성·수정은 100% AI다. 최초 인계는 구현·검증까지였고, 후속 사용자 요청으로 커밋·push·develop 대상 PR 생성까지 승인됐다. merge는 포함하지 않는다.
 
 ## 계약과 파일 책임
 
 - `api/contracts.ts`: 기존 지도 API 위치의 생성 `components` 타입을 재사용한다. 배포 OpenAPI의 월드컵 DTO는 required/null 표현이 부족해 `Required`와 실제 nullable 필드를 읽기 전용 BE 문서에 따라 보강한다. 생성 파일은 수정하지 않는다.
-- `api/validation.ts`: 모든 네트워크 JSON을 unknown으로 받아 카드·고정10판·연속 확정 기록·다음 판·완료·좌우 합100 또는 비공개 null·진행 수·목록을 검증한다. 계약 오류는 예시값으로 복구하지 않는다.
+- `api/validation.ts`: 모든 네트워크 JSON을 unknown으로 받아 카드(급지1.0~5.9)·고정10판·연속 확정 기록·다음 판·완료·좌우 합100 또는 비공개 null·진행 수·목록을 검증한다. 계약 오류는 예시값으로 복구하지 않는다.
 - `api/client.ts`: 상대 `/api/v1/worldcup`와 `credentials: 'include'`, `cache: 'no-store'`, AbortSignal을 사용한다. 서버 오류 메시지를 그대로 UI에 노출하지 않고 status/code를 구분한다. 요청 전·응답·JSON 해석 후 취소를 확인한다.
 - `live-source.ts`: 실제 API capability를 제공한다. 예시 loadMatch/submit으로 fallback하면 명시적으로 실패한다. `source.ts`의 기존 cursor source와 `/worldcup?scenario=`는 검토용이다.
 - `use-live-worldcup.ts`: 세션별 게임 snapshot, 일반/권역 scope, 제출 잠금, 불확실한 응답 복구, 피드백/다음 판 타이머, 날짜 경계를 소유한다. `use-worldcup.ts`는 실제 source면 이 hook을 선택하고 예시 흐름도 유지한다.
@@ -52,8 +52,8 @@ Node24.15.0·pnpm11.13.0을 사용했다. 실행 명령은 `npx --yes --package=
 | 검사 | 기대 | 현재 결과 |
 |---|---|---|
 | 시작 baseline `pnpm test` | 기존 단위 회귀 |236개 통과 |
-| API·상태·읽기 테스트 | 계약·409·응답 유실·시작 유실·날짜·scope·타임라인 stale | 26개 추가 단위 테스트 포함 전체262개 통과. 두 일반 자정 경계와 필터 scroll 회귀는 실패→성공 확인, 권역 게임은 자정 뒤에도 유지 확인 |
-| `pnpm check` | 토큰·타입·lint·format·단위·운영 build | 단위262개(30파일)·전체 품질 gate·운영 빌드 통과 |
+| API·상태·읽기 테스트 | 계약·409·응답 유실·시작 유실·날짜·scope·타임라인 stale | 27개 추가 단위 테스트 포함 전체263개 통과. 두 일반 자정 경계와 필터 scroll 회귀는 실패→성공 확인, 권역 게임은 자정 뒤에도 유지 확인 |
+| `pnpm check` | 토큰·타입·lint·format·단위·운영 build | 단위263개(30파일)·전체 품질 gate·운영 빌드 통과 |
 | 실제 월드컵 경로 E2E | desktop Chromium/mobile Chromium·WebKit | 전체156개 통과·48개 플랫폼 조건 제외·실패0. 실제 월드컵/쿠키·후속 리뷰는25개 통과·14개 모바일 타임라인/desktop 배치 조건 제외 |
 | 격리 HTTPS cookie E2E | Secure/HttpOnly/SameSite·PUT 쿠키·새로고침 이어하기 | 세 브라우저 통과 |
 | 공유 개발 API GET | progress·zones·timeline 배포 응답 |2026-11-20 progress·zones·timeline 조회, 쿠키 없는 진행0. current는404 GAME_NOT_FOUND·Set-Cookie 없음. 배포 월드컵 경로는 고정 OpenAPI와 동일 |
@@ -80,6 +80,7 @@ PR10은 최종 재확인(2026-11-20)에도 OPEN이다. 부모의 ResizeObserver 
 |0.2|2026-10-27|유효한 focus 보존 |
 |1.0|2026-11-20|실제 게임·권역 대안·진행·타임라인·쿠키·경합·날짜 계약과 현재 검증으로 갱신 |
 | 1.1 | 2026-11-20 | PR #11 최신 지도 탐색 경합·가변 모달 높이 회귀 보완 |
+| 1.2 | 2026-11-20 | 실제 개발 Origin CORS 확인·5.x 카드 급지 검증 보완 |
 
 ## PR 제출
 
@@ -97,3 +98,14 @@ My Picks의 절대 배치는 유지하되 실측 높이를 부모의 레이아�
 
 
 최종 실행 기록(리뷰 후속): Node24.15.0·pnpm11.13.0에서 `pnpm check`262개 통과, `pnpm test:e2e --workers=2`156개 통과·48개 플랫폼 조건 제외·실패0. macOS desktop Chromium·mobile Chromium/WebKit과 NAVER 오류 구성을 실행했다. 새 제외10건은 desktop 전용 지연 타임라인1건과 높이4종의 모바일 project 조건이다. 기존 모바일 whole-screen·짧은 화면·focus·넘김 회귀도 통과했다. 공유 API 쓰기·실기기·Linux는 이번 후속에서도 미실행이다.
+
+
+## 로컬 대진 로드 오류 확인
+
+2026-11-20 실제 실행에서 `http://127.0.0.1:5173`의 Origin은 개발 API에서403 `Invalid CORS request`, `http://localhost:5173`은 허용됨을 확인했다. 같은 포트라도 두 host는 다른 Origin이다. `changeOrigin: true`는 upstream Host를 바꾸며 브라우저 Origin을 허용된 값으로 바꾸는 설정이 아니다. 기존 허용 localhost 주소를 사용하고 서버 CORS를 임의 완화하거나 프록시에서 Origin을 숨기지 않는다. `.env.example`의 NAVER 서비스 URL도 localhost를 기준으로 한다. 최초 실행 안내에서 IP 주소를 연 것은 잘못이었으며 localhost로 다시 열었다.
+
+확인은 개발 API OPTIONS와 프록시 경유 GET으로 수행했다. POST 사전 요청은 IP Origin403·localhost Origin200, current GET은 IP Origin403·localhost Origin404 GAME_NOT_FOUND였다. 후자의404는 익명 쿠키 없는 조회에서 정상이며 신규 시작으로 진행하는 조건이다. 이 진단에서 공유 개발 API의 게임·투표 쓰기는 하지 않았다.
+
+추가로 공개 zones 응답의 급지 최대5.8을 읽어, 카드 검증의 `<=5`가 유효한5.x 대진을 거부함을 발견했다. BE `V3__expand_zone_tier_range.sql`은1.0~5.9를 허용한다. 검증을 이 범위에 맞추고5.8·5.9 수용,5.91·6·비유한 숫자 거부 회귀를 추가했다. 지도 카드의 정수 등급은 여전히 floor(tier)1~5를 사용한다. 새 게임을 쓰지 않고 합성 계약 응답으로 실제 화면의 대진 로드·투표 후5.x 급지 공개를 검증한다.
+
+급지 검증 후속 검사: `pnpm check`263개와 빌드 통과. 새5.x 대진 E2E는 desktop Chromium·mobile Chromium/WebKit3건 통과(합성 API). 직전 전체 E2E156개 통과·48개 조건 제외와 구분한다. 개발 API 진단은 OPTIONS·GET만 수행했다.

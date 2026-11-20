@@ -76,7 +76,7 @@ function card(v: unknown): GameCard {
   };
   requireValue(
     result.zoneTier >= 1 &&
-      result.zoneTier <= 5 &&
+      result.zoneTier <= 5.9 &&
       result.representativeSale.exclusiveAreaSquareMeters > 0,
   );
   return result;

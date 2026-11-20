@@ -99,3 +99,15 @@ it('keeps HTTP error codes and aborts without consuming late results', async () 
     name: 'AbortError',
   });
 });
+
+it('accepts fractional fifth-grade cards and rejects tiers outside the five grade bands', () => {
+  const withTier = (zoneTier: number) => {
+    const game = gameRecord();
+    game.matchups[0]!.left.zoneTier = zoneTier;
+    return game;
+  };
+  for (const tier of [1, 4.9, 5, 5.8, 5.9])
+    expect(parseGame(withTier(tier)).matchups[0]!.left.zoneTier).toBe(tier);
+  for (const tier of [0.9, 5.91, 6, NaN, Infinity])
+    expect(() => parseGame(withTier(tier))).toThrow();
+});
