@@ -199,6 +199,65 @@ describe('ranking shell', () => {
       vi.unstubAllGlobals();
     }
   });
+  it('moves focus into the desktop ranking opened from the keyboard and closes with Escape', async () => {
+    const user = userEvent.setup();
+    const signals: AbortSignal[] = [];
+    render(<RankingHarness signals={signals} />);
+    const ranking = screen.getByRole('button', { name: '랭킹' });
+    ranking.focus();
+    await user.keyboard('{Enter}');
+    expect(screen.getByRole('region', { name: '랭킹' })).toHaveFocus();
+    await user.keyboard('{Escape}');
+    expect(
+      screen.queryByRole('region', { name: '랭킹' }),
+    ).not.toBeInTheDocument();
+    expect(signals[0]?.aborted).toBe(true);
+    expect(ranking).toHaveFocus();
+  });
+
+  it('restores mobile modal focus when a focused retry button disappears', async () => {
+    const user = userEvent.setup();
+    vi.stubGlobal('matchMedia', () => ({
+      matches: true,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    }));
+    function RetryContent() {
+      const [loading, setLoading] = useState(false);
+      return loading ? (
+        <p role="status">조회 중</p>
+      ) : (
+        <button onClick={() => setLoading(true)}>다시 시도</button>
+      );
+    }
+    try {
+      render(
+        <AppShell
+          map={() => null}
+          ranking={() => <RetryContent />}
+          search={{ value: '', onValueChange: vi.fn() }}
+        />,
+      );
+      const ranking = screen.getByRole('button', { name: '랭킹' });
+      await user.click(ranking);
+      const dialog = screen.getByRole('dialog', { name: '랭킹' });
+      await user.tab();
+      expect(
+        within(dialog).getByRole('button', { name: '다시 시도' }),
+      ).toHaveFocus();
+      await user.keyboard('{Enter}');
+      expect(within(dialog).getByRole('status')).toHaveTextContent('조회 중');
+      expect(
+        within(dialog).getByRole('button', { name: '랭킹 닫기' }),
+      ).toHaveFocus();
+      await user.keyboard('{Escape}');
+      expect(dialog).not.toBeInTheDocument();
+      expect(ranking).toHaveFocus();
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
   it('invalidates a pending selection on breakpoint change and ignores its late callback', async () => {
     const user = userEvent.setup();
     const sessions: { signal: AbortSignal; onZoneSelected: () => void }[] = [];

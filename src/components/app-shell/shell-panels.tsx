@@ -1,4 +1,10 @@
-import { useRef, useState, type RefObject, type ReactNode } from 'react';
+import {
+  useLayoutEffect,
+  useRef,
+  useState,
+  type RefObject,
+  type ReactNode,
+} from 'react';
 import { Button, CloseButton } from '../ui';
 import type { AppShellProps, ShellDetail } from './types';
 
@@ -190,16 +196,44 @@ export function RankingPanel({
   compact: boolean;
   onClose: () => void;
 }) {
+  const panelRef = useRef<HTMLElement>(null);
+  const closeRef = useRef<HTMLButtonElement>(null);
+
+  useLayoutEffect(() => {
+    const panel = panelRef.current;
+    if (!panel) return;
+    if (!compact) {
+      panel.focus({ preventScroll: true });
+      return;
+    }
+
+    closeRef.current?.focus({ preventScroll: true });
+    // Async slot content can remove a focused control without dispatching blur.
+    const observer = new MutationObserver(() => {
+      if (document.activeElement === document.body)
+        closeRef.current?.focus({ preventScroll: true });
+    });
+    observer.observe(panel, { childList: true, subtree: true });
+    return () => observer.disconnect();
+  }, [compact]);
+
   return (
     <section
+      ref={panelRef}
       id="shell-ranking"
+      tabIndex={-1}
       className="shell-left-panel shell-ranking"
       aria-label="랭킹"
       role={compact ? 'dialog' : undefined}
       aria-modal={compact || undefined}
       data-layout-region
       onKeyDown={(event) => {
-        if (event.defaultPrevented || event.nativeEvent.isComposing) return;
+        if (
+          event.defaultPrevented ||
+          event.nativeEvent.isComposing ||
+          event.nativeEvent.keyCode === 229
+        )
+          return;
         if (event.key === 'Escape') {
           event.preventDefault();
           onClose();
@@ -224,7 +258,7 @@ export function RankingPanel({
     >
       {compact && (
         <div className="shell-ranking-toolbar">
-          <CloseButton autoFocus label="랭킹 닫기" onClick={onClose} />
+          <CloseButton ref={closeRef} label="랭킹 닫기" onClick={onClose} />
         </div>
       )}
       {content({ signal, onZoneSelected })}

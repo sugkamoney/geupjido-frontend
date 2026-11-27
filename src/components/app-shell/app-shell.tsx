@@ -196,6 +196,7 @@ export function AppShell({
       ref={rootRef}
       className="app-shell"
       data-panel-open={panelOpen}
+      data-active-panel={activePanel ?? undefined}
       data-detail-open={!!detail}
       data-compact={compact}
       onFocusCapture={(event) => {

@@ -15,6 +15,9 @@
   --shell-detail-x: 476px;
   --shell-search-x: 470px;
 }
+.app-shell[data-active-panel='ranking'][data-panel-open='true'] {
+  --shell-detail-x: 470px;
+}
 .app-shell[data-detail-open='true'] {
   --shell-search-x: calc(var(--shell-detail-x) + 368px);
 }
