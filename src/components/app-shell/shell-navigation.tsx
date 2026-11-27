@@ -1,13 +1,17 @@
 import type { RefObject } from 'react';
 
 export function ShellNavigation({
-  panelOpen,
+  activePanel,
+  onRanking,
+  rankingButtonRef,
   review,
   onMap,
   onWorldcup,
   mapButtonRef,
 }: {
-  panelOpen: boolean;
+  activePanel: 'timeline' | 'ranking' | null;
+  onRanking?: () => void;
+  rankingButtonRef: RefObject<HTMLButtonElement | null>;
   review: boolean;
   onMap: () => void;
   onWorldcup: (origin: HTMLElement) => void;
@@ -22,7 +26,7 @@ export function ShellNavigation({
         <button
           ref={mapButtonRef}
           className="shell-nav-item"
-          aria-pressed={!panelOpen}
+          aria-pressed={activePanel === null}
           onClick={onMap}
         >
           <span className="shell-nav-icon shell-nav-map" aria-hidden="true" />
@@ -30,7 +34,7 @@ export function ShellNavigation({
         </button>
         <button
           className="shell-nav-item"
-          aria-pressed={panelOpen}
+          aria-pressed={activePanel === 'timeline'}
           onClick={(event) => onWorldcup(event.currentTarget)}
         >
           <span
@@ -39,25 +43,31 @@ export function ShellNavigation({
           />
           <span>월드컵</span>
         </button>
+        {(onRanking || review) && (
+          <button
+            ref={rankingButtonRef}
+            className="shell-nav-item"
+            disabled={!onRanking}
+            aria-label={onRanking ? undefined : '랭킹 · 노출 미정'}
+            aria-pressed={onRanking ? activePanel === 'ranking' : undefined}
+            onClick={onRanking}
+          >
+            <span
+              className="shell-nav-icon shell-nav-ranking"
+              aria-hidden="true"
+            />
+            <span>랭킹</span>
+          </button>
+        )}
         {review && (
-          <>
-            <button
-              className="shell-nav-item"
-              disabled
-              aria-label="랭킹 · 노출 미정"
-            >
-              <img src="/assets/icons/shell-ranking.svg" alt="" />
-              <span>랭킹</span>
-            </button>
-            <button
-              className="shell-nav-item"
-              disabled
-              aria-label="리포트 · 노출 미정"
-            >
-              <img src="/assets/icons/shell-report.svg" alt="" />
-              <span>리포트</span>
-            </button>
-          </>
+          <button
+            className="shell-nav-item"
+            disabled
+            aria-label="리포트 · 노출 미정"
+          >
+            <img src="/assets/icons/shell-report.svg" alt="" />
+            <span>리포트</span>
+          </button>
         )}
       </div>
       <span className="shell-avatar" aria-label="익명 사용자">

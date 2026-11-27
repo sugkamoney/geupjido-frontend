@@ -39,6 +39,10 @@ export type ShellSearch = {
 };
 export type AppShellProps = {
   map: (context: { frame: MapFrame; level: DisplayLevel }) => ReactNode;
+  ranking?: (context: {
+    signal: AbortSignal;
+    onZoneSelected: () => void;
+  }) => ReactNode;
   timeline?: ReactNode;
   timelineHeader?: ReactNode;
   timelineVisible?: boolean;

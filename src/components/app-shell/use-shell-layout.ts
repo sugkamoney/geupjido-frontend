@@ -58,7 +58,7 @@ export function useMapFrame(
   root: RefObject<HTMLElement | null>,
   map: RefObject<HTMLDivElement | null>,
   compact: boolean,
-  panelOpen: boolean,
+  activePanel: 'timeline' | 'ranking' | null,
   detailId: string | undefined,
   sheetExpanded: boolean,
   searchHasContent: boolean,
@@ -92,7 +92,7 @@ export function useMapFrame(
         '.shell-detail',
       ]) {
         const box = rect(selector);
-        if (!box) continue;
+        if (!box || (compact && selector === '.shell-left-panel')) continue;
         if (compact) bottom = Math.min(bottom, box.top);
         else left = Math.max(left, box.right + 8);
       }
@@ -137,7 +137,7 @@ export function useMapFrame(
     root,
     map,
     compact,
-    panelOpen,
+    activePanel,
     detailId,
     sheetExpanded,
     searchHasContent,

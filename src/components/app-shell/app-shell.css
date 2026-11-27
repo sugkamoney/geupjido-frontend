@@ -15,6 +15,9 @@
   --shell-detail-x: 476px;
   --shell-search-x: 470px;
 }
+.app-shell[data-active-panel='ranking'][data-panel-open='true'] {
+  --shell-detail-x: 470px;
+}
 .app-shell[data-detail-open='true'] {
   --shell-search-x: calc(var(--shell-detail-x) + 368px);
 }
@@ -607,5 +610,32 @@
   .shell-detail[data-expanded='true'] .shell-detail-summary {
     min-height: 0;
     max-height: none;
+  }
+}
+
+.shell-nav-ranking {
+  --shell-icon: url('/assets/icons/shell-ranking.svg');
+}
+.shell-ranking {
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+.shell-ranking-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  flex-shrink: 0;
+  justify-content: flex-end;
+  padding: max(var(--space-8), env(safe-area-inset-top)) var(--space-16) 0;
+  background: var(--bg-surface);
+}
+@media (max-width: 767px) {
+  .shell-ranking {
+    inset: 0;
+    z-index: 60;
+    width: 100%;
+    padding-bottom: env(safe-area-inset-bottom);
+    border: 0;
   }
 }
