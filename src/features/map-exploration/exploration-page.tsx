@@ -1,4 +1,9 @@
-import { useTimelineNavigation } from './use-timeline-navigation';
+import { useZoneNavigation } from './use-zone-navigation';
+import { DEFAULT_RANKING_FILTERS } from '../ranking/api/contracts';
+import {
+  RankingContent,
+  type RankingSlotContext,
+} from '../ranking/ranking-content';
 import { liveWorldcupSource } from '../worldcup/live-source';
 import { LiveTimeline } from '../worldcup/live-data';
 import { useLiveTimeline } from '../worldcup/use-live-data';
@@ -37,6 +42,7 @@ import type {
   MapAdapter,
   MapLabel,
   Zone,
+  ZoneDetail,
 } from './types';
 
 const overviewCenter = (bounds: GeoBounds): LatLng => ({
@@ -71,8 +77,13 @@ export function ExplorationPage({
     () => providedAdapter ?? createDefaultMapAdapter(data),
   );
   const camera = useSyncExternalStore(adapter.subscribe, adapter.getSnapshot);
-  const { cancel: cancelTimelineNavigation, navigate: navigateTimeline } =
-    useTimelineNavigation(source);
+  const { cancel: cancelZoneNavigation, navigate: navigateZone } =
+    useZoneNavigation(source);
+  const [rankingQuery, setRankingQuery] = useState(DEFAULT_RANKING_FILTERS);
+  const [rankingDetail, setRankingDetail] = useState<{
+    source: ExplorationSource;
+    value: ZoneDetail;
+  }>();
 
   const [worldcup, setWorldcup] = useState<{
     zone?: Zone;
@@ -82,8 +93,10 @@ export function ExplorationPage({
   const [picks, setPicks] = useState(0);
   const [ownTimeline, setOwnTimeline] = useState<TimelineEntry[]>([]);
   const [timelineFilter, setTimelineFilter] = useState<'all' | 'zone'>('all');
-  const openWorldcup = (origin: HTMLElement, scope?: Zone) =>
+  const openWorldcup = (origin: HTMLElement, scope?: Zone) => {
+    cancelZoneNavigation();
     setWorldcup({ zone: scope, intro: claimIntroduction(), origin });
+  };
   const recordChoice = (match: Match, choice: Choice) => {
     if (choice === 'skip') return;
     if (live) {
@@ -118,7 +131,7 @@ export function ExplorationPage({
       });
     };
   }, [adapter]);
-  const detail = useZoneDetail(zoneId, source);
+  const detail = useZoneDetail(zoneId, source, rankingDetail);
   const searchZone =
     searchTarget?.kind === 'zone'
       ? searchTarget.item
@@ -168,8 +181,9 @@ export function ExplorationPage({
     setSelectedApartment({ ...selectedApartment, point: apartment.point });
   }
   const clear = () => {
-    cancelTimelineNavigation();
+    cancelZoneNavigation();
     setZoneId(undefined);
+    setRankingDetail(undefined);
     setSelectedZone(undefined);
     setSearchTarget(undefined);
     setApartmentId(undefined);
@@ -177,10 +191,10 @@ export function ExplorationPage({
     setSheetExpanded(false);
     adapter.releaseAnchor();
   };
-  const selectLabel = (label: MapLabel) => {
-    cancelTimelineNavigation();
+  const applyLabelSelection = (label: MapLabel) => {
     setApartmentId(undefined);
     setSelectedApartment(undefined);
+    if (label.kind === 'gu' || label.id !== zoneId) setRankingDetail(undefined);
     if (label.kind === 'gu') {
       setZoneId(undefined);
       setSelectedZone(undefined);
@@ -190,12 +204,21 @@ export function ExplorationPage({
     } else {
       setSelectedZone({ ...label, kind: 'zone' });
       setZoneId(label.id);
-      adapter.center(label.point, Math.max(camera.zoom, 12.5), true);
+      adapter.center(
+        label.point,
+        Math.max(adapter.getSnapshot().zoom, 12.5),
+        true,
+      );
     }
   };
+  const selectLabel = (label: MapLabel) => {
+    cancelZoneNavigation();
+    applyLabelSelection(label);
+  };
   const selectApartment = (item: Apartment, origin: 'map' | 'list') => {
-    cancelTimelineNavigation();
+    cancelZoneNavigation();
     if (item.zoneId !== zoneId) {
+      setRankingDetail(undefined);
       setSelectedZone(data.zones.find((entry) => entry.id === item.zoneId));
     }
     setZoneId(item.zoneId);
@@ -208,12 +231,43 @@ export function ExplorationPage({
     }
   };
   const navigateTimelineZone = (id: string, signal: AbortSignal) =>
-    navigateTimeline(id, signal, selectLabel);
-  const search = useSearch(searchSource, (target) => {
-    setSearchTarget(target);
-    if (target.kind === 'apartment') selectApartment(target.item, 'list');
-    else selectLabel(target.item);
-  });
+    navigateZone(id, signal, ({ zone }) => applyLabelSelection(zone));
+  const rankingSlot = {
+    ranking: ({ signal, onZoneSelected }: RankingSlotContext) => (
+      <RankingContent
+        signal={signal}
+        query={rankingQuery}
+        selectedZoneId={zoneId}
+        onQueryChange={(query) => {
+          cancelZoneNavigation();
+          setRankingQuery(query);
+        }}
+        onSelectZone={(id, onError) => {
+          void navigateZone(
+            id,
+            signal,
+            (value) => {
+              applyLabelSelection(value.zone);
+              setSearchTarget(undefined);
+              setSheetExpanded(false);
+              setRankingDetail({ source, value });
+              onZoneSelected();
+            },
+            onError,
+          );
+        }}
+      />
+    ),
+  };
+  const search = useSearch(
+    searchSource,
+    (target) => {
+      setSearchTarget(target);
+      if (target.kind === 'apartment') selectApartment(target.item, 'list');
+      else selectLabel(target.item);
+    },
+    cancelZoneNavigation,
+  );
   const allApartments = new Map<string, Apartment>();
   for (const item of [
     ...data.apartments,
@@ -237,6 +291,7 @@ export function ExplorationPage({
   return (
     <>
       <AppShell
+        {...(live ? rankingSlot : {})}
         onWorldcupStart={(origin) => openWorldcup(origin)}
         timelineVisible={
           worldcupSource.api
@@ -271,7 +326,7 @@ export function ExplorationPage({
         sheetExpanded={sheetExpanded}
         onSheetExpandedChange={setSheetExpanded}
         onLevelChange={(level) => {
-          cancelTimelineNavigation();
+          cancelZoneNavigation();
           if (level === 'gu') {
             clear();
             adapter.fit(data.overview, 48, [9.5, 12.49], true);
@@ -283,7 +338,7 @@ export function ExplorationPage({
             );
         }}
         onMapCommand={(command) => {
-          cancelTimelineNavigation();
+          cancelZoneNavigation();
           if (command === 'fit') {
             adapter.fit(data.overview, 48, [9.5, 12.49], true);
           } else adapter.zoom(command === 'zoom-in' ? 1 : -1, undefined, true);
@@ -331,7 +386,7 @@ export function ExplorationPage({
         map={({ frame }) => (
           <MapSurface
             adapter={adapter}
-            onNavigationStart={cancelTimelineNavigation}
+            onNavigationStart={cancelZoneNavigation}
             live={live}
             onViewportChange={onViewportChange}
             statusContent={statusContent}

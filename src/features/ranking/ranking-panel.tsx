@@ -61,6 +61,7 @@ export type RankingPanelProps = {
   onQueryChange: (query: RankingPanelQuery) => void;
   onSelectZone: (zoneId: string) => void;
   onRetry: () => void;
+  onRetrySelection?: () => void;
   selectedZoneId?: string | null;
 };
 
@@ -190,6 +191,7 @@ export function RankingPanel({
   onQueryChange,
   onSelectZone,
   onRetry,
+  onRetrySelection,
   selectedZoneId,
 }: RankingPanelProps) {
   const { region, tab, sort } = query;
@@ -268,6 +270,15 @@ export function RankingPanel({
           })}
         </div>
       </div>
+
+      {onRetrySelection && (
+        <div className="ranking-status">
+          <p role="alert">권역 정보를 불러오지 못했어요.</p>
+          <Button variant="Outline" onClick={onRetrySelection}>
+            권역 다시 시도
+          </Button>
+        </div>
+      )}
 
       <div className="ranking-scroll" ref={scrollRef}>
         <div className="ranking-controls">
