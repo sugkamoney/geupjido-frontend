@@ -1,6 +1,6 @@
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { createRef } from 'react';
+import { useRef, useState } from 'react';
 import { afterEach, expect, it, vi } from 'vitest';
 import { ShellSearchRow } from '../../components/app-shell/shell-search';
 import { MapStatusCard } from './map-status-card';
@@ -239,10 +239,33 @@ it('leaves Escape available to an outside input during IME composition', () => {
   expect(search).toHaveFocus();
 });
 
-it('lets editing search consume Escape before the card document listener', async () => {
+it('closes search on the first Escape and the card on the second', async () => {
   const user = userEvent.setup();
-  const onEditingChange = vi.fn();
-  const searchRef = createRef<HTMLInputElement>();
+
+  function ControlledSearch() {
+    const [editing, setEditing] = useState(true);
+    const [resultsOpen, setResultsOpen] = useState(true);
+    const searchRef = useRef<HTMLInputElement>(null);
+    return (
+      <ShellSearchRow
+        search={{
+          value: '',
+          onValueChange: vi.fn(),
+          resultsOpen,
+          onResultsOpenChange: setResultsOpen,
+          results: <p>검색 결과</p>,
+        }}
+        compact={false}
+        editing={editing}
+        onEditingChange={setEditing}
+        onSelection={vi.fn()}
+        level="gu"
+        onLevelChange={vi.fn()}
+        inputRef={searchRef}
+      />
+    );
+  }
+
   render(
     <>
       <MapStatusCard
@@ -251,16 +274,7 @@ it('lets editing search consume Escape before the card document listener', async
         phase="ready"
         onRetry={vi.fn()}
       />
-      <ShellSearchRow
-        search={{ value: '', onValueChange: vi.fn() }}
-        compact={false}
-        editing
-        onEditingChange={onEditingChange}
-        onSelection={vi.fn()}
-        level="gu"
-        onLevelChange={vi.fn()}
-        inputRef={searchRef}
-      />
+      <ControlledSearch />
     </>,
   );
   const trigger = screen.getByRole('button', { name: '초기 급지 지도 상태' });
@@ -270,10 +284,17 @@ it('lets editing search consume Escape before the card document listener', async
   await user.tab();
   const search = screen.getByRole('searchbox', { name: '지역 검색' });
   expect(search).toHaveFocus();
+  expect(screen.getByText('검색 결과')).toBeVisible();
 
   await user.keyboard('{Escape}');
 
-  expect(onEditingChange).toHaveBeenCalledExactlyOnceWith(false);
+  expect(screen.queryByText('검색 결과')).not.toBeInTheDocument();
   expect(trigger).toHaveAttribute('aria-expanded', 'true');
   expect(search).toHaveFocus();
+
+  await user.keyboard('{Escape}');
+
+  expect(screen.queryByText('검색 결과')).not.toBeInTheDocument();
+  expect(trigger).toHaveAttribute('aria-expanded', 'false');
+  expect(trigger).toHaveFocus();
 });
