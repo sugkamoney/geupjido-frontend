@@ -20,6 +20,8 @@
 
 - [검색](search/README.md) · 검토용 검색 구현·검증 완료, 실제 API 연결 대기 · v0.3
 
+- [랭킹](ranking/README.md) · 패널 구현·픽스처 검증, 앱 셸 연동 대기 · v0.1
+
 ## 문서 템플릿
 
 - [_templates/README.template.md](_templates/README.template.md)
