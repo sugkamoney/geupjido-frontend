@@ -34,12 +34,22 @@ export function MapStatusSlot({
     mapStatusQueryOptions(),
   );
   const ref = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
 
   useLayoutEffect(() => {
     const slot = ref.current;
     const shell = slot?.closest('.app-shell');
     const map = slot?.parentElement;
-    if (!slot || !shell || !map || !window.ResizeObserver) return;
+    const content = contentRef.current;
+    if (!slot || !shell || !map || !content || !window.ResizeObserver) return;
+
+    const updateScrolling = () => {
+      slot.toggleAttribute(
+        'data-scrollable',
+        slot.scrollHeight > slot.clientHeight ||
+          slot.scrollWidth > slot.clientWidth,
+      );
+    };
 
     let obstacles = new Set<Element>();
     const measure = () => {
@@ -56,9 +66,12 @@ export function MapStatusSlot({
       slot.style.top = `${placement.top - bounds.top}px`;
       slot.style.maxWidth = `${placement.width}px`;
       slot.style.maxHeight = `${placement.height}px`;
+      updateScrolling();
     };
     const sizes = new ResizeObserver(measure);
     sizes.observe(map);
+    const contentSize = new ResizeObserver(updateScrolling);
+    contentSize.observe(content);
     const observeObstacles = () => {
       const next = new Set(shell.querySelectorAll(obstacleSelector));
       for (const node of obstacles) {
@@ -105,6 +118,7 @@ export function MapStatusSlot({
     return () => {
       changes.disconnect();
       sizes.disconnect();
+      contentSize.disconnect();
     };
   }, []);
 
@@ -120,12 +134,14 @@ export function MapStatusSlot({
 
   return (
     <div className="exploration-status-card-slot" ref={ref} hidden inert>
-      <Renderer
-        basis="initial"
-        data={data}
-        phase={phase}
-        onRetry={() => void refetch({ cancelRefetch: false })}
-      />
+      <div ref={contentRef}>
+        <Renderer
+          basis="initial"
+          data={data}
+          phase={phase}
+          onRetry={() => void refetch({ cancelRefetch: false })}
+        />
+      </div>
     </div>
   );
 }

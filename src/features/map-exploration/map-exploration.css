@@ -425,6 +425,9 @@
   /* Keep the measured content origin while leaving room for focus ink. */
   margin: calc(-1 * var(--space-8));
   padding: var(--space-8);
+}
+
+.exploration-status-card-slot[data-scrollable] {
   overflow: auto;
   overscroll-behavior: contain;
 }

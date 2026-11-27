@@ -100,14 +100,31 @@ describe('live exploration route', () => {
     );
     fireEvent.click(probe);
     fireEvent.click(probe);
-    expect(request.mock.calls.slice(requestsBeforeRefresh)).toHaveLength(2);
-    finishRetry(Response.json(status));
-    await waitFor(() => expect(probe).toHaveTextContent('initial ready 5'));
-    expect(cities).toHaveBeenCalledOnce();
     expect(request.mock.calls.slice(requestsBeforeRefresh)).toEqual([
-      [path, expect.any(Object)],
-      [path, expect.any(Object)],
+      [path, expect.objectContaining({ method: 'GET' })],
+      [
+        path,
+        expect.objectContaining({
+          method: 'GET',
+          signal: expect.objectContaining({ aborted: false }),
+        }),
+      ],
     ]);
+    await waitFor(() =>
+      expect(probe).toHaveTextContent('initial refreshing 5'),
+    );
+    finishRetry(
+      Response.json({
+        ...status,
+        initialTierZoneCount: 4,
+        missingInitialTierZoneCount: 2,
+        initialGradeCounts: status.initialGradeCounts.map((entry) =>
+          entry.grade === 2 ? { ...entry, count: 1 } : entry,
+        ),
+      }),
+    );
+    await waitFor(() => expect(probe).toHaveTextContent('initial ready 4'));
+    expect(cities).toHaveBeenCalledOnce();
   });
 
   it('skips the status observer in the compact shell', async () => {
