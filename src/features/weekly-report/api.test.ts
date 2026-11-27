@@ -33,15 +33,19 @@ it.each(Object.values(weeklyReportListFixtures))(
 );
 
 it.each(['PREPARING', 'DELAYED'] as const)(
-  'allows %s before the first release',
+  'preserves collecting zones during %s before the first release',
   async (state) => {
-    const body = {
-      ...weeklyReportListFixtures.COLLECTING,
-      state,
-      collectingZones: [],
-    };
-    vi.stubGlobal('fetch', async () => Response.json(body));
-    await expect(fetchWeeklyReportList(signal)).resolves.toEqual(body);
+    const { collectingZones } = weeklyReportListFixtures.COLLECTING;
+    expect(collectingZones.length).toBeGreaterThan(0);
+    for (const zones of [[], collectingZones]) {
+      const body = {
+        ...weeklyReportListFixtures.COLLECTING,
+        state,
+        collectingZones: zones,
+      };
+      vi.stubGlobal('fetch', async () => Response.json(body));
+      await expect(fetchWeeklyReportList(signal)).resolves.toEqual(body);
+    }
   },
 );
 
@@ -140,6 +144,80 @@ it('classifies malformed successful JSON as a contract failure', async () => {
   });
 });
 
+it.each([
+  {
+    name: 'report not found',
+    respond: () => Response.json({ code: 'REPORT_NOT_FOUND' }, { status: 404 }),
+    error: { status: 404, code: 'REPORT_NOT_FOUND' },
+    attempts: 1,
+  },
+  {
+    name: 'contract violation',
+    respond: () => Response.json({ ...latest, cutoffCompletedAt: null }),
+    error: {
+      name: 'WeeklyReportContractError',
+      path: 'response.cutoffCompletedAt',
+    },
+    attempts: 1,
+  },
+  {
+    name: 'service unavailable',
+    respond: () => new Response(null, { status: 503 }),
+    error: { status: 503 },
+    attempts: 2,
+  },
+  {
+    name: 'network failure',
+    respond: () => {
+      throw new TypeError('Failed to fetch');
+    },
+    error: { name: 'TypeError', message: 'Failed to fetch' },
+    attempts: 2,
+  },
+])(
+  'stops after $attempts request(s) on persistent $name',
+  async ({ respond, error, attempts }) => {
+    const fetch = vi.fn(async () => respond());
+    vi.stubGlobal('fetch', fetch);
+    const client = new QueryClient();
+    try {
+      await expect(
+        client.fetchQuery(weeklyReportDetailOptions(latest.reportId)),
+      ).rejects.toMatchObject(error);
+      expect(fetch).toHaveBeenCalledTimes(attempts);
+    } finally {
+      client.clear();
+    }
+  },
+);
+
+it.each([
+  [200, 'fulfills'],
+  [200, 'rejects'],
+  [404, 'fulfills'],
+  [404, 'rejects'],
+] as const)(
+  'preserves cancellation when an HTTP %i body read %s',
+  async (status, outcome) => {
+    const controller = new AbortController();
+    const reason = new DOMException('Detail request cancelled', 'AbortError');
+    const body = status === 200 ? latest : { code: 'REPORT_NOT_FOUND' };
+    const response = Response.json(body, { status });
+    const json = vi.spyOn(response, 'json').mockImplementation(async () => {
+      controller.abort(reason);
+      if (outcome === 'rejects')
+        throw new DOMException('Body read aborted', 'AbortError');
+      return body;
+    });
+    vi.stubGlobal('fetch', async () => response);
+
+    await expect(
+      fetchWeeklyReport(latest.reportId, controller.signal),
+    ).rejects.toBe(reason);
+    expect(json).toHaveBeenCalledTimes(1);
+  },
+);
+
 it('keeps list and details isolated when navigating using server IDs', async () => {
   const fetch = vi.fn(async (url: string) => {
     if (url === '/api/v1/reports')
@@ -173,39 +251,42 @@ it('keeps list and details isolated when navigating using server IDs', async () 
     fallenZones: [],
     cityChanges: [],
   });
-  expect(
-    client.getQueryData(weeklyReportDetailOptions(latest.reportId).queryKey),
-  ).toEqual(latest);
+  for (const report of [latest, previous, first]) {
+    expect(
+      client.getQueryData(weeklyReportDetailOptions(report.reportId).queryKey),
+    ).toEqual(report);
+  }
   expect(client.getQueryData(weeklyReportListOptions().queryKey)).toEqual(list);
+  const forwardOptions = weeklyReportDetailOptions(oldest.nextReportId);
+  client.removeQueries({ queryKey: forwardOptions.queryKey, exact: true });
+  await expect(client.fetchQuery(forwardOptions)).resolves.toEqual(previous);
   expect(fetch.mock.calls.map(([url]) => url)).toEqual([
     '/api/v1/reports',
     '/api/v1/reports/25',
     '/api/v1/reports/17',
     '/api/v1/reports/11',
+    '/api/v1/reports/17',
   ]);
   client.clear();
 });
 
-it('aborts the previous detail when an observer switches IDs', async () => {
+it('aborts the previous detail and ignores its response after the new detail succeeds', async () => {
   let oldSignal: AbortSignal | null | undefined;
-  const fetch = vi.fn(async (url: string, options: RequestInit) => {
+  let releaseOld!: (response: Response) => void;
+  const oldResponse = new Promise<Response>((resolve) => {
+    releaseOld = resolve;
+  });
+  const fetch = vi.fn((url: string, options: RequestInit) => {
     expect(options.cache).toBe('no-store');
-    if (url.endsWith('/17')) return Response.json(previous);
+    if (url.endsWith('/17')) return Promise.resolve(Response.json(previous));
     oldSignal = options.signal;
-    return new Promise<Response>((resolve) => {
-      options.signal?.addEventListener(
-        'abort',
-        () => resolve(Response.json(latest)),
-        { once: true },
-      );
-    });
+    return oldResponse;
   });
   vi.stubGlobal('fetch', fetch);
   const client = new QueryClient();
-  const observer = new QueryObserver(
-    client,
-    weeklyReportDetailOptions(latest.reportId),
-  );
+  const oldOptions = weeklyReportDetailOptions(latest.reportId);
+  const oldQuery = vi.spyOn(oldOptions, 'queryFn');
+  const observer = new QueryObserver(client, oldOptions);
   const unsubscribe = observer.subscribe(() => {});
   try {
     observer.setOptions(weeklyReportDetailOptions(previous.reportId));
@@ -213,6 +294,17 @@ it('aborts the previous detail when an observer switches IDs', async () => {
     await vi.waitFor(() =>
       expect(observer.getCurrentResult().data).toEqual(previous),
     );
+    releaseOld(Response.json(latest));
+    expect(oldQuery).toHaveBeenCalledTimes(1);
+    await expect(oldQuery.mock.results[0]?.value).rejects.toMatchObject({
+      name: 'AbortError',
+    });
+    expect(observer.getCurrentResult().data).toEqual(previous);
+    expect(
+      client.getQueryData(
+        weeklyReportDetailOptions(previous.reportId).queryKey,
+      ),
+    ).toEqual(previous);
     expect(
       client.getQueryData(weeklyReportDetailOptions(latest.reportId).queryKey),
     ).toBeUndefined();
