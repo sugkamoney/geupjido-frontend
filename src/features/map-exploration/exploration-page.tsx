@@ -93,8 +93,10 @@ export function ExplorationPage({
   const [picks, setPicks] = useState(0);
   const [ownTimeline, setOwnTimeline] = useState<TimelineEntry[]>([]);
   const [timelineFilter, setTimelineFilter] = useState<'all' | 'zone'>('all');
-  const openWorldcup = (origin: HTMLElement, scope?: Zone) =>
+  const openWorldcup = (origin: HTMLElement, scope?: Zone) => {
+    cancelZoneNavigation();
     setWorldcup({ zone: scope, intro: claimIntroduction(), origin });
+  };
   const recordChoice = (match: Match, choice: Choice) => {
     if (choice === 'skip') return;
     if (live) {
@@ -320,6 +322,10 @@ export function ExplorationPage({
           onValueChange: (value) => {
             cancelZoneNavigation();
             search.onValueChange(value);
+          },
+          onResultsOpenChange: (open) => {
+            if (open) cancelZoneNavigation();
+            search.onResultsOpenChange?.(open);
           },
         }}
         displayLevel={zoneId || camera.zoom >= 12.5 ? 'zone' : 'gu'}

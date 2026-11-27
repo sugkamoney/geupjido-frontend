@@ -21,6 +21,13 @@ import { createWorldcupApi } from '../worldcup/api/client';
 import type { RankingFilters } from '../ranking/api/contracts';
 
 const selected = vi.fn();
+vi.mock('../worldcup/worldcup-dialog', () => ({
+  WorldcupDialog: ({ onClose }: { onClose: () => void }) => (
+    <div role="dialog">
+      <button onClick={onClose}>월드컵 닫기</button>
+    </div>
+  ),
+}));
 vi.mock('../../components/app-shell/app-shell', async () => {
   const { useLayoutEffect, useState } = await import('react');
   return {
@@ -59,6 +66,7 @@ vi.mock('../../components/app-shell/app-shell', async () => {
           <input
             aria-label="검색"
             value={search.value}
+            onFocus={() => search.onResultsOpenChange?.(true)}
             onChange={(event) => search.onValueChange(event.target.value)}
           />
           {session &&
@@ -67,6 +75,7 @@ vi.mock('../../components/app-shell/app-shell', async () => {
           {detail && (
             <section>
               <h2>{detail.title}</h2>
+              {detail.actions}
               {detail.content}
             </section>
           )}
@@ -226,6 +235,7 @@ it.each([
   '화면 전환',
   '지도 제스처',
   '검색',
+  '검색 결과 다시 열기',
   '필터 변경',
   '새 권역',
   'unmount',
@@ -239,6 +249,10 @@ it.each([
       finish = resolve;
     });
   });
+  if (intent === '검색 결과 다시 열기')
+    fireEvent.change(screen.getByLabelText('검색'), {
+      target: { value: '남아 있는 검색어' },
+    });
   fireEvent.click(await row());
   await waitFor(() => expect(signal).toBeDefined());
   if (intent === '지도 제스처')
@@ -249,6 +263,8 @@ it.each([
     fireEvent.change(screen.getByLabelText('검색'), {
       target: { value: '새 검색' },
     });
+  else if (intent === '검색 결과 다시 열기')
+    fireEvent.focus(screen.getByLabelText('검색'));
   else if (intent === '필터 변경')
     fireEvent.click(screen.getByRole('button', { name: /^2급지/ }));
   else if (intent === '새 권역')
@@ -341,6 +357,35 @@ it('commits only the latest click when the same row is selected twice', async ()
   ).toBeVisible();
   expect(firstSignal?.aborted).toBe(true);
   await act(async () => finishFirst(Response.json(detailRecord)));
+  expect(center).toHaveBeenCalledTimes(1);
+  expect(selected).toHaveBeenCalledTimes(1);
+});
+
+it('keeps the current detail when a newer scoped Worldcup opens during ranking navigation', async () => {
+  let signal: AbortSignal | undefined;
+  let finish!: (response: Response) => void;
+  const { center } = start(async (url, requestSignal) => {
+    if (url !== detailUrl) return Response.json(detailB);
+    signal = requestSignal;
+    return new Promise((resolve) => {
+      finish = resolve;
+    });
+  });
+  await row();
+  fireEvent.click(screen.getByRole('button', { name: /두 번째 랭킹/ }));
+  await screen.findByRole('heading', { name: zoneB.name });
+  fireEvent.click(await row());
+  await waitFor(() => expect(signal).toBeDefined());
+
+  fireEvent.click(
+    screen.getByRole('button', { name: '이 권역 단지 비교하기' }),
+  );
+  expect(screen.getByRole('dialog')).toBeVisible();
+  await act(async () => finish(Response.json(detailRecord)));
+  fireEvent.click(screen.getByRole('button', { name: '월드컵 닫기' }));
+
+  expect(screen.getByRole('heading', { name: zoneB.name })).toBeVisible();
+  expect(signal?.aborted).toBe(true);
   expect(center).toHaveBeenCalledTimes(1);
   expect(selected).toHaveBeenCalledTimes(1);
 });

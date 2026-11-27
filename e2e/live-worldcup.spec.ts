@@ -638,3 +638,72 @@ test('fractional fifth-grade matchups load and reveal the server tier after voti
   await expect(page.getByLabel('권역 급지 5.8', { exact: true })).toBeVisible();
   await expect(page.getByLabel('권역 급지 5.9', { exact: true })).toBeVisible();
 });
+
+test('opening a scoped comparison keeps its detail and focus when an older timeline request is delayed', async ({
+  page,
+  isMobile,
+}) => {
+  test.skip(isMobile, '타임라인 패널은 desktop 전용');
+  await mapRoutes(page);
+  const other = { ...zoneRecord, id: 'other-zone', name: '이전 요청 권역' };
+  const item = timelineRecord.items[0]!;
+  await page.route('**/api/v1/worldcup/timeline*', (route) =>
+    route.fulfill({
+      json: {
+        items: Array.from({ length: 5 }, () => ({
+          ...item,
+          left: { ...item.left, zoneId: other.id, zoneName: other.name },
+        })),
+      },
+    }),
+  );
+  let release: (() => void) | undefined;
+  let finished!: () => void;
+  const responseHandled = new Promise<void>((resolve) => {
+    finished = resolve;
+  });
+  await page.route('**/api/v1/map/zones/other-zone', async (route) => {
+    await new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    try {
+      await route.fulfill({ json: { ...detailRecord, zone: other } });
+    } finally {
+      finished();
+    }
+  });
+
+  await page.goto('/');
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.getByRole('combobox', { name: '지역 검색' }).fill(zoneRecord.name);
+  await page
+    .getByRole('option', { name: '예시권역 예시구', exact: true })
+    .click();
+  const compare = page.getByRole('button', { name: '이 권역 단지 비교하기' });
+  await expect(compare).toBeVisible();
+  await page.getByRole('button', { name: '월드컵', exact: true }).click();
+  await page
+    .getByRole('button', {
+      name: '이전 요청 권역 왼쪽단지 권역 상세',
+      exact: true,
+    })
+    .first()
+    .click();
+  await expect.poll(() => !!release).toBe(true);
+
+  await compare.click();
+  await expect(page.getByRole('dialog')).toBeVisible();
+  release!();
+  await responseHandled;
+  await page.evaluate(
+    () =>
+      new Promise((resolve) =>
+        requestAnimationFrame(() => requestAnimationFrame(resolve)),
+      ),
+  );
+  await page.getByRole('button', { name: '월드컵 닫기' }).click();
+  await expect(
+    page.getByRole('heading', { name: zoneRecord.name, exact: true }),
+  ).toBeVisible();
+  await expect(compare).toBeFocused();
+});
