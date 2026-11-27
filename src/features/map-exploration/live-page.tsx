@@ -1,5 +1,6 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState, type ComponentType } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { MapStatusSlot, type MapStatusCardProps } from './map-status-slot';
 import { ExplorationPage } from './exploration-page';
 import { createDefaultMapAdapter } from './map-provider';
 import { createMapApi, MapApiError } from './api/client';
@@ -18,7 +19,9 @@ const retry = (attempt: number, error: Error) =>
 export function LiveExplorationPage({
   api = apiClient,
   createAdapter = createDefaultMapAdapter,
+  mapStatusRenderer,
 }: {
+  mapStatusRenderer?: ComponentType<MapStatusCardProps>;
   api?: ReturnType<typeof createMapApi>;
   createAdapter?: (data: ExplorationData) => MapAdapter;
 }) {
@@ -51,6 +54,7 @@ export function LiveExplorationPage({
       api={api}
       initial={cityData(cities.data)}
       createAdapter={createAdapter}
+      mapStatusRenderer={mapStatusRenderer}
       catalogError={cities.isError}
       retryCatalog={() => void cities.refetch()}
     />
@@ -62,11 +66,13 @@ function LiveMap({
   initial,
   createAdapter,
   catalogError,
+  mapStatusRenderer,
   retryCatalog,
 }: {
   api: ReturnType<typeof createMapApi>;
   initial: ExplorationData;
   createAdapter: (data: ExplorationData) => MapAdapter;
+  mapStatusRenderer?: ComponentType<MapStatusCardProps>;
   catalogError: boolean;
   retryCatalog: () => void;
 }) {
@@ -141,6 +147,9 @@ function LiveMap({
       source={sources.source}
       searchSource={sources.searchSource}
       onViewportChange={onViewportChange}
+      desktopMapOverlay={
+        mapStatusRenderer && <MapStatusSlot renderer={mapStatusRenderer} />
+      }
       statusContent={
         catalogError ? (
           <>

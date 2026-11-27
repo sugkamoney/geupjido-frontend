@@ -38,6 +38,7 @@ export type ShellSearch = {
   >;
 };
 export type AppShellProps = {
+  desktopMapOverlay?: ReactNode;
   map: (context: { frame: MapFrame; level: DisplayLevel }) => ReactNode;
   ranking?: (context: {
     signal: AbortSignal;

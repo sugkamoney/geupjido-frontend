@@ -59,6 +59,7 @@ export function ExplorationPage({
   live = false,
   onViewportChange,
   statusContent,
+  desktopMapOverlay,
 }: {
   adapter?: MapAdapter;
   source?: ExplorationSource;
@@ -68,6 +69,7 @@ export function ExplorationPage({
   live?: boolean;
   onViewportChange?: (bounds: GeoBounds, zoom: number) => void;
   statusContent?: ReactNode;
+  desktopMapOverlay?: ReactNode;
 }) {
   const worldcupSource =
     providedWorldcupSource ??
@@ -383,6 +385,7 @@ export function ExplorationPage({
               : undefined
         }
         onDetailClose={clear}
+        desktopMapOverlay={desktopMapOverlay}
         map={({ frame }) => (
           <MapSurface
             adapter={adapter}

@@ -414,3 +414,17 @@
     height: 44px;
   }
 }
+
+.exploration-status-card-slot {
+  position: absolute;
+  z-index: 5;
+  width: max-content;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+@media (max-width: 767px) {
+  .exploration-status-card-slot {
+    display: none;
+  }
+}

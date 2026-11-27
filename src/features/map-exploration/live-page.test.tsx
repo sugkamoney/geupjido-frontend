@@ -12,23 +12,117 @@ import { createMapApi } from './api/client';
 import { cityRecord, zoneRecord } from './api/test-data';
 import { parseCities, parseZones } from './api/validation';
 import { FixtureMapAdapter } from './fixture-adapter';
+import type { MapStatusCardProps } from './map-status-slot';
 
-afterEach(() => vi.restoreAllMocks());
+afterEach(() => {
+  vi.restoreAllMocks();
+  vi.unstubAllGlobals();
+});
+
+function StatusProbe({ basis, phase, data, onRetry }: MapStatusCardProps) {
+  return (
+    <button data-testid="status-probe" onClick={onRetry}>
+      {basis} {phase} {data?.initialTierZoneCount}
+    </button>
+  );
+}
 function mount(
   api: ReturnType<typeof createMapApi>,
   map = new FixtureMapAdapter(),
+  mapStatusRenderer?: typeof StatusProbe,
 ) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
   render(
     <QueryClientProvider client={queryClient}>
-      <LiveExplorationPage api={api} createAdapter={() => map} />
+      <LiveExplorationPage
+        api={api}
+        createAdapter={() => map}
+        mapStatusRenderer={mapStatusRenderer}
+      />
     </QueryClientProvider>,
   );
   return queryClient;
 }
 describe('live exploration route', () => {
+  it('passes the last good snapshot through refresh failure and retries only status', async () => {
+    const status = {
+      zoneCount: 6,
+      initialTierZoneCount: 5,
+      missingInitialTierZoneCount: 1,
+      voteBasedZoneCount: 2,
+      collectingZoneCount: 4,
+      initialGradeCounts: [0, 2, 1, 1, 1].map((count, index) => ({
+        grade: index + 1,
+        count,
+      })),
+      validVoteCount: 95,
+      participantCount: 21,
+      lastCompletedAt: null,
+      nextScheduledAt: null,
+    };
+    const path = '/api/v1/map/status';
+    const request = vi.fn(async (url: string) =>
+      Response.json(url === path ? status : { items: [] }),
+    );
+    vi.stubGlobal('fetch', request);
+    const cities = vi.fn(async () => parseCities([cityRecord]));
+    const client = mount({ ...createMapApi(), cities }, undefined, StatusProbe);
+    const probe = await screen.findByTestId('status-probe');
+    await waitFor(() => expect(probe).toHaveTextContent('initial ready 5'));
+
+    const requestsBeforeRefresh = request.mock.calls.length;
+    let failRefresh!: (response: Response) => void;
+    request.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          failRefresh = resolve;
+        }),
+    );
+    act(() => {
+      void client.refetchQueries({ queryKey: ['map', 'status'] });
+    });
+    await waitFor(() =>
+      expect(probe).toHaveTextContent('initial refreshing 5'),
+    );
+    failRefresh(Response.json({}, { status: 404 }));
+    await waitFor(() =>
+      expect(probe).toHaveTextContent('initial refresh-error 5'),
+    );
+
+    fireEvent.click(probe);
+    await waitFor(() => expect(probe).toHaveTextContent('initial ready 5'));
+    expect(cities).toHaveBeenCalledOnce();
+    expect(request.mock.calls.slice(requestsBeforeRefresh)).toEqual([
+      [path, expect.any(Object)],
+      [path, expect.any(Object)],
+    ]);
+  });
+
+  it('skips the status observer in the compact shell', async () => {
+    vi.stubGlobal('matchMedia', () => ({
+      matches: true,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+    }));
+    const request = vi.fn(async (url: string) =>
+      Response.json({ items: [], url }),
+    );
+    vi.stubGlobal('fetch', request);
+    const client = mount(
+      { ...createMapApi(), cities: async () => parseCities([cityRecord]) },
+      undefined,
+      StatusProbe,
+    );
+    await screen.findByRole('region', { name: /^지도$/ });
+    expect(screen.queryByTestId('status-probe')).not.toBeInTheDocument();
+    expect(client.getQueryState(['map', 'status'])).toBeUndefined();
+    expect(request.mock.calls.map(([url]) => url)).not.toContain(
+      '/api/v1/map/status',
+    );
+  });
+
   it('offers initial failure retry and never falls back to example data', async () => {
     const api = {
       ...createMapApi(),
