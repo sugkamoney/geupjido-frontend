@@ -285,16 +285,20 @@ it('closes search on the first Escape and the card on the second', async () => {
   const search = screen.getByRole('searchbox', { name: '지역 검색' });
   expect(search).toHaveFocus();
   expect(screen.getByText('검색 결과')).toBeVisible();
+  const panel = screen.getByRole('region', { name: '지금 지도 상태' });
+  expect(panel).toBeVisible();
 
   await user.keyboard('{Escape}');
 
   expect(screen.queryByText('검색 결과')).not.toBeInTheDocument();
   expect(trigger).toHaveAttribute('aria-expanded', 'true');
+  expect(panel).toBeVisible();
   expect(search).toHaveFocus();
 
   await user.keyboard('{Escape}');
 
   expect(screen.queryByText('검색 결과')).not.toBeInTheDocument();
   expect(trigger).toHaveAttribute('aria-expanded', 'false');
+  expect(panel).not.toBeVisible();
   expect(trigger).toHaveFocus();
 });
