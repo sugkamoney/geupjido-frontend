@@ -34,7 +34,6 @@ function respond(body: unknown, statusCode = 200) {
 function fetchStatus() {
   return new QueryClient().fetchQuery({
     ...mapStatusQueryOptions(),
-    retry: false,
     gcTime: Infinity,
   });
 }
@@ -69,25 +68,35 @@ describe('map status query', () => {
     expect(await fetchStatus()).toEqual(scheduleDisabled);
   });
 
-  it('surfaces HTTP failures with the original status and code', async () => {
-    respond({ code: 'SERVICE_UNAVAILABLE' }, 503);
+  it('retries HTTP 503 once and surfaces the original status and code', async () => {
+    const fetch = respond({ code: 'SERVICE_UNAVAILABLE' }, 503);
     const request = fetchStatus();
     await expect(request).rejects.toBeInstanceOf(MapApiError);
     await expect(request).rejects.toMatchObject({
       status: 503,
       code: 'SERVICE_UNAVAILABLE',
     });
+    expect(fetch).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not retry an HTTP 404', async () => {
+    const fetch = respond({ code: 'NOT_FOUND' }, 404);
+    await expect(fetchStatus()).rejects.toMatchObject({ status: 404 });
+    expect(fetch).toHaveBeenCalledTimes(1);
   });
 
   it.each([
     { validVoteCount: -1 },
     { participantCount: '21' },
     { lastCompletedAt: '2026-11-27' },
+    { lastCompletedAt: '2026-02-30T12:00:00Z' },
+    { nextScheduledAt: '2026-11-27T24:00:00Z' },
     { nextScheduledAt: undefined },
     { initialGradeCounts: [{ grade: 6, count: 1 }] },
     { initialGradeCounts: [{ grade: 1, count: 0 }] },
   ])('rejects malformed snapshot fields %j', async (override) => {
-    respond({ ...status, ...override });
+    const fetch = respond({ ...status, ...override });
     await expect(fetchStatus()).rejects.toBeInstanceOf(MapContractError);
+    expect(fetch).toHaveBeenCalledTimes(1);
   });
 });

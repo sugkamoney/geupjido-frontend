@@ -12,10 +12,18 @@ export type MapStatus = components['schemas']['Status'];
 function instant(value: unknown, path: string): string {
   if (
     typeof value !== 'string' ||
-    !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/.test(
+    !/^\d{4}-\d{2}-\d{2}T(?:[01]\d|2[0-3]):\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/.test(
       value,
     ) ||
     !Number.isFinite(Date.parse(value))
+  ) {
+    throw new MapContractError(path);
+  }
+  const calendarDate = value.slice(0, 10);
+  const midnight = new Date(`${calendarDate}T00:00:00Z`);
+  if (
+    !Number.isFinite(midnight.getTime()) ||
+    midnight.toISOString().slice(0, 10) !== calendarDate
   ) {
     throw new MapContractError(path);
   }
