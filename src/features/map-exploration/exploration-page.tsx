@@ -259,11 +259,15 @@ export function ExplorationPage({
       />
     ),
   };
-  const search = useSearch(searchSource, (target) => {
-    setSearchTarget(target);
-    if (target.kind === 'apartment') selectApartment(target.item, 'list');
-    else selectLabel(target.item);
-  });
+  const search = useSearch(
+    searchSource,
+    (target) => {
+      setSearchTarget(target);
+      if (target.kind === 'apartment') selectApartment(target.item, 'list');
+      else selectLabel(target.item);
+    },
+    cancelZoneNavigation,
+  );
   const allApartments = new Map<string, Apartment>();
   for (const item of [
     ...data.apartments,
@@ -317,17 +321,7 @@ export function ExplorationPage({
             />
           )
         }
-        search={{
-          ...search,
-          onValueChange: (value) => {
-            cancelZoneNavigation();
-            search.onValueChange(value);
-          },
-          onResultsOpenChange: (open) => {
-            if (open) cancelZoneNavigation();
-            search.onResultsOpenChange?.(open);
-          },
-        }}
+        search={search}
         displayLevel={zoneId || camera.zoom >= 12.5 ? 'zone' : 'gu'}
         sheetExpanded={sheetExpanded}
         onSheetExpandedChange={setSheetExpanded}

@@ -19,6 +19,7 @@ type Response = {
 export function useSearch(
   source: SearchSource,
   onSelect: (target: SearchTarget) => void,
+  onSearchIntent?: () => void,
 ): ShellSearch {
   const [{ query, revision }, setInput] = useState({ query: '', revision: 0 });
   const setQuery = (query: string) =>
@@ -86,12 +87,14 @@ export function useSearch(
   return {
     value: query,
     onValueChange: (value) => {
+      onSearchIntent?.();
       setQuery(value);
       setActive(undefined);
       setOpen(!!normalizeQuery(value));
     },
     resultsOpen: open && nonempty,
     onResultsOpenChange: (value) => {
+      if (value) onSearchIntent?.();
       setOpen(value && nonempty);
       if (!value) setActive(undefined);
     },
@@ -133,6 +136,7 @@ export function useSearch(
       ended.current = undefined;
       if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
         event.preventDefault();
+        if (nonempty) onSearchIntent?.();
         setOpen(nonempty);
         if (results.length)
           setActive((index) =>

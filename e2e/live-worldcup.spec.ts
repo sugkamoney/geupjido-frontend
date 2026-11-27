@@ -707,3 +707,71 @@ test('opening a scoped comparison keeps its detail and focus when an older timel
   ).toBeVisible();
   await expect(compare).toBeFocused();
 });
+
+test('keyboard search reopening cancels a timeline selection started while search has focus', async ({
+  page,
+  isMobile,
+}) => {
+  test.skip(isMobile, '타임라인 패널은 desktop 전용');
+  await mapRoutes(page);
+  await page.route('**/api/v1/worldcup/timeline*', (route) =>
+    route.fulfill({
+      json: { items: Array.from({ length: 5 }, () => timelineRecord.items[0]) },
+    }),
+  );
+  let release: (() => void) | undefined;
+  let finish!: () => void;
+  const responseHandled = new Promise<void>((resolve) => {
+    finish = resolve;
+  });
+  await page.route('**/api/v1/map/zones/zone-a', async (route) => {
+    await new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    try {
+      await route.fulfill({ json: detailRecord });
+    } finally {
+      finish();
+    }
+  });
+
+  await page.goto('/');
+  await page.getByRole('button', { name: '월드컵', exact: true }).click();
+  const field = page.getByRole('combobox', { name: '지역 검색' });
+  await field.fill(zoneRecord.name);
+  await field.press('Escape');
+  await expect(field).toHaveAttribute('aria-expanded', 'false');
+
+  // Move focus before mouseup starts the request, so ArrowDown reopens
+  // the search without another focus or pointer event on the input.
+  const card = page
+    .getByRole('button', { name: '예시권역 왼쪽단지 권역 상세', exact: true })
+    .last();
+  await card.hover();
+  await page.mouse.down();
+  for (let count = 0; count < 25; count++) {
+    if (await field.evaluate((input) => document.activeElement === input))
+      break;
+    await page.keyboard.press('Tab');
+  }
+  await expect(field).toBeFocused();
+  await page.keyboard.press('Escape');
+  await expect(field).toHaveAttribute('aria-expanded', 'false');
+  await page.mouse.up();
+  await expect.poll(() => !!release).toBe(true);
+  await expect(field).toBeFocused();
+
+  const aborted = page.waitForEvent('requestfailed', (request) =>
+    request.url().endsWith('/api/v1/map/zones/zone-a'),
+  );
+  await page.keyboard.press('ArrowDown');
+  await expect(field).toHaveAttribute('aria-expanded', 'true');
+  await aborted;
+  release!();
+  await responseHandled;
+  await expect(field).toBeFocused();
+  await expect(field).toHaveAttribute('aria-expanded', 'true');
+  await expect(
+    page.getByRole('heading', { name: zoneRecord.name, exact: true }),
+  ).toHaveCount(0);
+});
