@@ -22,6 +22,7 @@
 - [배포 OpenAPI 사본](api/INDEX.md)
 - [지도 API 읽기 계층과 검증 결과](map-api-read-layer.md)
 - [지도 상태 조회와 공개 주간 리포트 검증 데이터](map-status-weekly-report-prep.md)
+- [공개 주간 리포트 조회](weekly-report-api.md)
 - [기존 지도 화면의 실제 API 연결](map-api-ui-integration.md)
 - [실제 지도 경계와 모바일 SDK/API 결합 검증](map-boundary-mobile-validation.md)
 - [BE 추가 요청: 지도 표시 경계의 한강 수면 제외(미발송)](map-boundary-backend-followup.md)
