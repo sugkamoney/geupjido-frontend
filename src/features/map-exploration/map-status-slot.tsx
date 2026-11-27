@@ -43,11 +43,17 @@ export function MapStatusSlot({
     const content = contentRef.current;
     if (!slot || !shell || !map || !content || !window.ResizeObserver) return;
 
+    let placement: ReturnType<typeof placeMapStatus>;
     const updateScrolling = () => {
+      if (!placement) return;
+      const { width, height } = content.getBoundingClientRect();
+      // The slot's scroll metrics include padding and depend on overflow mode.
       slot.toggleAttribute(
         'data-scrollable',
-        slot.scrollHeight > slot.clientHeight ||
-          slot.scrollWidth > slot.clientWidth,
+        width > placement.width ||
+          height > placement.height ||
+          content.scrollWidth > Math.round(placement.width) ||
+          content.scrollHeight > Math.round(placement.height),
       );
     };
 
@@ -57,7 +63,7 @@ export function MapStatusSlot({
       const boxes = [...obstacles]
         .filter((node) => node.getClientRects().length > 0)
         .map((node) => node.getBoundingClientRect());
-      const placement = placeMapStatus(bounds, boxes);
+      placement = placeMapStatus(bounds, boxes);
       slot.hidden = !placement;
       slot.inert = !placement;
       if (!placement) return;
