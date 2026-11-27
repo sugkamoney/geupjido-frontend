@@ -1,6 +1,6 @@
 import { useRef, useState, type RefObject, type ReactNode } from 'react';
 import { Button, CloseButton } from '../ui';
-import type { ShellDetail } from './types';
+import type { AppShellProps, ShellDetail } from './types';
 
 export function TimelinePanel({
   content,
@@ -173,6 +173,61 @@ export function DetailPanel({
           {detail.content}
         </div>
       </div>
+    </section>
+  );
+}
+
+export function RankingPanel({
+  content,
+  signal,
+  onZoneSelected,
+  compact,
+  onClose,
+}: {
+  content: NonNullable<AppShellProps['ranking']>;
+  signal: AbortSignal;
+  onZoneSelected: () => void;
+  compact: boolean;
+  onClose: () => void;
+}) {
+  return (
+    <section
+      id="shell-ranking"
+      className="shell-left-panel shell-ranking"
+      aria-label="랭킹"
+      role={compact ? 'dialog' : undefined}
+      aria-modal={compact || undefined}
+      data-layout-region
+      onKeyDown={(event) => {
+        if (event.defaultPrevented || event.nativeEvent.isComposing) return;
+        if (event.key === 'Escape') {
+          event.preventDefault();
+          onClose();
+        }
+        if (!compact || event.key !== 'Tab') return;
+        const controls = Array.from(
+          event.currentTarget.querySelectorAll<HTMLElement>(
+            'button, a[href], input, select, textarea, [tabindex]',
+          ),
+        ).filter(
+          (node) =>
+            node.tabIndex >= 0 &&
+            !node.matches(':disabled') &&
+            !node.closest('[hidden], [inert]') &&
+            (node.checkVisibility?.({ visibilityProperty: true }) ?? true),
+        );
+        const edge = event.shiftKey ? controls[0] : controls.at(-1);
+        if (document.activeElement !== edge) return;
+        event.preventDefault();
+        (event.shiftKey ? controls.at(-1) : controls[0])?.focus();
+      }}
+    >
+      {compact && (
+        <div className="shell-ranking-toolbar">
+          <CloseButton autoFocus label="랭킹 닫기" onClick={onClose} />
+        </div>
+      )}
+      {content({ signal, onZoneSelected })}
     </section>
   );
 }

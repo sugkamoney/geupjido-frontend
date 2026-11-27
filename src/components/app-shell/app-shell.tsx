@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { MapControl, PanelHandle } from '../ui';
 import { ShellNavigation } from './shell-navigation';
-import { DetailPanel, TimelinePanel } from './shell-panels';
+import { DetailPanel, RankingPanel, TimelinePanel } from './shell-panels';
 import { ShellSearchRow } from './shell-search';
 import {
   useCompactLayout,
@@ -12,6 +12,7 @@ import type { AppShellProps, DisplayLevel } from './types';
 
 export function AppShell({
   map,
+  ranking,
   timeline,
   timelineHeader,
   timelineVisible = true,
@@ -26,7 +27,24 @@ export function AppShell({
   onMapCommand,
   review = false,
 }: AppShellProps) {
-  const [panelOpen, setPanelOpen] = useState(false);
+  const [timelineOpen, setTimelineOpen] = useState(false);
+  const [rankingSession, setRankingSession] = useState<AbortController | null>(
+    null,
+  );
+  const activeRanking =
+    ranking && !rankingSession?.signal.aborted ? rankingSession : null;
+  const [lastPanel, setLastPanel] = useState<'timeline' | 'ranking'>(
+    'timeline',
+  );
+  const rankingReturnFocus = useRef<'menu' | 'detail' | null>(null);
+  const rankingButtonRef = useRef<HTMLButtonElement | null>(null);
+  const closeRanking = (focus: typeof rankingReturnFocus.current = null) => {
+    if (!activeRanking) return;
+    rankingReturnFocus.current = focus;
+    activeRanking.abort();
+    setRankingSession(null);
+  };
+  useLayoutEffect(() => () => activeRanking?.abort(), [activeRanking]);
   const [localLevel, setLevel] = useState<DisplayLevel>('zone');
   const [localSheetExpanded, setLocalSheetExpanded] = useState(false);
   const level = displayLevel ?? localLevel;
@@ -51,12 +69,14 @@ export function AppShell({
   const interactionOrigin = useRef<HTMLElement | null>(null);
   const lastFocused = useRef<HTMLElement | null>(null);
   const compact = useCompactLayout((next) => {
+    closeRanking('menu');
     // CSS may hide a list before the media change callback runs.
     const active =
       document.activeElement === document.body
         ? lastFocused.current
         : document.activeElement;
     if (
+      !activeRanking &&
       next &&
       (panelRef.current?.contains(active) || active === handleRef.current)
     )
@@ -68,13 +88,25 @@ export function AppShell({
     setSearchEditing(false);
     setMobileNotice(false);
   });
+  const mobileRanking = compact && !!activeRanking;
   const editing = compact && searchEditing;
+  const panelOpen = !compact && (timelineOpen || !!activeRanking);
+  const activePanel = activeRanking ? 'ranking' : panelOpen ? 'timeline' : null;
+  useLayoutEffect(() => {
+    if (activeRanking || !rankingReturnFocus.current) return;
+    const target =
+      rankingReturnFocus.current === 'detail'
+        ? (closeRef.current ?? rankingButtonRef.current)
+        : rankingButtonRef.current;
+    rankingReturnFocus.current = null;
+    target?.focus({ preventScroll: true });
+  }, [activeRanking, detail]);
   useShellViewport(rootRef);
   const frame = useMapFrame(
     rootRef,
     mapRef,
     compact,
-    panelOpen,
+    activePanel,
     detail?.id,
     sheetExpanded,
     (search.resultsOpen ?? !!search.value) || editing,
@@ -135,14 +167,28 @@ export function AppShell({
     if (next === 'gu' && detail) closeDetail(false);
     onLevelChange?.(next);
   };
+  const openRanking = () => {
+    if (activeRanking) return;
+    setLastPanel('ranking');
+    setTimelineOpen(false);
+    setMobileNotice(false);
+    setRankingSession(new AbortController());
+  };
   const collapse = () => {
+    if (activeRanking) {
+      closeRanking('menu');
+      return;
+    }
     handleRef.current?.focus({ preventScroll: true });
-    setPanelOpen((open) => !open);
+    if (!timelineOpen && ranking && lastPanel === 'ranking') openRanking();
+    else setTimelineOpen((open) => !open);
   };
   const worldcup = (origin: HTMLElement) => {
+    closeRanking();
+    setLastPanel('timeline');
     if (compact && onWorldcupStart) onWorldcupStart(origin);
     else if (compact) setMobileNotice(true);
-    else setPanelOpen(true);
+    else setTimelineOpen(true);
   };
 
   return (
@@ -167,23 +213,26 @@ export function AppShell({
       <div
         ref={mapRef}
         className="shell-map-slot"
-        inert={editing}
+        inert={editing || mobileRanking}
         data-layout-region
       >
         {map({ frame, level: detail ? 'zone' : level })}
       </div>
-      <div inert={editing}>
+      <div inert={editing || mobileRanking}>
         <ShellNavigation
-          panelOpen={!compact && panelOpen}
+          activePanel={activePanel}
+          onRanking={ranking ? openRanking : undefined}
+          rankingButtonRef={rankingButtonRef}
           review={review}
           mapButtonRef={mapButtonRef}
           onMap={() => {
-            setPanelOpen(false);
+            closeRanking();
+            setTimelineOpen(false);
             setMobileNotice(false);
           }}
           onWorldcup={worldcup}
         />
-        {!compact && panelOpen && (
+        {activePanel === 'timeline' && (
           <TimelinePanel
             panelRef={panelRef}
             content={timeline}
@@ -197,7 +246,12 @@ export function AppShell({
             ref={handleRef}
             className="shell-panel-handle"
             expanded={panelOpen}
-            aria-controls="shell-timeline"
+            aria-controls={
+              activePanel === 'ranking' ||
+              (!panelOpen && ranking && lastPanel === 'ranking')
+                ? 'shell-ranking'
+                : 'shell-timeline'
+            }
             onClick={collapse}
           />
         )}
@@ -243,19 +297,36 @@ export function AppShell({
           </div>
         )}
       </div>
-      <ShellSearchRow
-        search={search}
-        compact={compact}
-        editing={editing}
-        onEditingChange={setSearchEditing}
-        onSelection={() => {
-          detailOrigin.current = inputRef.current;
-          interactionOrigin.current = inputRef.current;
-        }}
-        level={detail ? 'zone' : level}
-        onLevelChange={changeLevel}
-        inputRef={inputRef}
-      />
+      <div inert={mobileRanking}>
+        <ShellSearchRow
+          search={search}
+          compact={compact}
+          editing={editing}
+          onEditingChange={setSearchEditing}
+          onSelection={() => {
+            detailOrigin.current = inputRef.current;
+            interactionOrigin.current = inputRef.current;
+          }}
+          level={detail ? 'zone' : level}
+          onLevelChange={changeLevel}
+          inputRef={inputRef}
+        />
+      </div>
+      {activeRanking && ranking && (
+        <RankingPanel
+          compact={compact}
+          onClose={() => closeRanking('menu')}
+          content={ranking}
+          signal={activeRanking.signal}
+          onZoneSelected={() => {
+            if (activeRanking.signal.aborted) return;
+            interactionOrigin.current = rankingButtonRef.current;
+            detailOrigin.current = rankingButtonRef.current;
+            if (compact) closeRanking('detail');
+            else closeRef.current?.focus({ preventScroll: true });
+          }}
+        />
+      )}
     </main>
   );
 }
