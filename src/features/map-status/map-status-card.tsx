@@ -208,6 +208,20 @@ export function MapStatusCard({
     </Button>
   );
 
+  const dismissOnEscape = useCallback((event: KeyboardEvent) => {
+    if (
+      event.key !== 'Escape' ||
+      event.defaultPrevented ||
+      event.isComposing ||
+      event.keyCode === 229
+    ) {
+      return;
+    }
+    event.preventDefault();
+    setOpen(false);
+    trigger.current?.focus();
+  }, []);
+
   useEffect(() => {
     if (!open) return;
     function dismissOutside(event: MouseEvent) {
@@ -216,10 +230,12 @@ export function MapStatusCard({
       }
     }
     document.addEventListener('click', dismissOutside, true);
+    document.addEventListener('keydown', dismissOnEscape);
     return () => {
       document.removeEventListener('click', dismissOutside, true);
+      document.removeEventListener('keydown', dismissOnEscape);
     };
-  }, [open]);
+  }, [open, dismissOnEscape]);
 
   return (
     <div
@@ -227,10 +243,7 @@ export function MapStatusCard({
       className="map-status"
       onKeyDown={(event) => {
         event.stopPropagation();
-        if (!open || event.key !== 'Escape' || event.defaultPrevented) return;
-        event.preventDefault();
-        setOpen(false);
-        trigger.current?.focus();
+        if (open) dismissOnEscape(event.nativeEvent);
       }}
       onClick={(event) => event.stopPropagation()}
       onPointerDown={(event) => event.stopPropagation()}

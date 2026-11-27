@@ -185,3 +185,54 @@ it('keeps popover scrolling keys from reaching the map without canceling their d
   expect(defaultAllowed).toBe(true);
   expect(onMapKeyDown).not.toHaveBeenCalled();
 });
+
+it('closes on Escape and returns focus after tabbing past the nonmodal popover', async () => {
+  const user = userEvent.setup();
+  render(
+    <>
+      <MapStatusCard
+        basis="initial"
+        data={data}
+        phase="ready"
+        onRetry={vi.fn()}
+      />
+      <button>다음 동작</button>
+    </>,
+  );
+  const trigger = screen.getByRole('button', { name: '초기 급지 지도 상태' });
+  await user.tab();
+  await user.keyboard('{Enter}');
+  await user.tab();
+  await user.tab();
+  expect(screen.getByRole('button', { name: '다음 동작' })).toHaveFocus();
+
+  await user.keyboard('{Escape}');
+
+  expect(trigger).toHaveAttribute('aria-expanded', 'false');
+  expect(trigger).toHaveFocus();
+});
+
+it('leaves Escape available to an outside input during IME composition', () => {
+  render(
+    <>
+      <MapStatusCard
+        basis="initial"
+        data={data}
+        phase="ready"
+        onRetry={vi.fn()}
+      />
+      <input aria-label="지도 검색" />
+    </>,
+  );
+  const trigger = screen.getByRole('button', { name: '초기 급지 지도 상태' });
+  fireEvent.click(trigger);
+  const search = screen.getByRole('textbox', { name: '지도 검색' });
+  search.focus();
+
+  expect(fireEvent.keyDown(search, { key: 'Escape', isComposing: true })).toBe(
+    true,
+  );
+  expect(fireEvent.keyDown(search, { key: 'Escape', keyCode: 229 })).toBe(true);
+  expect(trigger).toHaveAttribute('aria-expanded', 'true');
+  expect(search).toHaveFocus();
+});
