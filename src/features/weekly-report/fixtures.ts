@@ -1,29 +1,9 @@
-import type { components } from '../map-exploration/api/generated';
-
-type Schemas = components['schemas'];
-type ReportSummary = Required<Schemas['WeeklyReportSummary']>;
-type CollectingZone = Required<Schemas['WeeklyReportCollectingZone']>;
-type ZoneChange = Required<Schemas['WeeklyReportZoneChange']>;
-
-type ListFixture = Required<Schemas['WeeklyReportListResponse']> & {
-  reports: ReportSummary[];
-  collectingZones: CollectingZone[];
-};
-
-// The pinned schema omits the explicit nulls serialized by the backend.
-type DetailFixture = Omit<
-  Required<Schemas['WeeklyReportDetail']>,
-  'changedGradeZoneCount' | 'previousReportId' | 'nextReportId'
-> & {
-  changedGradeZoneCount: number | null;
-  previousReportId: number | null;
-  nextReportId: number | null;
-  risenZones: ZoneChange[];
-  fallenZones: ZoneChange[];
-  nearBoundaryZones: Required<Schemas['WeeklyReportBoundaryZone']>[];
-  collectingZones: CollectingZone[];
-  cityChanges: Required<Schemas['WeeklyReportCityChange']>[];
-};
+import type {
+  WeeklyReportCollectingZone as CollectingZone,
+  WeeklyReportDetail as DetailFixture,
+  WeeklyReportList as ListFixture,
+  WeeklyReportZoneChange as ZoneChange,
+} from './contracts';
 
 const collectingZone: CollectingZone = {
   zoneId: 'fixture-zone-collecting',
