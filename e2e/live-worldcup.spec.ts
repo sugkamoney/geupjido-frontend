@@ -766,11 +766,17 @@ test('keyboard search reopening cancels a timeline selection started while searc
   );
   await page.keyboard.press('ArrowDown');
   await expect(field).toHaveAttribute('aria-expanded', 'true');
+  const result = page.getByRole('option', {
+    name: '예시권역 예시구',
+    exact: true,
+  });
+  await expect(result).toBeVisible();
   await aborted;
   release!();
   await responseHandled;
   await expect(field).toBeFocused();
   await expect(field).toHaveAttribute('aria-expanded', 'true');
+  await expect(result).toBeVisible();
   await expect(
     page.getByRole('heading', { name: zoneRecord.name, exact: true }),
   ).toHaveCount(0);
