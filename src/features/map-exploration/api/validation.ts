@@ -20,12 +20,12 @@ export class MapContractError extends Error {
 }
 
 type Parser<T> = (value: unknown, path: string) => T;
-function object(value: unknown, path: string): Record<string, unknown> {
+export function object(value: unknown, path: string): Record<string, unknown> {
   if (!value || typeof value !== 'object' || Array.isArray(value))
     throw new MapContractError(path);
   return value as Record<string, unknown>;
 }
-function array<T>(value: unknown, path: string, parse: Parser<T>): T[] {
+export function array<T>(value: unknown, path: string, parse: Parser<T>): T[] {
   if (!Array.isArray(value)) throw new MapContractError(path);
   return value.map((item, index) => parse(item, `${path}[${index}]`));
 }
@@ -44,7 +44,7 @@ const area: Parser<number> = (value, path) => {
   if (n < 0) throw new MapContractError(path);
   return n;
 };
-const count: Parser<number> = (value, path) => {
+export const count: Parser<number> = (value, path) => {
   const n = number(value, path);
   if (!Number.isSafeInteger(n) || n < 0) throw new MapContractError(path);
   return n;
@@ -69,7 +69,11 @@ const date: Parser<string> = (value, path) => {
     throw new MapContractError(path);
   return s;
 };
-function nullable<T>(value: unknown, path: string, parse: Parser<T>): T | null {
+export function nullable<T>(
+  value: unknown,
+  path: string,
+  parse: Parser<T>,
+): T | null {
   return value === null ? null : parse(value, path);
 }
 const point: Parser<MapPoint> = (value, path) => {

@@ -20,7 +20,7 @@ export class MapApiError extends Error {
   }
 }
 
-async function get<T>(
+export async function getMap<T>(
   path: string,
   signal: AbortSignal,
   parse: (value: unknown) => T,
@@ -67,17 +67,21 @@ function boundsQuery(value: MapBounds): string {
 export function createMapApi() {
   return {
     async cities(signal: AbortSignal) {
-      return get('/cities', signal, parseCities);
+      return getMap('/cities', signal, parseCities);
     },
     async zones(bounds: MapBounds, signal: AbortSignal) {
-      return get(`/zones?${boundsQuery(bounds)}`, signal, parseZones);
+      return getMap(`/zones?${boundsQuery(bounds)}`, signal, parseZones);
     },
     async complexes(bounds: MapBounds, signal: AbortSignal) {
-      return get(`/complexes?${boundsQuery(bounds)}`, signal, parseComplexPins);
+      return getMap(
+        `/complexes?${boundsQuery(bounds)}`,
+        signal,
+        parseComplexPins,
+      );
     },
     async zone(id: string, signal: AbortSignal) {
       if (!id.trim()) throw new MapContractError('zoneId');
-      const detail = await get(
+      const detail = await getMap(
         `/zones/${encodeURIComponent(id)}`,
         signal,
         parseZoneDetail,
@@ -87,7 +91,7 @@ export function createMapApi() {
     },
     async search(query: string, signal: AbortSignal) {
       if (!query.trim() || query.length > 80) throw new MapContractError('q');
-      return get(
+      return getMap(
         `/search?${new URLSearchParams({ q: query })}`,
         signal,
         parseSearch,
