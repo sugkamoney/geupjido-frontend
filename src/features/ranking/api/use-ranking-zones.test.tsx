@@ -79,8 +79,6 @@ it('exposes a failure and retries the same filters on refetch', async () => {
   await waitFor(() => expect(result.current.data).toEqual(responseBody()));
   expect(fetch).toHaveBeenCalledTimes(2);
   expect(fetch.mock.calls.map(([url]) => url)).toEqual(
-    Array(2).fill(
-      `/api/v1/rankings/zones?${new URLSearchParams(DEFAULT_RANKING_FILTERS)}`,
-    ),
+    Array(2).fill('/api/v1/rankings/zones?region=ALL&tab=GRADE_1&sort=CURRENT'),
   );
 });

@@ -21,7 +21,8 @@ export async function fetchRankingZones(
   signal: AbortSignal,
 ): Promise<RankingResponse> {
   signal.throwIfAborted();
-  const params = new URLSearchParams(normalizeRankingFilters(filters));
+  const applied = normalizeRankingFilters(filters);
+  const params = new URLSearchParams(applied);
   const response = await fetch(`/api/v1/rankings/zones?${params}`, {
     method: 'GET',
     signal,
@@ -53,5 +54,10 @@ export async function fetchRankingZones(
     throw error;
   }
   signal.throwIfAborted();
-  return parseRankingResponse(body);
+  const ranking = parseRankingResponse(body);
+  for (const field of ['region', 'tab', 'sort'] as const) {
+    if (ranking[field] !== applied[field])
+      throw new RankingContractError(field);
+  }
+  return ranking;
 }

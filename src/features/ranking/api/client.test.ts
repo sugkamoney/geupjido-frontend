@@ -24,7 +24,7 @@ const zone = {
 afterEach(() => vi.unstubAllGlobals());
 
 it.each([
-  [undefined, DEFAULT_RANKING_FILTERS],
+  [undefined, { region: 'ALL', tab: 'GRADE_1', sort: 'CURRENT' }],
   [
     { region: 'SEOUL', tab: 'GRADE_5', sort: 'FALLEN' },
     { region: 'SEOUL', tab: 'GRADE_5', sort: 'FALLEN' },
@@ -96,6 +96,50 @@ it.each([
   await expect(
     fetchRankingZones(undefined, new AbortController().signal),
   ).rejects.toBeInstanceOf(RankingContractError);
+});
+
+it.each([
+  ['region', 'SEOUL'],
+  ['tab', 'GRADE_2'],
+  ['sort', 'FALLEN'],
+] as const)('rejects a response for a different %s', async (field, value) => {
+  vi.stubGlobal('fetch', async () =>
+    Response.json({ ...responseBody(), [field]: value }),
+  );
+  await expect(
+    fetchRankingZones(undefined, new AbortController().signal),
+  ).rejects.toMatchObject({ name: 'RankingContractError', path: field });
+});
+
+it.each([
+  [{ previousCompletedAt: '2026-02-30T00:00:00Z' }, 'previousCompletedAt'],
+  [
+    {
+      zones: [
+        {
+          ...zone,
+          tier: 3.5,
+          rank: 19,
+          previousTier: 4,
+          tierDelta: -0.5,
+          movement: 'UP',
+        },
+      ],
+    },
+    'zones[0].tierDelta',
+  ],
+  [{ gradeCounts: [] }, 'gradeCounts'],
+  [
+    { gradeCounts: Array.from({ length: 5 }, () => ({ grade: 1, count: 2 })) },
+    'gradeCounts',
+  ],
+] as const)('rejects inconsistent contract data %j', async (fields, path) => {
+  vi.stubGlobal('fetch', async () =>
+    Response.json({ ...responseBody(), ...fields }),
+  );
+  await expect(
+    fetchRankingZones(undefined, new AbortController().signal),
+  ).rejects.toMatchObject({ name: 'RankingContractError', path });
 });
 
 it('reports HTTP failures with status and code', async () => {

@@ -7,7 +7,10 @@ export function responseBody(
     ...filters,
     totalZoneCount: 30,
     rankedZoneCount: 27,
-    gradeCounts: [{ grade: 1, count: 2 }],
+    gradeCounts: [0, 2, 10, 10, 5].map((count, index) => ({
+      grade: index + 1,
+      count,
+    })),
     collectingCount: 8,
     lastCompletedAt: null,
     previousCompletedAt: null,

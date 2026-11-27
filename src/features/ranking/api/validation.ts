@@ -60,10 +60,17 @@ const rank = nullable((value, path) => {
 const timestamp = nullable((value, path) => {
   const date = text(value, path);
   if (
-    !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/.test(
+    !/^\d{4}-\d{2}-\d{2}T(?:[01]\d|2[0-3]):\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/.test(
       date,
     ) ||
     !Number.isFinite(Date.parse(date))
+  )
+    throw new RankingContractError(path);
+  const day = date.slice(0, 10);
+  const utcDay = new Date(`${day}T00:00:00Z`);
+  if (
+    !Number.isFinite(utcDay.getTime()) ||
+    utcDay.toISOString().slice(0, 10) !== day
   )
     throw new RankingContractError(path);
   return date;
@@ -86,6 +93,11 @@ const sort = oneOf<RankingFilters['sort']>(['CURRENT', 'RISEN', 'FALLEN']);
 const rankingBasis = oneOf<RankingZone['rankingBasis']>(['INITIAL', 'VOTE']);
 const movement = oneOf<RankingZone['movement']>(['UP', 'DOWN', 'SAME', 'NONE']);
 const nullableNumber = nullable(finite);
+const tierDelta = nullable((value, path) => {
+  const number = finite(value, path);
+  if (number < 0) throw new RankingContractError(path);
+  return number;
+});
 
 const zone: Parser<RankingZone> = (value, path) => {
   const row = object(value, path);
@@ -99,7 +111,7 @@ const zone: Parser<RankingZone> = (value, path) => {
     rank: rank(row.rank, `${path}.rank`),
     rankTotal: count(row.rankTotal, `${path}.rankTotal`),
     previousTier: nullableNumber(row.previousTier, `${path}.previousTier`),
-    tierDelta: nullableNumber(row.tierDelta, `${path}.tierDelta`),
+    tierDelta: tierDelta(row.tierDelta, `${path}.tierDelta`),
     movement: movement(row.movement, `${path}.movement`),
     validVoteCount: count(row.validVoteCount, `${path}.validVoteCount`),
     participantCount: count(row.participantCount, `${path}.participantCount`),
@@ -122,13 +134,19 @@ const gradeCount: Parser<RankingResponse['gradeCounts'][number]> = (
 
 export function parseRankingResponse(value: unknown): RankingResponse {
   const response = object(value, 'response');
+  const gradeCounts = array(response.gradeCounts, 'gradeCounts', gradeCount);
+  if (
+    gradeCounts.length !== 5 ||
+    new Set(gradeCounts.map(({ grade }) => grade)).size !== 5
+  )
+    throw new RankingContractError('gradeCounts');
   return {
     region: region(response.region, 'region'),
     tab: tab(response.tab, 'tab'),
     sort: sort(response.sort, 'sort'),
     totalZoneCount: count(response.totalZoneCount, 'totalZoneCount'),
     rankedZoneCount: count(response.rankedZoneCount, 'rankedZoneCount'),
-    gradeCounts: array(response.gradeCounts, 'gradeCounts', gradeCount),
+    gradeCounts,
     collectingCount: count(response.collectingCount, 'collectingCount'),
     lastCompletedAt: timestamp(response.lastCompletedAt, 'lastCompletedAt'),
     previousCompletedAt: timestamp(
