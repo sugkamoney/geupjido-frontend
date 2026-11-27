@@ -91,7 +91,7 @@ PR10은 최종 재확인(2026-11-20)에도 OPEN이다. 부모의 ResizeObserver 
 
 2026-11-20 사용자 리뷰의 두 재현을 실패 테스트로 확인했다. 전체 타임라인에서 A 상세를 기다리다 검색으로 B를 고르면 A가 늦게 덮었고,1280×780·긴 단지명에서 My Picks의 y는−26.5px(높이800에서는−16.5px)였다.
 
-타임라인 조회 scope와 지도 탐색의 수명을 분리했다. LiveTimeline은 버튼 요청의 자식signal을 전달하고 ExplorationPage의 useTimelineNavigation이 source.loadZone용 controller를 소유한다. 새 라벨/검색/목록 선택, 상세 닫기, 지도 명령은 동기적으로 이전 이동을 취소한다. MapSurface의 onNavigationStart를 실제 포인터 시작·휠·유효한 더블클릭·이동/줌 키 입력에서 호출한다. 카메라 revision 변화 자체는 취소 기준이 아니다. 이전 선택의 이동 애니메이션 프레임이나 화면 크기 조정이 더 최신 타임라인 클릭을 취소해서는 안 되기 때문이다. 취소를 무시한 source도 resolve 뒤 controller·자식signal을 검사하므로 최신 선택을 덮지 않는다. 자식 취소·unmount·source 교체도 정리하며, 이전 finally가 새 요청 ref를 지우지 않게 동일 controller인지 확인한다.
+타임라인 조회 scope와 지도 탐색의 수명을 분리했다. LiveTimeline은 버튼 요청의 자식signal을 전달하고 ExplorationPage의 useZoneNavigation이 source.loadZone용 controller를 소유한다. 새 라벨/검색/목록 선택, 랭킹 권역 선택, 상세 닫기, 지도 명령은 동기적으로 이전 이동을 취소한다. MapSurface의 onNavigationStart를 실제 포인터 시작·휠·유효한 더블클릭·이동/줌 키 입력에서 호출한다. 카메라 revision 변화 자체는 취소 기준이 아니다. 이전 선택의 이동 애니메이션 프레임이나 화면 크기 조정이 더 최신 타임라인 클릭을 취소해서는 안 되기 때문이다. 취소를 무시한 source도 resolve 뒤 controller·자식signal을 검사하므로 최신 선택을 덮지 않는다. 자식 취소·unmount·source 교체도 정리하며, 이전 finally가 새 요청 ref를 지우지 않게 동일 controller인지 확인한다.
 
 My Picks의 절대 배치는 유지하되 실측 높이를 부모의 레이아웃 높이에 포함했다. 고정 높이 임계값을 늘리는 방식은 진행/이름/피드백/글자 크기가 바뀔 때 같은 문제가 생겨 사용하지 않았다. 기존 데스크톱 중앙 정렬 검사는 창 단독이 아닌 전체 묶음 중심을 확인한다. 모바일 전체화면·상단 내부 판·닫기·넘김 배치는 유지한다.
 
