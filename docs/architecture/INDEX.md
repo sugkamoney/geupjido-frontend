@@ -45,3 +45,5 @@
 - [월드컵 실제 API·게임 상태·쿠키·검증](worldcup.md)
 
 - [월드컵 실제 API 실행 계획](plans/2026-11-20-worldcup-api.md)
+
+- [권역 랭킹 API 조회와 응답 검증](ranking-api.md)
