@@ -292,13 +292,19 @@ it('closes search on the first Escape and the card on the second', async () => {
 
   expect(screen.queryByText('검색 결과')).not.toBeInTheDocument();
   expect(trigger).toHaveAttribute('aria-expanded', 'true');
-  expect(panel).toBeVisible();
+  expect(screen.getByRole('region', { name: '지금 지도 상태' })).toBeVisible();
   expect(search).toHaveFocus();
 
   await user.keyboard('{Escape}');
 
   expect(screen.queryByText('검색 결과')).not.toBeInTheDocument();
   expect(trigger).toHaveAttribute('aria-expanded', 'false');
-  expect(panel).not.toBeVisible();
+  expect(
+    screen.queryByRole('region', { name: '지금 지도 상태' }),
+  ).not.toBeInTheDocument();
+  const currentPanel = document.getElementById(
+    trigger.getAttribute('aria-controls') ?? panel.id,
+  );
+  if (currentPanel) expect(currentPanel).not.toBeVisible();
   expect(trigger).toHaveFocus();
 });
