@@ -91,7 +91,17 @@ describe('live exploration route', () => {
       expect(probe).toHaveTextContent('initial refresh-error 5'),
     );
 
+    let finishRetry!: (response: Response) => void;
+    request.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finishRetry = resolve;
+        }),
+    );
     fireEvent.click(probe);
+    fireEvent.click(probe);
+    expect(request.mock.calls.slice(requestsBeforeRefresh)).toHaveLength(2);
+    finishRetry(Response.json(status));
     await waitFor(() => expect(probe).toHaveTextContent('initial ready 5'));
     expect(cities).toHaveBeenCalledOnce();
     expect(request.mock.calls.slice(requestsBeforeRefresh)).toEqual([

@@ -1,5 +1,7 @@
 .exploration-map {
   position: absolute;
+  /* SDK layers stack within the map, below sibling shell overlays. */
+  isolation: isolate;
   inset: 0;
   overflow: hidden;
   touch-action: none;
@@ -419,6 +421,10 @@
   position: absolute;
   z-index: 5;
   width: max-content;
+  box-sizing: content-box;
+  /* Keep the measured content origin while leaving room for focus ink. */
+  margin: calc(-1 * var(--space-8));
+  padding: var(--space-8);
   overflow: auto;
   overscroll-behavior: contain;
 }

@@ -124,7 +124,7 @@ export function MapStatusSlot({
         basis="initial"
         data={data}
         phase={phase}
-        onRetry={() => void refetch()}
+        onRetry={() => void refetch({ cancelRefetch: false })}
       />
     </div>
   );
