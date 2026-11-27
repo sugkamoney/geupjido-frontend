@@ -19,7 +19,7 @@ const zone = {
   crossZoneVoteCount: 19,
 } as const;
 const result = {
-  region: 'ALL',
+  ...query,
   gradeCounts: [{ grade: 1, count: 2 }],
   collectingCount: 1,
   lastCompletedAt: '2026-11-27T03:00:00Z',
@@ -88,6 +88,8 @@ describe('RankingPanel', () => {
         query={{ ...query, tab: 'COLLECTING', sort: 'CURRENT' }}
         result={{
           ...result,
+          tab: 'COLLECTING',
+          sort: 'CURRENT',
           lastCompletedAt: null,
           zones: [
             {
@@ -111,6 +113,44 @@ describe('RankingPanel', () => {
     expect(screen.getByLabelText('급지 미정')).toBeVisible();
     expect(screen.getByText(/아직 발표된 랭킹이 없어요/)).toBeVisible();
   });
+
+  it.each([
+    { ...query, tab: 'COLLECTING', sort: 'CURRENT' },
+    { ...query, sort: 'FALLEN' },
+  ] as const)(
+    'withholds stale rows while $tab $sort awaits a matching result',
+    (nextQuery) => {
+      const input = props();
+      const { rerender } = render(<RankingPanel {...input} />);
+      expect(
+        screen.getByRole('button', { name: /공식 권역 이름/ }),
+      ).toBeVisible();
+
+      rerender(<RankingPanel {...input} query={nextQuery} />);
+      expect(
+        screen.queryByRole('button', { name: /공식 권역 이름/ }),
+      ).toBeNull();
+      expect(screen.getByRole('status')).toHaveTextContent('불러오는 중');
+      expect(
+        within(screen.getByRole('button', { name: /^1급지/ })).getByText('2'),
+      ).toBeVisible();
+
+      rerender(
+        <RankingPanel
+          {...input}
+          query={nextQuery}
+          result={{
+            ...result,
+            ...nextQuery,
+            zones: [{ ...zone, name: '새 조건의 권역' }],
+          }}
+        />,
+      );
+      expect(
+        screen.getByRole('button', { name: /새 조건의 권역/ }),
+      ).toBeVisible();
+    },
+  );
 
   it('shows loading, empty results and a retryable error', async () => {
     const input = props();

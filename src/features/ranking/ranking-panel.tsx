@@ -46,8 +46,7 @@ type RankingPanelZone = {
   crossZoneVoteCount: number;
 };
 
-export type RankingPanelResult = {
-  region: RankingPanelQuery['region'];
+export type RankingPanelResult = RankingPanelQuery & {
   gradeCounts: readonly { grade: number; count: number }[];
   collectingCount: number;
   lastCompletedAt: string | null;
@@ -201,8 +200,11 @@ export function RankingPanel({
   }, [region, tab, sort]);
 
   const collecting = tab === 'COLLECTING';
-  const regionResult = result?.region === query.region ? result : undefined;
-  const zones = regionResult?.zones ?? [];
+  const regionResult = result?.region === region ? result : undefined;
+  const matchesQuery = regionResult?.tab === tab && regionResult.sort === sort;
+  const loading =
+    status === 'loading' || (status === 'ready' && !!result && !matchesQuery);
+  const zones = matchesQuery ? regionResult.zones : [];
   const publication = regionResult?.lastCompletedAt;
 
   return (
@@ -309,7 +311,7 @@ export function RankingPanel({
           </div>
         </div>
 
-        {status === 'loading' && (
+        {loading && (
           <p className="ranking-status" role="status">
             랭킹을 불러오는 중이에요.
           </p>
@@ -323,6 +325,7 @@ export function RankingPanel({
           </div>
         )}
         {status === 'ready' &&
+          !loading &&
           (zones.length === 0 ? (
             <p className="ranking-status" role="status">
               조건에 맞는 권역이 없어요.

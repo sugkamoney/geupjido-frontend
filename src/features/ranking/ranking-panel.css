@@ -123,7 +123,7 @@
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: var(--space-4);
+  row-gap: var(--space-4);
 }
 
 .ranking-sorts {
@@ -315,5 +315,17 @@
 
   .ranking-sort {
     min-width: var(--control-touch-target);
+  }
+}
+
+@container (min-width: 389px) {
+  .ranking-scroll {
+    container: ranking-desktop-scroll / inline-size;
+  }
+}
+
+@container ranking-desktop-scroll (width < 349px) {
+  .ranking-sort {
+    padding-inline: var(--space-8);
   }
 }
