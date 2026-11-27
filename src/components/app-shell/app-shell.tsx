@@ -12,6 +12,7 @@ import type { AppShellProps, DisplayLevel } from './types';
 
 export function AppShell({
   map,
+  desktopMapOverlay,
   ranking,
   timeline,
   timelineHeader,
@@ -218,6 +219,7 @@ export function AppShell({
         data-layout-region
       >
         {map({ frame, level: detail ? 'zone' : level })}
+        {!compact && desktopMapOverlay}
       </div>
       <div inert={editing || mobileRanking}>
         <ShellNavigation
