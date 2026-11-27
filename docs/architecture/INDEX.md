@@ -18,6 +18,7 @@
 - [지도·검색·권역 상세 API 계약 조사와 설계 검토](map-api-integration-review.md)
 - [지도 API 연동을 위한 BE 계약 보완 요청(전달용 초안)](map-api-backend-request.md)
 - [지도 연동 마무리·현재 검증과 제약](map-integration-finalization.md)
+- [WebKit 목록 수동 스크롤 CI 실패 조사](webkit-list-scroll-ci.md)
 - [배포 OpenAPI 사본](api/INDEX.md)
 - [지도 API 읽기 계층과 검증 결과](map-api-read-layer.md)
 - [기존 지도 화면의 실제 API 연결](map-api-ui-integration.md)

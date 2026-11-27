@@ -26,3 +26,4 @@
 - [QA-FE-010: 경계 데이터 오류와 SDK 렌더링 오류 구별](QA-FE-010-api-geometry-and-sdk-projection.md)
 
 - [QA-FE-011: 실행 화면이 E2E 중 새로고침되는 이유](QA-FE-011-dev-reload-during-e2e.md)
+- [QA-FE-012: ResizeObserver 최초 알림과 수동 스크롤 보존](QA-FE-012-resize-observer-initial-scroll.md)
